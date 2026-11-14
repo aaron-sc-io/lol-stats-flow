@@ -21,29 +21,6 @@
   gap: var(--space-3);
 }
 
-.menuButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-control);
-  color: var(--text-secondary);
-  transition:
-    background-color var(--motion-fast) var(--motion-easing),
-    color var(--motion-fast) var(--motion-easing),
-    transform var(--motion-fast) var(--motion-easing);
-}
-
-.menuButton:hover {
-  background-color: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.menuButton:active {
-  transform: scale(0.96);
-}
-
 .title {
   font-size: var(--font-size-md);
   line-height: var(--line-height-md);
@@ -61,4 +38,14 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.loading {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
 }
