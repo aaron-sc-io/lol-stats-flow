@@ -29,7 +29,8 @@ const STACK_ID_PATTERN = /^(.+)-stack(\d+)$/
  * single `StackActionGroup`; everything else (including crit/empowered
  * variants, which stay independently clickable per plan D9's "separate
  * quick-add for crit variants") renders as its own `SingleActionGroup`.
- * Order is preserved — a stack group takes the position of its base action. */
+ * Auto-attack groups (AA, AA-crit) lead the list; otherwise order is
+ * preserved — a stack group takes the position of its base action. */
 export function groupComboActions(actions: readonly ComboAction[]): ActionGroup[] {
   const byId = new Map(actions.map((action) => [action.id, action]))
   const stackVariantsByBaseId = new Map<string, ComboAction[]>()
@@ -64,7 +65,11 @@ export function groupComboActions(actions: readonly ComboAction[]): ActionGroup[
       groups.push({ kind: "single", action })
     }
   }
-  return groups
+  return [...groups.filter(isAutoAttackGroup), ...groups.filter((g) => !isAutoAttackGroup(g))]
+}
+
+function isAutoAttackGroup(group: ActionGroup): boolean {
+  return (group.kind === "single" ? group.action.slot : group.slot) === "AA"
 }
 
 function stackCountOf(a: ComboAction, b: ComboAction): number {

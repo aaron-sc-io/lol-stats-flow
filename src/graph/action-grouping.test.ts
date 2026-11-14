@@ -75,6 +75,24 @@ describe("groupComboActions", () => {
     expect(groups.every((g) => g.kind === "single")).toBe(true)
   })
 
+  it("moves AA and AA-crit to the front, preserving their order and the rest", () => {
+    const actions = [
+      action("Q", "Q", "Q"),
+      action("E", "E", "E"),
+      action("AA", "AA", "AA"),
+      action("AA-crit", "AA", "AA✳"),
+      action("R", "R", "R"),
+    ]
+    const groups = groupComboActions(actions)
+    expect(groups.map((g) => (g.kind === "single" ? g.action.id : g.base.id))).toEqual([
+      "AA",
+      "AA-crit",
+      "Q",
+      "E",
+      "R",
+    ])
+  })
+
   it("falls back to a single group for an orphaned stack-suffixed id with no base action present", () => {
     const actions = [action("X-stack1", "ITEM", "X1")]
     const groups = groupComboActions(actions)
