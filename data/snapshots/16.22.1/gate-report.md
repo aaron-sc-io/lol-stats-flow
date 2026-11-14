@@ -1,4 +1,4 @@
-# Gate report — 16.22.1 (baseline 16.22.1)
+# Gate report — 16.22.1 (baseline 16.22.1~pre-resync)
 
 **Result: PASS**
 

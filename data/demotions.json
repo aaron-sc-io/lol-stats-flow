@@ -1,1 +1,1 @@
-{"demotions":[]}
+{"demotions":[{"patch":"16.22.1","kind":"item","id":"3071","name":"Black Cleaver","reason":"lost calculations: 1 → 0; bound-calculation coverage dropped: 1 → 0","demotedAt":"2026-11-14T17:15:09.367Z"}]}
