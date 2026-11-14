@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { buildKit } from "../kit"
-import { simulate } from "../sim/simulate"
-import { loadSnapshotFixture } from "../test-support/load-snapshot"
+import { buildKit } from "../../kit"
+import { simulate } from "../../sim/simulate"
+import { loadPinnedSnapshotFixture } from "../../test-support/load-snapshot"
 
-const snapshot = loadSnapshotFixture()
+/** Pinned to patch 16.22.1 (plan §3.3 item 2) — see `pinned/darius.test.ts`
+ * module doc comment for why this suite loads the frozen fixture instead of
+ * `data/current.json`. */
+const PINNED_PATCH = "16.22.1"
+const snapshot = loadPinnedSnapshotFixture(PINNED_PATCH)
 const dummy = (maxHp: number, armor: number, magicResist: number) => ({
   id: "dummy",
   name: "Dummy",
@@ -37,7 +41,7 @@ const dummy = (maxHp: number, armor: number, magicResist: number) => ({
  * for Darius's Hemorrhage bleed, to keep the event queue tractable. Total
  * damage output over a sustained burn is equivalent; only sub-tick timing
  * granularity differs from the true per-stack-independent model. */
-describe("Brand golden — Blaze passive (detonation + ablaze burn)", () => {
+describe("Brand golden (pinned 16.22.1) — Blaze passive (detonation + ablaze burn)", () => {
   it("Given 2 ablaze applications (Q then W), when simulated, then detonation does NOT fire (requires 3 stacks, not 2)", () => {
     const kit = buildKit(snapshot, { championId: "Brand", level: 9, items: [] })
     const result = simulate({

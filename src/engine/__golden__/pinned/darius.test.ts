@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest"
-import { buildKit } from "../kit"
-import { simulate } from "../sim/simulate"
-import { loadSnapshotFixture } from "../test-support/load-snapshot"
+import { buildKit } from "../../kit"
+import { simulate } from "../../sim/simulate"
+import { loadPinnedSnapshotFixture } from "../../test-support/load-snapshot"
 
-const snapshot = loadSnapshotFixture()
+/** Pinned to patch 16.22.1 (plan §3.3 item 2): loads the frozen committed
+ * fixture under `__golden__/fixtures/16.22.1/`, NOT `data/current.json` —
+ * these assertions are hand-verified absolute numbers that only hold for
+ * this exact patch's dataValues, so they must never see a different
+ * patch's snapshot (a routine balance change would fail them for no
+ * engine-logic reason, which is exactly what broke `data:gates` on
+ * 16.21.1 — see plan §7 Phase 6). Structural/compiler regressions still
+ * fail this suite, which is its whole purpose: see `__golden__/reference/`
+ * for the patch-agnostic suite the `data:gates` golden gate actually
+ * re-runs against every new patch. */
+const PINNED_PATCH = "16.22.1"
+const snapshot = loadPinnedSnapshotFixture(PINNED_PATCH)
 const dummy = (maxHp: number, armor: number, magicResist: number) => ({
   id: "dummy",
   name: "Dummy",
@@ -28,7 +39,7 @@ const dummy = (maxHp: number, armor: number, magicResist: number) => ({
  * not the real rank-scaled 100/110/120/130/140%) — both are binding
  * overrides computed directly off `Q.dataValues` here, never the broken
  * compiled calcs. */
-describe("Darius golden — level 1, rank 1, no items", () => {
+describe("Darius golden (pinned 16.22.1) — level 1, rank 1, no items", () => {
   const kit = buildKit(snapshot, {
     championId: "Darius",
     level: 1,
@@ -63,7 +74,7 @@ describe("Darius golden — level 1, rank 1, no items", () => {
   })
 })
 
-describe("Darius golden — level 11, rank 5, with Black Cleaver, vs 100 armor / 100 MR target", () => {
+describe("Darius golden (pinned 16.22.1) — level 11, rank 5, with Black Cleaver, vs 100 armor / 100 MR target", () => {
   const kit = buildKit(snapshot, {
     championId: "Darius",
     level: 11,
