@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react"
+import type { CSSProperties, ReactNode, Ref } from "react"
 import { cx } from "@/lib/cx"
 import styles from "./NodeFrame.module.css"
 
@@ -18,6 +18,12 @@ export type NodeFrameProps = {
   /** Extra inline styles merged with the computed `width` style — e.g. the
    * Champion node's `--node-scale` custom property (plan D6). */
   readonly style?: CSSProperties | undefined
+  /** Lets a node drive the store's hover-linking (e.g. hovering a Combo
+   * highlights the item sets feeding it). */
+  readonly onPointerEnter?: (() => void) | undefined
+  readonly onPointerLeave?: (() => void) | undefined
+  /** The outer frame element — e.g. for a node measuring its own chrome. */
+  readonly ref?: Ref<HTMLDivElement> | undefined
 }
 
 /**
@@ -39,6 +45,9 @@ export function NodeFrame({
   width,
   className,
   style: styleProp,
+  onPointerEnter,
+  onPointerLeave,
+  ref,
 }: NodeFrameProps) {
   const style: CSSProperties | undefined =
     width === undefined && styleProp === undefined
@@ -47,8 +56,11 @@ export function NodeFrame({
 
   return (
     <div
+      ref={ref}
       className={cx(styles.frame, className)}
       style={style}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
       data-selected={selected === true ? "true" : undefined}
       data-highlighted={highlighted === true ? "true" : undefined}
       data-dimmed={dimmed === true ? "true" : undefined}

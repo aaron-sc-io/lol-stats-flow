@@ -65,6 +65,10 @@
   gap: var(--space-1);
 }
 
+/* Fills whatever height the frame has beyond its header — a no-op for
+   content-sized frames, the elastic region for a height-resized one. */
 .body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--space-3);
 }

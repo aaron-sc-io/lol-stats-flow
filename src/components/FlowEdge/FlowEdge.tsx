@@ -43,9 +43,10 @@ export function FlowEdge({
   const nodes = useGraphStore((s) => s.nodes)
   const edges = useGraphStore((s) => s.edges)
   const hoveredComboId = useGraphStore((s) => s.hoveredComboId)
+  const hoveredItemSetIds = useGraphStore((s) => s.hoveredItemSetIds)
   const highlight = useMemo(
-    () => computeHighlightState(nodes, edges, hoveredComboId),
-    [nodes, edges, hoveredComboId],
+    () => computeHighlightState(nodes, edges, hoveredComboId, hoveredItemSetIds),
+    [nodes, edges, hoveredComboId, hoveredItemSetIds],
   )
 
   const [path] = getSmoothStepPath({
