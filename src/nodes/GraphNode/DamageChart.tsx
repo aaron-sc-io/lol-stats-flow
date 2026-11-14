@@ -1,14 +1,24 @@
-import { Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import type { ComboSeries } from "@/graph/graph-node-derivation"
 import { useGraphStore } from "@/graph/store"
 import type { ChartType } from "@/graph/types"
 import { cx } from "@/lib/cx"
 import { ChartLegend } from "./ChartLegend"
 import { ChartTooltip } from "./ChartTooltip"
+import { ColoredLineSeries, type MergedRow } from "./ColoredLineSeries"
 import styles from "./GraphNode.module.css"
-import { MARKER_SHAPES, SeriesDot, STROKE_DASHARRAYS } from "./SeriesDot"
+import { MARKER_SHAPES, STROKE_DASHARRAYS } from "./SeriesDot"
 
-type MergedRow = { readonly x: number; readonly xLabel: string } & Record<string, number | string>
+const CHART_HEIGHT = 260
 
 /** One shared dataset keyed by `x` (step index, or tick-mode seconds) with
  * per-combo keys — the canonical Recharts multi-series shape, robust
@@ -25,6 +35,7 @@ function mergeSeries(series: readonly ComboSeries[]): MergedRow[] {
       row[`${combo.comboId}.cumulative`] = point.cumulative
       row[`${combo.comboId}.targetHpAfter`] = point.targetHpAfter
       row[`${combo.comboId}.stepId`] = point.stepId ?? ""
+      row[`${combo.comboId}.instances`] = point.instances
       byX.set(point.x, row)
     }
   }
@@ -33,6 +44,26 @@ function mergeSeries(series: readonly ComboSeries[]): MergedRow[] {
 
 function lineDataKey(chartType: ChartType): "cumulative" | "targetHpAfter" {
   return chartType === "hp" ? "targetHpAfter" : "cumulative"
+}
+
+/** Diagonal hatch fill for magic-damage bars (DESIGN.md §6: color + a
+ * redundant shape cue — "magic = fill + diagonal hatch" — used everywhere
+ * a damage type is shown, including bars, not just the small chip swatch). */
+function MagicHatchDefs() {
+  return (
+    <defs>
+      <pattern
+        id="magic-hatch"
+        width="4"
+        height="4"
+        patternTransform="rotate(45)"
+        patternUnits="userSpaceOnUse"
+      >
+        <rect width="4" height="4" className={styles.hatchBg} />
+        <line x1="0" y1="0" x2="0" y2="4" className={styles.hatchLine} />
+      </pattern>
+    </defs>
+  )
 }
 
 export function DamageChart({
@@ -58,86 +89,67 @@ export function DamageChart({
   return (
     <div className={styles.chartWrap}>
       <ChartLegend series={series} hoveredComboId={hoveredComboId} onHover={setHoveredCombo} />
-      {chartType === "bars" ? (
-        <BarChart width={560} height={240} data={data} className="nodrag nowheel">
-          <CartesianGrid vertical={false} className={cx(styles.grid)} />
-          <XAxis dataKey="xLabel" className={cx(styles.axis)} />
-          <YAxis className={cx(styles.axis)} />
-          <Tooltip content={<ChartTooltip series={series} />} />
-          {series.flatMap((combo) => [
-            <Bar
-              key={`${combo.comboId}-physical`}
-              dataKey={`${combo.comboId}.physical`}
-              stackId={combo.comboId}
-              className={cx(styles.barPhysical)}
-              style={{ opacity: opacityFor(combo.comboId) }}
-              onMouseEnter={() => setHoveredCombo(combo.comboId)}
-              onMouseLeave={() => setHoveredCombo(null)}
-            />,
-            <Bar
-              key={`${combo.comboId}-magic`}
-              dataKey={`${combo.comboId}.magic`}
-              stackId={combo.comboId}
-              className={cx(styles.barMagic)}
-              style={{ opacity: opacityFor(combo.comboId) }}
-              onMouseEnter={() => setHoveredCombo(combo.comboId)}
-              onMouseLeave={() => setHoveredCombo(null)}
-            />,
-            <Bar
-              key={`${combo.comboId}-true`}
-              dataKey={`${combo.comboId}.true`}
-              stackId={combo.comboId}
-              className={cx(styles.barTrue)}
-              style={{ opacity: opacityFor(combo.comboId) }}
-              onMouseEnter={() => setHoveredCombo(combo.comboId)}
-              onMouseLeave={() => setHoveredCombo(null)}
-            />,
-          ])}
-        </BarChart>
-      ) : (
-        <LineChart width={560} height={240} data={data} className="nodrag nowheel">
-          <CartesianGrid vertical={false} className={cx(styles.grid)} />
-          <XAxis dataKey="xLabel" className={cx(styles.axis)} />
-          <YAxis className={cx(styles.axis)} />
-          <Tooltip content={<ChartTooltip series={series} />} />
-          {series.map((combo, index) => {
-            const shape = MARKER_SHAPES[index % MARKER_SHAPES.length] ?? "circle"
-            const dasharray = STROKE_DASHARRAYS[index % STROKE_DASHARRAYS.length]
-            return (
-              <Line
-                key={combo.comboId}
-                type="monotone"
-                dataKey={`${combo.comboId}.${lineDataKey(chartType)}`}
-                name={combo.comboName}
-                className={cx(styles.line)}
-                {...(dasharray === undefined ? {} : { strokeDasharray: dasharray })}
-                strokeOpacity={opacityFor(combo.comboId)}
-                connectNulls
-                dot={(dotProps) => {
-                  const rowIndex = dotProps.index ?? -1
-                  const stepId = data[rowIndex]?.[`${combo.comboId}.stepId`]
-                  return (
-                    <SeriesDot
-                      key={`${combo.comboId}-${String(dotProps.index ?? dotProps.key)}`}
-                      cx={dotProps.cx}
-                      cy={dotProps.cy}
-                      shape={shape}
-                      opacity={opacityFor(combo.comboId)}
-                      highlighted={hoveredStepId !== null && stepId === hoveredStepId}
-                      stepId={typeof stepId === "string" && stepId !== "" ? stepId : undefined}
-                      onHover={setHoveredStep}
-                      className={cx(styles.markerFill)}
-                    />
-                  )
-                }}
-                activeDot={{ r: 5 }}
+      <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+        {chartType === "bars" ? (
+          <BarChart data={data} className="nodrag nowheel">
+            <MagicHatchDefs />
+            <CartesianGrid vertical={false} className={cx(styles.grid)} />
+            <XAxis dataKey="xLabel" className={cx(styles.axis)} />
+            <YAxis className={cx(styles.axis)} />
+            <Tooltip content={<ChartTooltip series={series} />} />
+            {series.flatMap((combo) => [
+              <Bar
+                key={`${combo.comboId}-physical`}
+                dataKey={`${combo.comboId}.physical`}
+                stackId={combo.comboId}
+                className={cx(styles.barPhysical)}
+                style={{ opacity: opacityFor(combo.comboId) }}
                 onMouseEnter={() => setHoveredCombo(combo.comboId)}
                 onMouseLeave={() => setHoveredCombo(null)}
+              />,
+              <Bar
+                key={`${combo.comboId}-magic`}
+                dataKey={`${combo.comboId}.magic`}
+                stackId={combo.comboId}
+                className={cx(styles.barMagic)}
+                style={{ opacity: opacityFor(combo.comboId) }}
+                onMouseEnter={() => setHoveredCombo(combo.comboId)}
+                onMouseLeave={() => setHoveredCombo(null)}
+              />,
+              <Bar
+                key={`${combo.comboId}-true`}
+                dataKey={`${combo.comboId}.true`}
+                stackId={combo.comboId}
+                className={cx(styles.barTrue)}
+                style={{ opacity: opacityFor(combo.comboId) }}
+                onMouseEnter={() => setHoveredCombo(combo.comboId)}
+                onMouseLeave={() => setHoveredCombo(null)}
+              />,
+            ])}
+          </BarChart>
+        ) : (
+          <LineChart data={data} className="nodrag nowheel" margin={{ right: 56 }}>
+            <CartesianGrid vertical={false} className={cx(styles.grid)} />
+            <XAxis dataKey="xLabel" className={cx(styles.axis)} />
+            <YAxis className={cx(styles.axis)} />
+            <Tooltip content={<ChartTooltip series={series} />} />
+            {series.map((combo, index) => (
+              <ColoredLineSeries
+                key={combo.comboId}
+                combo={combo}
+                data={data}
+                dataKeySuffix={lineDataKey(chartType)}
+                dasharray={STROKE_DASHARRAYS[index % STROKE_DASHARRAYS.length]}
+                shape={MARKER_SHAPES[index % MARKER_SHAPES.length] ?? "circle"}
+                opacity={opacityFor(combo.comboId)}
+                hoveredStepId={hoveredStepId}
+                onHoverStep={setHoveredStep}
+                onHoverCombo={setHoveredCombo}
               />
-            )
-          })}
-        </LineChart>
-      )}
+            ))}
+          </LineChart>
+        )}
+      </ResponsiveContainer>
     </div>
   )
 }

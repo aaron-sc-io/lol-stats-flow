@@ -1,16 +1,20 @@
+import { DamageTypeChip } from "@/components/DamageTypeChip"
+import type { DamageInstance } from "@/engine"
 import type { ComboSeries } from "@/graph/graph-node-derivation"
 import styles from "./GraphNode.module.css"
 
 type TooltipPayloadEntry = { readonly payload?: Record<string, unknown> }
 
-function readNumber(row: Record<string, unknown>, key: string): number {
+function readInstances(row: Record<string, unknown>, key: string): readonly DamageInstance[] {
   const value = row[key]
-  return typeof value === "number" ? value : 0
+  return Array.isArray(value) ? (value as DamageInstance[]) : []
 }
 
-/** Custom tooltip (DESIGN.md §7/§9: no default Recharts tooltip). Shows
- * every connected combo's total at the hovered point, read straight off the
- * merged data row rather than reassembling it from Recharts' own
+/** Custom tooltip (DESIGN.md §6/§7/§9: no default Recharts tooltip) showing,
+ * per connected combo, every damage instance folded into the hovered point
+ * — source (the action that dealt it), raw → mitigated value, damage type,
+ * and the target's HP after — reading straight off the merged data row's
+ * `instances` array rather than reassembling it from Recharts' own
  * per-dataKey payload entries. */
 export function ChartTooltip(props: {
   readonly active?: boolean
@@ -31,14 +35,34 @@ export function ChartTooltip(props: {
     <div className={styles.tooltip}>
       <div className={styles.tooltipLabel}>{label}</div>
       {series.map((combo) => {
-        const total =
-          readNumber(row, `${combo.comboId}.physical`) +
-          readNumber(row, `${combo.comboId}.magic`) +
-          readNumber(row, `${combo.comboId}.true`)
+        const instances = readInstances(row, `${combo.comboId}.instances`)
+        if (instances.length === 0) {
+          return null
+        }
+        const total = instances.reduce((sum, instance) => sum + instance.mitigated, 0)
         return (
-          <div key={combo.comboId} className={styles.tooltipRow}>
-            <span>{combo.comboName}</span>
-            <span className="num">{Math.round(total).toLocaleString()}</span>
+          <div key={combo.comboId} className={styles.tooltipCombo}>
+            <div className={styles.tooltipRow}>
+              <span>{combo.comboName}</span>
+              <span className="num">{Math.round(total).toLocaleString()}</span>
+            </div>
+            <ul className={styles.tooltipInstances}>
+              {instances.map((instance, index) => (
+                <li
+                  // biome-ignore lint/suspicious/noArrayIndexKey: a point's instance list is rebuilt fresh from derived SimResult data every render, never reordered in place
+                  key={index}
+                  className={styles.tooltipInstance}
+                >
+                  <DamageTypeChip type={instance.damageType}>
+                    {Math.round(instance.raw).toLocaleString()} →{" "}
+                    {Math.round(instance.mitigated).toLocaleString()}
+                  </DamageTypeChip>
+                  <span className={styles.tooltipInstanceMeta}>
+                    {instance.label} · HP {Math.round(instance.targetHpAfter).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )
       })}
