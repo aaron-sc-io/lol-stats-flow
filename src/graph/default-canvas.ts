@@ -10,6 +10,18 @@ import type { ChampionFlowNode, ComboFlowNode, FlowEdge, FlowNode, GraphFlowNode
  * The canvas shown on first load (plan §6 "App shell" / deliverable 6):
  * Yasuo (1 item set: Infinity Edge) → Combo (Q, AA, E, Q✳) → Graph (1
  * target, 2000 HP / 80 armor / 50 MR), laid out left to right.
+ *
+ * Layout math (Phase 5 shell-bug fix, see `.qa/phase3-live.png`): nodes
+ * were previously positioned with a 0px champion→combo gap (champion's
+ * `DEFAULT_WIDTH` of 560 exactly equals the combo's old `x`), so the two
+ * visually touched/overlapped, and uneven y values (120/160/100) combined
+ * with the Graph node's much taller rendered content (chart + comparison
+ * table) skewed `fitView`'s centering. Every node now starts at the same
+ * `y` (simple top-aligned left-to-right flow) and `x` offsets are derived
+ * from each predecessor's real `DEFAULT_WIDTH` (`ChampionNode.tsx` 560 /
+ * `ComboNode.tsx` 380) plus a fixed gap comfortably over the plan's 64px
+ * minimum — never hand-tuned pixel guesses that silently drift from the
+ * node components' actual widths.
  */
 
 export const DEFAULT_CHAMPION_NODE_ID = "champion-yasuo"
@@ -20,11 +32,23 @@ export const DEFAULT_TARGET_ID = "target-1"
 
 const INFINITY_EDGE_ITEM_ID = 3031
 
+/** Mirrors `ChampionNode.tsx`'s/`ComboNode.tsx`'s own `DEFAULT_WIDTH` — kept
+ * here (not imported) since `src/nodes/**` is outside this phase's
+ * ownership; a width drift there is harmless (still ≥ the 64px minimum
+ * gap below, just not pixel-perfect), never a broken/overlapping layout. */
+const CHAMPION_NODE_WIDTH = 560
+const COMBO_NODE_WIDTH = 380
+const NODE_GAP = 80
+const ROW_Y = 0
+
 export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly edges: FlowEdge[] } {
+  const comboX = CHAMPION_NODE_WIDTH + NODE_GAP
+  const graphX = comboX + COMBO_NODE_WIDTH + NODE_GAP
+
   const championNode: ChampionFlowNode = {
     id: DEFAULT_CHAMPION_NODE_ID,
     type: "champion",
-    position: { x: 0, y: 120 },
+    position: { x: 0, y: ROW_Y },
     data: {
       championId: "Yasuo",
       level: 11,
@@ -42,7 +66,7 @@ export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly ed
   const comboNode: ComboFlowNode = {
     id: DEFAULT_COMBO_NODE_ID,
     type: "combo",
-    position: { x: 560, y: 160 },
+    position: { x: comboX, y: ROW_Y },
     data: {
       name: "Combo 1",
       steps: [
@@ -58,7 +82,7 @@ export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly ed
   const graphNode: GraphFlowNode = {
     id: DEFAULT_GRAPH_NODE_ID,
     type: "graph",
-    position: { x: 1040, y: 100 },
+    position: { x: graphX, y: ROW_Y },
     data: {
       targets: [
         {

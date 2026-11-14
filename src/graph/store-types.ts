@@ -2,14 +2,64 @@ import type { Connection, OnEdgesChange, OnNodesChange, XYPosition } from "@xyfl
 import type { ComboStep } from "@/engine"
 import type {
   AbilitySlotWithRank,
+  ChampionNodeData,
   ChartType,
+  ComboNodeData,
   FlowEdge,
   FlowNode,
+  GraphNodeData,
   ItemSlotValue,
   XMode,
 } from "./types"
 
 export type ComboStepInput = ComboStep
+
+/**
+ * The subset of a `FlowNode`/`FlowEdge` that is safe to persist or record
+ * in undo history (plan D14 deliverable 4: "Exclude transient UI state —
+ * hover, selection, open popovers — from history and from saved docs").
+ * React Flow's own `Node`/`Edge` carry extra transient fields
+ * (`selected`, `dragging`, `measured`, `zIndex`, …) and `FlowEdgeData`
+ * carries derived hover state (`highlighted`/`dimmed`, set live by the
+ * Graph's upstream-highlight feature) — none of that belongs in a saved
+ * canvas or an undo checkpoint. `src/graph/store-helpers.ts`'s
+ * `toCanonicalGraph` is the one place this projection is built; the Zod
+ * schema in `src/persistence/schema.ts` mirrors this shape independently
+ * (persistence depends on graph, never the other way).
+ */
+export type CanonicalNode =
+  | {
+      readonly id: string
+      readonly type: "champion"
+      readonly position: XYPosition
+      readonly data: ChampionNodeData
+    }
+  | {
+      readonly id: string
+      readonly type: "combo"
+      readonly position: XYPosition
+      readonly data: ComboNodeData
+    }
+  | {
+      readonly id: string
+      readonly type: "graph"
+      readonly position: XYPosition
+      readonly data: GraphNodeData
+    }
+
+export type CanonicalEdge = {
+  readonly id: string
+  readonly source: string
+  readonly sourceHandle: string | null
+  readonly target: string
+  readonly targetHandle: string | null
+  readonly type: "flow"
+}
+
+export type CanonicalGraph = {
+  readonly nodes: readonly CanonicalNode[]
+  readonly edges: readonly CanonicalEdge[]
+}
 
 /** Minimal structural `set`/`get` shapes every slice needs — compatible
  * with zustand's real (wider) `set`/`get` signatures by function-parameter
@@ -90,4 +140,21 @@ export type GraphSlice = {
   readonly setXMode: (nodeId: string, xMode: XMode) => void
 }
 
-export type GraphState = FlowSlice & ChampionSlice & ComboSlice & GraphSlice
+export type GraphState = FlowSlice &
+  ChampionSlice &
+  ComboSlice &
+  GraphSlice &
+  PersistenceBridgeSlice
+
+/** The one seam `src/persistence/` is allowed to reach into the graph
+ * store through: replacing the whole canonical graph wholesale (opening a
+ * different canvas, import, decoding a share URL, patch-pin reconcile
+ * emptying removed item/champion slots). Deliberately NOT a persistence
+ * concern living inside `src/graph/` — it only replaces state; clearing
+ * undo history around a canvas switch is the caller's job (see
+ * `src/persistence/graph-bridge.ts`), same as cafe-hass's
+ * `fromFlowGraph`/`reset` pattern of pairing a state replace with
+ * `temporal.getState().clear()` at the call site. */
+export type PersistenceBridgeSlice = {
+  readonly loadCanvas: (nodes: FlowNode[], edges: FlowEdge[]) => void
+}

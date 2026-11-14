@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   DEFAULT_CHAMPION_NODE_ID,
   DEFAULT_COMBO_NODE_ID,
@@ -14,6 +14,10 @@ import { isChampionNode, isComboNode, isGraphNode } from "./types"
 function freshStore() {
   return createGraphStore()
 }
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe("graph store — initial state", () => {
   it("loads the default Yasuo -> Combo -> Graph canvas", () => {
@@ -202,8 +206,14 @@ describe("graph store — targets", () => {
 
 describe("graph store — undo/redo (zundo temporal)", () => {
   it("undo reverts a level change and redo reapplies it", () => {
+    vi.useFakeTimers()
     const store = freshStore()
     store.getState().setChampionLevel(DEFAULT_CHAMPION_NODE_ID, 1)
+    // History checkpoints commit after a short burst-quiet delay (`store.ts`'s
+    // `HISTORY_BURST_MS`), so a continuous drag/slider-scrub collapses into
+    // one undo step instead of one per tick — advance past it before
+    // asserting on `pastStates`.
+    vi.advanceTimersByTime(1000)
 
     const levelOf = () => {
       const champ = store.getState().nodes.find((n) => n.id === DEFAULT_CHAMPION_NODE_ID)
