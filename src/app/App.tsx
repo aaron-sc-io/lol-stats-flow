@@ -138,7 +138,7 @@ function TopBar({ snapshotStatus }: { readonly snapshotStatus: SnapshotStatus })
       <div className={styles.topBarLeft}>
         <IconButton icon="menu" aria-label="Open menu" />
         <span className={styles.title}>lol-stats-flow</span>
-        {snapshotStatus.status === "ready" ? <AddNodeMenu /> : null}
+        {!isGalleryView && snapshotStatus.status === "ready" ? <AddNodeMenu /> : null}
       </div>
       <span className={`${styles.patch} num`}>Patch {patchLabel}</span>
     </header>
