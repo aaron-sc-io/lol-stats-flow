@@ -1,6 +1,10 @@
 import { fetchTextWithRetry, type RetryOptions } from "./http"
 
 const CDRAGON_BASE = "https://raw.communitydragon.org"
+/** Alternate mirror for hash lists only — same files, hosted by the
+ * CommunityDragon/Data GitHub repo (data fix §3). */
+const GITHUB_HASHES_MIRROR_BASE =
+  "https://raw.githubusercontent.com/CommunityDragon/Data/master/hashes/lol"
 
 export type ChampionSummaryEntry = {
   readonly id: number
@@ -65,18 +69,34 @@ export async function fetchCdragonItemsBin(patchDir: string, retry: RetryOptions
 }
 
 /** Best-effort: CDragon's published hash lists let us resolve some `{hash}`
- * keys back to names. Returns `null` on failure — callers must tolerate this
- * and fall back to preserving the raw hash (never crash on a missing list). */
+ * keys back to names. Tries the primary CDragon mirror first (patient
+ * retries, per data fix §3 — CDragon's hash endpoint is known to 522
+ * intermittently), then falls back to the CommunityDragon/Data GitHub raw
+ * mirror (same files, different host, rarely down at the same time).
+ * Returns `null` only if both mirrors fail — callers must tolerate this and
+ * fall back to preserving the raw hash (never crash on a missing list). */
 export async function fetchCdragonHashList(
   fileName: "hashes.bintypes.txt" | "hashes.binfields.txt" | "hashes.binhashes.txt",
   retry: RetryOptions,
 ): Promise<string | null> {
+  const patientRetry: RetryOptions = {
+    ...retry,
+    maxAttempts: Math.max(retry.maxAttempts, 8),
+    maxDelayMs: Math.max(retry.maxDelayMs, 30_000),
+  }
   try {
-    return await fetchTextWithRetry(`${CDRAGON_BASE}/data/hashes/lol/${fileName}`, {
-      ...retry,
-      maxAttempts: 3,
-    })
-  } catch {
-    return null
+    return await fetchTextWithRetry(`${CDRAGON_BASE}/data/hashes/lol/${fileName}`, patientRetry)
+  } catch (primaryError) {
+    try {
+      return await fetchTextWithRetry(`${GITHUB_HASHES_MIRROR_BASE}/${fileName}`, {
+        ...retry,
+        maxAttempts: 3,
+      })
+    } catch {
+      console.warn(
+        `[cdragon] hash list "${fileName}" unavailable on both mirrors: ${String(primaryError)}`,
+      )
+      return null
+    }
   }
 }

@@ -59,27 +59,97 @@ function lookupPath(bin: RawBin, path: string): RawBin | null {
   return null
 }
 
+/** Reads a CDragon `ModifiableFloat`-shaped field (`{ baseValue: number }`). */
+function modifiableFloat(record: RawBin, key: string): number | null {
+  const field = record[key]
+  if (
+    field !== null &&
+    typeof field === "object" &&
+    typeof (field as RawBin).baseValue === "number"
+  ) {
+    return (field as RawBin).baseValue as number
+  }
+  return null
+}
+
+/** Logs a mismatch between DDragon and CDragon base/growth stats (data fix
+ * §1 requirement: "add a normalizer check that logs any champion where
+ * DDragon and CDragon disagree"). A relative tolerance of 0.5% filters out
+ * float32-vs-float64 rounding noise between the two sources. */
+function logIfMismatched(
+  championId: string,
+  field: string,
+  ddragonValue: number,
+  cdragonValue: number,
+): void {
+  const magnitude = Math.max(Math.abs(ddragonValue), Math.abs(cdragonValue), 1e-9)
+  if (Math.abs(ddragonValue - cdragonValue) / magnitude > 0.005) {
+    console.warn(
+      `[normalize:champion] ${championId}.${field} mismatch — DDragon=${ddragonValue} CDragon=${cdragonValue} (using CDragon)`,
+    )
+  }
+}
+
+/** CDragon-authoritative stat field, logging any disagreement with the
+ * DDragon fallback value (data fix §1: CDragon CharacterRecord is the
+ * authoritative source for base/growth stats; DDragon is fallback-only). */
+function authoritativeStat(
+  championId: string,
+  field: string,
+  record: RawBin | null,
+  cdragonKey: string,
+  ddragonValue: number,
+): number {
+  const cdragonValue = record !== null ? modifiableFloat(record, cdragonKey) : null
+  if (cdragonValue === null) {
+    return ddragonValue
+  }
+  logIfMismatched(championId, field, ddragonValue, cdragonValue)
+  return cdragonValue
+}
+
 function buildStats(
+  championId: string,
   ddragonStats: Record<string, number>,
+  record: RawBin | null,
   critDamageMultiplier: number,
 ): ChampionStats {
+  const stat = (field: string, cdragonKey: string, ddragonKey: string): number =>
+    authoritativeStat(championId, field, record, cdragonKey, ddragonStats[ddragonKey] ?? 0)
+
+  const attackSpeedRatio =
+    record !== null ? (modifiableFloat(record, "attackSpeedRatioModifiable") ?? 1) : 1
+
   return {
-    hp: ddragonStats.hp ?? 0,
-    hpPerLevel: ddragonStats.hpperlevel ?? 0,
+    hp: stat("hp", "baseHPModifiable", "hp"),
+    hpPerLevel: stat("hpPerLevel", "hpPerLevelModifiable", "hpperlevel"),
     mp: ddragonStats.mp ?? 0,
     mpPerLevel: ddragonStats.mpperlevel ?? 0,
-    armor: ddragonStats.armor ?? 0,
-    armorPerLevel: ddragonStats.armorperlevel ?? 0,
-    magicResist: ddragonStats.spellblock ?? 0,
-    magicResistPerLevel: ddragonStats.spellblockperlevel ?? 0,
-    attackDamage: ddragonStats.attackdamage ?? 0,
-    attackDamagePerLevel: ddragonStats.attackdamageperlevel ?? 0,
-    attackSpeed: ddragonStats.attackspeed ?? 0,
-    attackSpeedPerLevel: ddragonStats.attackspeedperlevel ?? 0,
+    armor: stat("armor", "baseArmorModifiable", "armor"),
+    armorPerLevel: stat("armorPerLevel", "armorPerLevelModifiable", "armorperlevel"),
+    magicResist: stat("magicResist", "baseMR", "spellblock"),
+    magicResistPerLevel: stat("magicResistPerLevel", "mrPerLevel", "spellblockperlevel"),
+    // DDragon's `attackdamageperlevel` is 0 for every champion we checked
+    // (a DDragon data-pipeline bug); CDragon's `damagePerLevelModifiable` is
+    // the authoritative source (data fix §1 — verified for Yasuo/Brand/
+    // Vayne/Darius/Garen: Yasuo DDragon=0 vs CDragon=2.5).
+    attackDamage: stat("attackDamage", "baseDamageModifiable", "attackdamage"),
+    attackDamagePerLevel: stat(
+      "attackDamagePerLevel",
+      "damagePerLevelModifiable",
+      "attackdamageperlevel",
+    ),
+    attackSpeed: stat("attackSpeed", "attackSpeedModifiable", "attackspeed"),
+    attackSpeedPerLevel: stat(
+      "attackSpeedPerLevel",
+      "attackSpeedPerLevelModifiable",
+      "attackspeedperlevel",
+    ),
+    attackSpeedRatio,
     attackRange: ddragonStats.attackrange ?? 0,
     moveSpeed: ddragonStats.movespeed ?? 0,
-    hpRegen: ddragonStats.hpregen ?? 0,
-    hpRegenPerLevel: ddragonStats.hpregenperlevel ?? 0,
+    hpRegen: stat("hpRegen", "baseStaticHPRegenModifiable", "hpregen"),
+    hpRegenPerLevel: stat("hpRegenPerLevel", "hpRegenPerLevelModifiable", "hpregenperlevel"),
     critDamageMultiplier,
   }
 }
@@ -204,7 +274,7 @@ export function normalizeChampion(
     iconUrl: ddragonChampionIconUrl(ddragonVersion, entry.image.full),
     splashUrl: ddragonSplashUrl(entry.id),
     loadingUrl: ddragonLoadingUrl(entry.id),
-    stats: buildStats(entry.stats, critDamageMultiplier),
+    stats: buildStats(entry.id, entry.stats, record, critDamageMultiplier),
     abilities: {
       P: passiveAbility,
       Q: abilitiesBySlot.Q ?? emptyAbility("Q"),
