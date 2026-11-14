@@ -5,6 +5,7 @@ import type { IconName } from "@/components/icons"
 import { Tooltip } from "@/components/Tooltip"
 import type { ItemData, Snapshot } from "@/data/schema"
 import { canAddItemToSet } from "@/graph/item-rules"
+import { cx } from "@/lib/cx"
 import styles from "./ChampionNode.module.css"
 
 const SUMMONERS_RIFT_MAP_ID = "11"
@@ -129,6 +130,9 @@ export function ItemSlotControl({
         <>
           <img src={item.iconUrl} alt="" className={styles.pickerItemIcon} />
           <span className={styles.pickerItemName}>{item.name}</span>
+          <span className={cx("num", styles.pickerItemCost)}>
+            {item.goldTotal.toLocaleString()}g
+          </span>
           {item.modeled ? null : <Badge className={styles.unmodeledBadge}>Unmodeled</Badge>}
         </>
       )}

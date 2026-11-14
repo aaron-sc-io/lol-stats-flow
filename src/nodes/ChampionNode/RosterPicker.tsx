@@ -60,8 +60,8 @@ export function RosterPicker({
       getKey={(c) => c.id}
       renderItem={(c) => (
         <>
-          <img src={c.iconUrl} alt="" className={styles.pickerItemIcon} />
-          <span className={styles.pickerItemName}>{c.name}</span>
+          <img src={c.iconUrl} alt="" className={styles.rosterPortraitIcon} />
+          <span className={styles.rosterPortraitName}>{c.name}</span>
         </>
       )}
       searchText={(c) => c.name}
