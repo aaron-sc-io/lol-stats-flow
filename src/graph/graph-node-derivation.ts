@@ -41,7 +41,7 @@ export function deriveGraphNodeData(
     }
     const sources = getConnectedItemSetSources(comboId, nodes, edges)
     const kits = buildKitsForSources(snapshot, sources)
-    const steps = comboNode.data.steps.filter((step) => !isStepOrphaned(step, sources))
+    const steps = comboNode.data.steps.filter((step) => !isStepOrphaned(step, sources, kits))
 
     if (activeTarget !== undefined) {
       const result = getOrSimulate(steps, kits, activeTarget)

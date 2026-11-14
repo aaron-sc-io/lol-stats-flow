@@ -1,4 +1,4 @@
-import type { ComboStep, DamageType, SimResult, TargetSpec } from "@/engine"
+import type { ComboStep, DamageInstance, DamageType, SimResult, TargetSpec } from "@/engine"
 import type { XMode } from "./types"
 
 export type ChartPoint = {
@@ -14,6 +14,23 @@ export type ChartPoint = {
    * where it drives the timeline-entry ↔ chart-point cross-highlight
    * (plan §6). Tick-mode points don't map 1:1 onto a single step. */
   readonly stepId?: string
+  /** Every damage instance folded into this point (plan §6/DESIGN.md §6:
+   * "Mixed steps use the dominant type, and the tooltip shows the full
+   * breakdown") — a single instance in tick mode, one-or-more in step mode
+   * (a hit plus the DoT ticks or passive procs it caused). */
+  readonly instances: readonly DamageInstance[]
+}
+
+/** The damage type that dominates a point's mitigated-damage split —
+ * physical/magic/true ties resolve in that same priority order. Drives
+ * both the combo-timeline entry chip (`TimelineEntry`) and mixed-step line
+ * segment coloring (`ColoredLineSeries`) with one shared rule, per
+ * DESIGN.md §6's "the same damage-type encoding is used everywhere". */
+export function dominantDamageType(point: ChartPoint): DamageType {
+  if (point.physical >= point.magic && point.physical >= point.true) {
+    return "physical"
+  }
+  return point.magic >= point.true ? "magic" : "true"
 }
 
 function startingHp(target: TargetSpec): number {
@@ -35,11 +52,15 @@ function buildStepPoints(
   target: TargetSpec,
 ): ChartPoint[] {
   const byStepId = new Map<string, Record<DamageType, number>>()
+  const instancesByStepId = new Map<string, DamageInstance[]>()
   const lastHpByStepId = new Map<string, number>()
   for (const instance of result.instances) {
     const bucket = byStepId.get(instance.stepId) ?? emptyDelta()
     bucket[instance.damageType] += instance.mitigated
     byStepId.set(instance.stepId, bucket)
+    const instanceList = instancesByStepId.get(instance.stepId) ?? []
+    instanceList.push(instance)
+    instancesByStepId.set(instance.stepId, instanceList)
     lastHpByStepId.set(instance.stepId, instance.targetHpAfter)
   }
 
@@ -58,6 +79,7 @@ function buildStepPoints(
       cumulative,
       targetHpAfter: lastHp,
       stepId: step.id,
+      instances: instancesByStepId.get(step.id) ?? [],
     }
   })
 }
@@ -78,6 +100,7 @@ function buildTickPoints(result: SimResult): ChartPoint[] {
       total: instance.mitigated,
       cumulative,
       targetHpAfter: instance.targetHpAfter,
+      instances: [instance],
     }
   })
 }

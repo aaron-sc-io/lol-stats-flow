@@ -5,7 +5,7 @@ import { IconButton } from "@/components/IconButton"
 import { Icon } from "@/components/icons"
 import { NumberField } from "@/components/NumberField"
 import type { ComboStep } from "@/engine"
-import type { ChartPoint } from "@/graph/chart-points"
+import { type ChartPoint, dominantDamageType } from "@/graph/chart-points"
 import { useGraphStore } from "@/graph/store"
 import { cx } from "@/lib/cx"
 import styles from "./ComboNode.module.css"
@@ -15,13 +15,6 @@ const DELAY_STEP_MS = 50
 
 function monogramFor(name: string): string {
   return name.slice(0, 2).toUpperCase()
-}
-
-function dominantDamageType(point: ChartPoint): "physical" | "magic" | "true" {
-  if (point.physical >= point.magic && point.physical >= point.true) {
-    return "physical"
-  }
-  return point.magic >= point.true ? "magic" : "true"
 }
 
 export function TimelineEntry({
