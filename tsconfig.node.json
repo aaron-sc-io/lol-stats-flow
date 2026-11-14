@@ -41,6 +41,7 @@
     "src/data/formula-schema.ts",
     "src/data/snapshot-schema.ts",
     "src/data/stat-ids.ts",
-    "src/data/snapshot-selectors.ts"
+    "src/data/snapshot-selectors.ts",
+    "src/engine/**/*.ts"
   ]
 }
