@@ -50,7 +50,7 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
   const highlighted = highlight.highlightedNodeIds.has(id)
   const dimmed = highlight.dimmedNodeIds.has(id)
 
-  const connectedSteps = data.steps.filter((step) => !isStepOrphaned(step, connectedSources))
+  const connectedSteps = data.steps.filter((step) => !isStepOrphaned(step, connectedSources, kits))
   const total =
     target === undefined
       ? 0
@@ -62,7 +62,15 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
   return (
     <NodeFrame
       label="Combo"
-      title={data.name}
+      title={
+        <input
+          type="text"
+          className={styles.nameInput}
+          value={data.name}
+          onChange={(event) => renameCombo(id, event.target.value)}
+          aria-label="Combo name"
+        />
+      }
       selected={selected}
       highlighted={highlighted}
       dimmed={dimmed}
@@ -74,13 +82,6 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
       }
     >
       <div className={cx(styles.body, "nodrag")}>
-        <input
-          type="text"
-          className={styles.nameInput}
-          value={data.name}
-          onChange={(event) => renameCombo(id, event.target.value)}
-          aria-label="Combo name"
-        />
         {connectedSources.map((source) => {
           const kit = kits[source.itemSetId]
           const champion = snapshot.champions.find(

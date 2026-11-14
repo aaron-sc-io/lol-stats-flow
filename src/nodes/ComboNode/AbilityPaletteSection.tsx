@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Button } from "@/components/Button"
 import { Collapsible } from "@/components/Collapsible"
+import { IconButton } from "@/components/IconButton"
 import { NumberField } from "@/components/NumberField"
 import type { ChampionData } from "@/data/schema"
 import type { ComboAction, Kit } from "@/engine"
@@ -8,9 +9,20 @@ import { type ActionGroup, groupComboActions, type StackActionGroup } from "@/gr
 import type { ConnectedItemSetSource } from "@/graph/selectors"
 import { useGraphStore } from "@/graph/store"
 import type { AbilitySlotWithRank } from "@/graph/types"
+import { cx } from "@/lib/cx"
 import styles from "./ComboNode.module.css"
 
 const RANKABLE_SLOTS: readonly AbilitySlotWithRank[] = ["Q", "W", "E", "R"]
+
+function isRankableSlot(slot: ComboAction["slot"]): slot is AbilitySlotWithRank {
+  return (RANKABLE_SLOTS as readonly string[]).includes(slot)
+}
+
+type RankControl = {
+  readonly championNodeId: string
+  readonly itemSetId: string
+  readonly maxRank: number
+}
 
 function abilityIconUrl(champion: ChampionData, action: ComboAction): string | undefined {
   const slot = action.slot
@@ -19,7 +31,43 @@ function abilityIconUrl(champion: ChampionData, action: ComboAction): string | u
     : undefined
 }
 
-function AbilityIcon({
+/** Compact per-ability rank stepper (plan §6/defect fix: replaces the
+ * standalone heavy NumberField row that sat above the whole palette,
+ * disconnected from the abilities it modified). Attached directly beneath
+ * each rankable ability's icon so rank and ability read as one control. */
+function RankStepper({
+  slot,
+  rank,
+  maxRank,
+  onChange,
+}: {
+  readonly slot: AbilitySlotWithRank
+  readonly rank: number
+  readonly maxRank: number
+  readonly onChange: (rank: number) => void
+}) {
+  return (
+    <div className={styles.rankStepper}>
+      <IconButton
+        icon="minus"
+        aria-label={`Decrease ${slot} rank`}
+        size={24}
+        disabled={rank <= 1}
+        onClick={() => onChange(rank - 1)}
+      />
+      <span className={cx("num", styles.rankValue)}>{rank}</span>
+      <IconButton
+        icon="plus"
+        aria-label={`Increase ${slot} rank`}
+        size={24}
+        disabled={rank >= maxRank}
+        onClick={() => onChange(rank + 1)}
+      />
+    </div>
+  )
+}
+
+function AbilityIconContent({
   champion,
   action,
 }: {
@@ -28,26 +76,61 @@ function AbilityIcon({
 }) {
   const iconUrl = abilityIconUrl(champion, action)
   return (
-    <span className={styles.paletteIconWrap}>
+    <>
       {iconUrl === undefined ? null : <img src={iconUrl} alt="" className={styles.paletteIcon} />}
       <span className={styles.paletteKey}>{action.keyLabel}</span>
-    </span>
+    </>
+  )
+}
+
+/** Renders the rank stepper for `action`'s slot when it's rankable — kept
+ * as its own component so callers can place it as a *sibling* of (never
+ * nested inside) the ability's own `<button>`: axe's `nested-interactive`
+ * rule correctly flags a button-inside-a-button as broken for assistive
+ * tech, so the stepper's own `-`/`+` buttons must live outside the "add
+ * this ability to the combo" button, not inside it. */
+function RankStepperFor({
+  action,
+  rankControl,
+}: {
+  readonly action: ComboAction
+  readonly rankControl: RankControl | undefined
+}) {
+  const setItemSetRankOverride = useGraphStore((s) => s.setItemSetRankOverride)
+  const slot = action.slot
+  if (rankControl === undefined || !isRankableSlot(slot)) {
+    return null
+  }
+  return (
+    <RankStepper
+      slot={slot}
+      rank={action.rank}
+      maxRank={rankControl.maxRank}
+      onChange={(rank) =>
+        setItemSetRankOverride(rankControl.championNodeId, rankControl.itemSetId, slot, rank)
+      }
+    />
   )
 }
 
 function SingleActionButton({
   champion,
   action,
+  rankControl,
   onAdd,
 }: {
   readonly champion: ChampionData
   readonly action: ComboAction
+  readonly rankControl?: RankControl | undefined
   readonly onAdd: () => void
 }) {
   return (
-    <button type="button" className={styles.paletteButton} onClick={onAdd} title={action.label}>
-      <AbilityIcon champion={champion} action={action} />
-    </button>
+    <div className={styles.paletteCell}>
+      <button type="button" className={styles.paletteButton} onClick={onAdd} title={action.label}>
+        <AbilityIconContent champion={champion} action={action} />
+      </button>
+      <RankStepperFor action={action} rankControl={rankControl} />
+    </div>
   )
 }
 
@@ -58,10 +141,12 @@ function SingleActionButton({
 function StackActionControl({
   champion,
   group,
+  rankControl,
   onAdd,
 }: {
   readonly champion: ChampionData
   readonly group: StackActionGroup
+  readonly rankControl?: RankControl | undefined
   readonly onAdd: (actionId: string) => void
 }) {
   const [stacks, setStacks] = useState(group.variants.length)
@@ -69,7 +154,12 @@ function StackActionControl({
 
   return (
     <div className={styles.stackControl}>
-      <AbilityIcon champion={champion} action={group.base} />
+      <div className={styles.paletteCell}>
+        <span className={styles.paletteIconWrap}>
+          <AbilityIconContent champion={champion} action={group.base} />
+        </span>
+        <RankStepperFor action={group.base} rankControl={rankControl} />
+      </div>
       <NumberField
         value={stacks}
         onChange={setStacks}
@@ -80,49 +170,6 @@ function StackActionControl({
       <Button variant="secondary" onClick={() => onAdd(selected.id)}>
         Add
       </Button>
-    </div>
-  )
-}
-
-function RankControls({
-  championNodeId,
-  source,
-  kit,
-  champion,
-}: {
-  readonly championNodeId: string
-  readonly source: ConnectedItemSetSource
-  readonly kit: Kit
-  readonly champion: ChampionData
-}) {
-  const setItemSetRankOverride = useGraphStore((s) => s.setItemSetRankOverride)
-  const presentSlots = RANKABLE_SLOTS.filter((slot) =>
-    kit.actions.some((action) => action.slot === slot),
-  )
-  if (presentSlots.length === 0) {
-    return null
-  }
-
-  return (
-    <div className={styles.rankRow}>
-      {presentSlots.map((slot) => {
-        const currentRank = kit.actions.find((action) => action.slot === slot)?.rank ?? 1
-        const maxRank = champion.abilities[slot].maxRank
-        return (
-          <div key={slot} className={styles.rankField}>
-            <span className={styles.rankLabel}>{slot} rank</span>
-            <NumberField
-              value={currentRank}
-              onChange={(rank) =>
-                setItemSetRankOverride(championNodeId, source.itemSetId, slot, rank)
-              }
-              min={1}
-              max={maxRank}
-              aria-label={`${slot} rank`}
-            />
-          </div>
-        )
-      })}
     </div>
   )
 }
@@ -144,6 +191,14 @@ export function AbilityPaletteSection({
 }) {
   const addComboStep = useGraphStore((s) => s.addComboStep)
   const groups: ActionGroup[] = groupComboActions(kit.actions)
+  const rankControlFor = (slot: ComboAction["slot"]): RankControl | undefined =>
+    isRankableSlot(slot)
+      ? {
+          championNodeId: source.championNode.id,
+          itemSetId: source.itemSetId,
+          maxRank: champion.abilities[slot].maxRank,
+        }
+      : undefined
 
   return (
     <Collapsible
@@ -151,12 +206,6 @@ export function AbilityPaletteSection({
       open={isOpen}
       onOpenChange={onToggle}
     >
-      <RankControls
-        championNodeId={source.championNode.id}
-        source={source}
-        kit={kit}
-        champion={champion}
-      />
       <div className={styles.paletteGrid}>
         {groups.map((group) =>
           group.kind === "single" ? (
@@ -164,6 +213,7 @@ export function AbilityPaletteSection({
               key={group.action.id}
               champion={champion}
               action={group.action}
+              rankControl={rankControlFor(group.action.slot)}
               onAdd={() => addComboStep(comboNodeId, source.itemSetId, group.action.id)}
             />
           ) : (
@@ -171,6 +221,7 @@ export function AbilityPaletteSection({
               key={group.base.id}
               champion={champion}
               group={group}
+              rankControl={rankControlFor(group.base.slot)}
               onAdd={(actionId) => addComboStep(comboNodeId, source.itemSetId, actionId)}
             />
           ),

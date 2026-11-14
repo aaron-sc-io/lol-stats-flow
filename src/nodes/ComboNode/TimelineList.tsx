@@ -57,7 +57,7 @@ export function TimelineList({
     )
   }
 
-  const connectedSteps = steps.filter((step) => !isStepOrphaned(step, connectedSources))
+  const connectedSteps = steps.filter((step) => !isStepOrphaned(step, connectedSources, kits))
   const result = target === undefined ? undefined : getOrSimulate(connectedSteps, kits, target)
   const chartPoints =
     result === undefined || target === undefined
@@ -111,7 +111,7 @@ export function TimelineList({
                   index={index}
                   actionLabel={action?.label ?? step.actionId}
                   championName={champion?.name ?? "?"}
-                  orphaned={source === undefined}
+                  orphaned={isStepOrphaned(step, connectedSources, kits)}
                   chartPoint={chartPointByStepId.get(step.id)}
                   onDelete={() => handleDelete(step, index)}
                 />
