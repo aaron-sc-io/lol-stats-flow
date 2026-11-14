@@ -115,7 +115,7 @@ describe("reconcileCanvasWithSnapshot", () => {
 
     const { removedLabels } = reconcileCanvasWithSnapshot([championNode()], newSnapshot, null)
 
-    expect(removedLabels).toEqual(["item #3031", "item #3072"])
+    expect(removedLabels).toEqual(["item 3031", "item 3072"])
   })
 
   it("never removes the itemSet itself, only its slot contents", () => {

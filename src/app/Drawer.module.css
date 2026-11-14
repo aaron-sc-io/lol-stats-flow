@@ -1,0 +1,174 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  padding: var(--space-4);
+  border-right: var(--border-width-hairline) solid var(--border-default);
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-popover);
+  z-index: 1000;
+  transition: transform var(--motion-base) var(--motion-easing);
+}
+
+.header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.heading {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.searchRow {
+  flex: 0 0 auto;
+  margin-bottom: var(--space-3);
+}
+
+.search {
+  width: 100%;
+}
+
+.newCanvas {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.empty {
+  flex: 1 1 auto;
+  margin: var(--space-4) 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  text-align: center;
+}
+
+.list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 calc(var(--space-2) * -1);
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+}
+
+.row:hover {
+  background-color: var(--surface-hover);
+}
+
+.rowActive {
+  background-color: var(--surface-hover);
+}
+
+.rowName {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  text-align: left;
+}
+
+.name {
+  overflow: hidden;
+  width: 100%;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+}
+
+.renameInput {
+  flex: 1 1 auto;
+  height: 28px;
+  min-width: 0;
+  padding: 0 var(--space-2);
+  border: var(--border-width-hairline) solid var(--border-focus);
+  border-radius: var(--radius-control);
+  background-color: var(--surface-node);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.rowActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.renameButton {
+  height: 24px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-2xs);
+}
+
+.footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--border-width-hairline) solid var(--border-default);
+}
+
+.footerActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.footerActions button {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.patchLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+}

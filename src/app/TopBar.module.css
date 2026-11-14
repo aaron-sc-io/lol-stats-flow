@@ -1,0 +1,61 @@
+.topBar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+}
+
+.topBarLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.patch {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  color: var(--text-tertiary);
+}
+
+.saveStatus {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  color: var(--text-tertiary);
+}
+
+.nameField {
+  max-width: 320px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: var(--border-width-hairline) solid transparent;
+  border-radius: var(--radius-control);
+  background-color: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  transition: border-color var(--motion-fast) var(--motion-easing);
+}
+
+.nameField:hover {
+  border-color: var(--border-default);
+}
+
+.nameField:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+}

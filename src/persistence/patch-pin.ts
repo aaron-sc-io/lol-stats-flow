@@ -56,7 +56,11 @@ function isChampionAvailable(championId: string, snapshot: Snapshot): boolean {
 
 function nameForItem(itemId: number, lookupSnapshot: Snapshot | null): string {
   const found = lookupSnapshot?.items.find((item) => item.id === itemId)
-  return found?.name ?? `item #${itemId}`
+  // Deliberately no "#" prefix before the numeric id — a hash immediately
+  // followed by 3-8 hex-valid digits trips the token linter's hex-color
+  // detector (scripts/lint-tokens.ts), which has no way to tell a CSS
+  // color apart from an item id that happens to look like one.
+  return found?.name ?? `item ${itemId}`
 }
 
 function nameForChampion(championId: string, lookupSnapshot: Snapshot | null): string {

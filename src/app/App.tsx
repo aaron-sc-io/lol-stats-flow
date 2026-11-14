@@ -10,20 +10,28 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import "@/styles/reactflow-theme.css"
-import { lazy, Suspense, useCallback, useEffect, useRef } from "react"
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { FlowEdge } from "@/components/FlowEdge"
-import { IconButton } from "@/components/IconButton"
 import { ToastProvider } from "@/components/Toast"
 import { SnapshotProvider } from "@/data/snapshot-context"
-import { type SnapshotStatus, useSnapshot } from "@/data/use-snapshot"
 import { isValidGraphConnection } from "@/graph/connection-rules"
 import { useGraphStore } from "@/graph/store"
 import type { FlowEdge as GraphEdge } from "@/graph/types"
 import { ChampionNode } from "@/nodes/ChampionNode"
 import { ComboNode } from "@/nodes/ComboNode"
 import { GraphNode } from "@/nodes/GraphNode"
-import { AddNodeMenu } from "./AddNodeMenu"
+import {
+  type EffectiveSnapshotStatus,
+  startAutosave,
+  useBootstrapPersistence,
+  useEffectiveSnapshot,
+  usePersistenceStore,
+} from "@/persistence"
 import styles from "./App.module.css"
+import { Drawer } from "./Drawer"
+import { PatchPinBanner } from "./PatchPinBanner"
+import { TopBar } from "./TopBar"
+import { useStableToast } from "./use-stable-toast"
 
 const NODE_TYPES = { champion: ChampionNode, combo: ComboNode, graph: GraphNode }
 const EDGE_TYPES = { flow: FlowEdge }
@@ -35,27 +43,60 @@ const Gallery = lazy(() => import("./Gallery"))
 const isGalleryView = new URLSearchParams(window.location.search).get("view") === "gallery"
 
 export function App() {
-  const snapshotStatus = useSnapshot()
-
   return (
     <ToastProvider>
       <ReactFlowProvider>
-        <div className={styles.shell}>
-          <TopBar snapshotStatus={snapshotStatus} />
-          {isGalleryView ? (
-            <Suspense fallback={<div className={styles.loading}>Loading gallery…</div>}>
-              <Gallery />
-            </Suspense>
-          ) : (
-            <Canvas snapshotStatus={snapshotStatus} />
-          )}
-        </div>
+        <AppShell />
       </ReactFlowProvider>
     </ToastProvider>
   )
 }
 
-function Canvas({ snapshotStatus }: { readonly snapshotStatus: SnapshotStatus }) {
+/**
+ * Everything that needs `useToast()` (bootstrap's invalid-share-link
+ * notice, autosave's save-error notice, the drawer, the patch-pin
+ * banner) lives below `<ToastProvider>` — `App` itself stays a thin
+ * provider shell so those hooks have somewhere to read from.
+ */
+function AppShell() {
+  const toast = useStableToast()
+  useBootstrapPersistence(toast)
+  useEffect(() => startAutosave(toast), [toast])
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const patchPin = usePersistenceStore((state) => state.patchPin)
+  const pinnedPatch = patchPin.kind === "pinned-available" ? patchPin.pinnedPatch : null
+  const snapshotStatus = useEffectiveSnapshot(pinnedPatch)
+  const patchLabel = snapshotStatus.status === "ready" ? snapshotStatus.snapshot.meta.patch : "—"
+
+  return (
+    <div className={styles.shell}>
+      <TopBar
+        patchLabel={patchLabel}
+        showAddNodeMenu={!isGalleryView && snapshotStatus.status === "ready"}
+        isGalleryView={isGalleryView}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+      {isGalleryView ? null : <PatchPinBanner toast={toast} />}
+      {isGalleryView ? (
+        <Suspense fallback={<div className={styles.loading}>Loading gallery…</div>}>
+          <Gallery />
+        </Suspense>
+      ) : (
+        <Canvas snapshotStatus={snapshotStatus} />
+      )}
+      {isGalleryView ? null : (
+        <Drawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          effectivePatch={patchLabel}
+        />
+      )}
+    </div>
+  )
+}
+
+function Canvas({ snapshotStatus }: { readonly snapshotStatus: EffectiveSnapshotStatus }) {
   if (snapshotStatus.status === "loading") {
     return (
       <div className={styles.canvas}>
@@ -127,20 +168,5 @@ function FlowCanvas() {
       <Background variant={BackgroundVariant.Dots} gap={24} size={2} />
       <Controls showInteractive={false} />
     </ReactFlow>
-  )
-}
-
-function TopBar({ snapshotStatus }: { readonly snapshotStatus: SnapshotStatus }) {
-  const patchLabel = snapshotStatus.status === "ready" ? snapshotStatus.snapshot.meta.patch : "—"
-
-  return (
-    <header className={styles.topBar}>
-      <div className={styles.topBarLeft}>
-        <IconButton icon="menu" aria-label="Open menu" />
-        <span className={styles.title}>lol-stats-flow</span>
-        {!isGalleryView && snapshotStatus.status === "ready" ? <AddNodeMenu /> : null}
-      </div>
-      <span className={`${styles.patch} num`}>Patch {patchLabel}</span>
-    </header>
   )
 }
