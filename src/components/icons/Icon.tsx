@@ -1,6 +1,7 @@
 import { assertNever } from "@/lib/assert-never"
 import { cx } from "@/lib/cx"
 import styles from "./Icon.module.css"
+import { CLASS_ICON_PATHS } from "./icon-paths.class"
 import { ROLE_ICON_PATHS } from "./icon-paths.role"
 import { STAT_ICON_PATHS } from "./icon-paths.stat"
 import { UI_ICON_PATHS } from "./icon-paths.ui"
@@ -9,6 +10,7 @@ import type { IconDefinition, IconShape } from "./icon-shape"
 const ICON_PATHS = {
   ...UI_ICON_PATHS,
   ...ROLE_ICON_PATHS,
+  ...CLASS_ICON_PATHS,
   ...STAT_ICON_PATHS,
 } as const satisfies Record<string, IconDefinition>
 
