@@ -185,7 +185,16 @@ test.describe("Phase 3 — graph model & nodes", () => {
       )
 
       await expect(defaultGraph.locator(".recharts-wrapper")).toBeVisible()
-      await expect(defaultGraph.getByRole("button").filter({ hasText: /^Combo/ })).toHaveCount(2)
+      // Scoped to the chart legend's own <ul> (Phase 4b) — the comparison
+      // table's sortable "Combo" column header is also a <button> whose
+      // text starts with "Combo", so an unscoped `getByRole("button")`
+      // over the whole graph node would double-count it.
+      await expect(
+        defaultGraph
+          .locator("ul")
+          .getByRole("button")
+          .filter({ hasText: /^Combo/ }),
+      ).toHaveCount(2)
     })
 
     await test.step("Step <-> Tick toggle increases the rendered point count when DoTs are present", async () => {
