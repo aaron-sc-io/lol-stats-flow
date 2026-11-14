@@ -69,6 +69,21 @@ describe("Yasuo golden — level 18, rank 5, vs 100 armor / 100 MR target", () =
     expect(result.instances[0]?.mitigated).toBeCloseTo(expectedRaw / 2)
   })
 
+  it("ComboStep.rankOverride is honored at fire time: a rank-5-kit Q step fired with rankOverride:1 uses rank-1's dataValues (20, not 120)", () => {
+    const atKitRank = simulate({
+      steps: [{ id: "s", sourceId: "Yasuo", actionId: "Q" }],
+      kits: { Yasuo: kit },
+      target: dummy(2000, 0, 0),
+    })
+    const overridden = simulate({
+      steps: [{ id: "s", sourceId: "Yasuo", actionId: "Q", rankOverride: 1 }],
+      kits: { Yasuo: kit },
+      target: dummy(2000, 0, 0),
+    })
+    expect(atKitRank.instances[0]?.raw).toBeCloseTo(120 + totalAD)
+    expect(overridden.instances[0]?.raw).toBeCloseTo(20 + totalAD)
+  })
+
   it('E (Sweeping Blade) rank 5 is magic damage (verified via wiki — deals magic, not physical, despite scaling off AD): raw = 130 + 20% bonus AD + 60% AP; with no items, bonus AD is 0 (per wiki\'s Attack_damage page: "bonus attack damage can be gained from any source other than levels" — level growth counts as base, not bonus), so raw = 130 flat', () => {
     const result = simulate({
       steps: [{ id: "s", sourceId: "Yasuo", actionId: "E" }],

@@ -10,6 +10,16 @@ export type EvalContext = {
   readonly level: number
   readonly rank: number
   readonly dataValues: Readonly<Record<string, readonly number[]>>
+  /** Per-step rank override (plan §5 `ComboStep.rankOverride`), scoped
+   * narrowly: only set on the `EvalContext` passed to an action's own
+   * `ActionComponent.compute` calls (`simulate.ts`'s `fireAction`), never on
+   * the ctx exposed to `PassiveTriggerApi`/passive-rule effects — so a
+   * step's rank override affects that *ability's* own damage formula
+   * (via `bindings/helpers.ts`'s `withAbilityData`) without leaking into
+   * unrelated passive calcs bound at a fixed rank (e.g. Brand's
+   * `ExplosionDamage`, always rank 1 regardless of the triggering ability's
+   * rank). */
+  readonly rankOverride?: number
   /** Stack counts keyed by buff name, for `BuffCounterBy*` parts (e.g. Darius
    * bleed stacks, Riftmaker's eternity counter). */
   readonly buffCounters?: Readonly<Record<string, number>>
