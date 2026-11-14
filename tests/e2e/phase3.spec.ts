@@ -158,10 +158,12 @@ test.describe("Phase 3 — graph model & nodes", () => {
     await test.step("interleaved stepwise damage from both sources (Brand Q triggers Liandry's DoT)", async () => {
       await defaultCombo.getByTitle("Sear (Q)").click()
       const entries = defaultCombo.locator("li")
-      await expect(entries.last()).toContainText("Sear")
-      // Both a Yasuo-sourced and a Brand-sourced monogram chip exist among the steps.
-      await expect(defaultCombo.locator("li").filter({ hasText: "YA" }).first()).toBeVisible()
-      await expect(defaultCombo.locator("li").filter({ hasText: "BR" }).first()).toBeVisible()
+      await expect(entries.last().getByTitle("Sear (Q)")).toBeVisible()
+      // Both a Yasuo-sourced and a Brand-sourced step icon exist in the timeline.
+      await expect(
+        entries.getByTitle(/Steel Tempest|Sweeping Blade|Auto Attack|Last Breath/).first(),
+      ).toBeVisible()
+      await expect(entries.getByTitle("Sear (Q)")).toHaveCount(1)
     })
 
     await test.step("two combos into one graph -> two series rendered", async () => {

@@ -348,7 +348,7 @@ test.describe("Phase 4 AC #5 — Upstream highlight", () => {
     const comboA = nodeById(page, DEFAULT_COMBO_ID)
     const graph = nodeById(page, DEFAULT_GRAPH_ID)
 
-    await comboA.getByTitle("Steel Tempest (Q)").click()
+    await comboA.getByRole("button", { name: "Steel Tempest (Q)", exact: true }).click()
 
     await page.getByRole("button", { name: "Add node" }).click()
     await page.getByRole("menuitem", { name: "Combo" }).click()
@@ -360,8 +360,10 @@ test.describe("Phase 4 AC #5 — Upstream highlight", () => {
       .locator('.react-flow__handle[data-handleid^="itemset:"]')
       .first()
     await dragBetween(page, championHandle, comboB.locator(".react-flow__handle-left"))
-    await expect(comboB.getByTitle("Steel Tempest (Q)")).toBeVisible()
-    await comboB.getByTitle("Steel Tempest (Q)").click()
+    await expect(
+      comboB.getByRole("button", { name: "Steel Tempest (Q)", exact: true }),
+    ).toBeVisible()
+    await comboB.getByRole("button", { name: "Steel Tempest (Q)", exact: true }).click()
 
     await fitViewNow(page)
     await dragBetween(
