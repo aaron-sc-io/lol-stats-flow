@@ -5,7 +5,9 @@ import styles from "./NodeFrame.module.css"
 export type NodeFrameProps = {
   /** 11px uppercase kicker — e.g. "CHAMPION". */
   readonly label: string
-  readonly title: string
+  /** Usually plain text, but a node may embed an inline-editable control
+   * (e.g. Combo's rename `<input>`) instead of a static string. */
+  readonly title: ReactNode
   readonly actions?: ReactNode
   readonly selected?: boolean | undefined
   readonly highlighted?: boolean | undefined
@@ -13,6 +15,9 @@ export type NodeFrameProps = {
   readonly children?: ReactNode
   readonly width?: number | string | undefined
   readonly className?: string | undefined
+  /** Extra inline styles merged with the computed `width` style — e.g. the
+   * Champion node's `--node-scale` custom property (plan D6). */
+  readonly style?: CSSProperties | undefined
 }
 
 /**
@@ -33,8 +38,12 @@ export function NodeFrame({
   children,
   width,
   className,
+  style: styleProp,
 }: NodeFrameProps) {
-  const style: CSSProperties | undefined = width === undefined ? undefined : { width }
+  const style: CSSProperties | undefined =
+    width === undefined && styleProp === undefined
+      ? undefined
+      : { ...(width === undefined ? {} : { width }), ...styleProp }
 
   return (
     <div

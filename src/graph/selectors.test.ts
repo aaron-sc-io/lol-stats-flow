@@ -12,6 +12,7 @@ import {
   getConnectedItemSetSources,
   isStepOrphaned,
 } from "./selectors"
+import { fixtureAction, fixtureKit } from "./test-support/fixtures"
 import type {
   ChampionFlowNode,
   ComboFlowNode,
@@ -95,6 +96,31 @@ describe("isStepOrphaned", () => {
   it("is true once the connecting edge (and thus the source) is gone", () => {
     expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, [])).toBe(true)
   })
+
+  it("given no kits argument, is false for any actionId while connected (back-compat)", () => {
+    const sources = [
+      { itemSetId: "is-1", itemSet: itemSet("is-1", "x"), championNode: championNode("c", []) },
+    ]
+    expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "nonexistent" }, sources)).toBe(
+      false,
+    )
+  })
+
+  it("given kits, is true when the step's action no longer exists in its source's kit (e.g. after switching the champion backing that item set) — prevents simulating a stale step", () => {
+    const sources = [
+      { itemSetId: "is-1", itemSet: itemSet("is-1", "x"), championNode: championNode("c", []) },
+    ]
+    const kits = { "is-1": fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
+    expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, sources, kits)).toBe(false)
+    expect(
+      isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q-empowered" }, sources, kits),
+    ).toBe(true)
+  })
+
+  it("given kits, is still true when disconnected even if the actionId happens to be valid elsewhere", () => {
+    const kits = { "is-1": fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
+    expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, [], kits)).toBe(true)
+  })
 })
 
 describe("getConnectedComboIds", () => {
@@ -159,12 +185,20 @@ describe("computeHighlightState", () => {
     expect(state.dimmedNodeIds.size).toBe(0)
   })
 
-  it("highlights the hovered combo, its sources' champions, and connecting edges only", () => {
+  it("highlights the hovered combo, its sources' champions, and connecting edges (incoming sources + its own outgoing edge)", () => {
     const state = computeHighlightState(nodes, edges, "combo-1")
 
     expect(state.highlightedNodeIds).toEqual(new Set(["combo-1", "champ-1", "champ-2"]))
     expect(state.highlightedItemSetIds).toEqual(new Set(["is-1", "is-2"]))
-    expect(state.highlightedEdgeIds).toEqual(new Set(["e1", "e2"]))
+    // e1/e2 feed into combo-1; e4 is combo-1's own edge out to the graph.
+    expect(state.highlightedEdgeIds).toEqual(new Set(["e1", "e2", "e4"]))
+  })
+
+  it("dims the other combo's own edges (its incoming sources + its outgoing edge to the graph)", () => {
+    const state = computeHighlightState(nodes, edges, "combo-1")
+
+    // e3 feeds combo-2 (the non-hovered combo); e5 is combo-2's own edge out to the graph.
+    expect(state.dimmedEdgeIds).toEqual(new Set(["e3", "e5"]))
   })
 
   it("dims the other combo but not a champion shared with the hovered combo", () => {
