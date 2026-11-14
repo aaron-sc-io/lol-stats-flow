@@ -1,0 +1,109 @@
+/**
+ * Global base styles: reset, self-hosted fonts, scrollbars, focus ring.
+ * Only `tokens.css` may contain raw color/px-font-size literals — this file
+ * consumes tokens exclusively.
+ */
+@import "./tokens.css";
+
+/* Self-hosted Geist Sans / Geist Mono (no Google Fonts CDN, no FOUT —
+   `font-display: swap` ships from the fontsource package itself). */
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+@import "@fontsource/geist-mono/600.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  font-weight: var(--font-weight-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Numbers are the product: monospaced, tabular, right-aligned by context,
+   never jumping in width when they change. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus ring — :focus-visible only (never on mouse click), per DESIGN.md §8:
+   a 1px --border-focus ring with a 2px --surface-canvas offset. A double
+   box-shadow guarantees the offset gap reads as --surface-canvas even when
+   the focused element sits on a different surface. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--surface-canvas),
+    0 0 0 calc(2px + var(--border-width-hairline)) var(--border-focus);
+}
+
+/* Themed thin scrollbars (Firefox + WebKit/Blink). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-5) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--gray-5);
+  border-radius: var(--radius-control);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--gray-6);
+}

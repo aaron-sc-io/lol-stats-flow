@@ -1,0 +1,118 @@
+/**
+ * Design tokens — the single source of raw values for lol-stats-flow.
+ *
+ * This is the ONLY file in `src/` allowed to contain hex colors, rgb()/hsl()
+ * literals, or raw px font-size declarations. Every other file consumes the
+ * semantic aliases defined here. `npm run lint:tokens` enforces this.
+ *
+ * Mirrors DESIGN.md §2–§5 exactly. If a value needs to change, change
+ * DESIGN.md first.
+ */
+
+:root {
+  /* ── §2.1 Neutrals (slightly cool) ──────────────────────────────── */
+  --gray-0: #0a0a0b; /* Canvas background */
+  --gray-1: #111113; /* Node surface */
+  --gray-2: #18181b; /* Raised surface, popovers */
+  --gray-3: #212125; /* Hover fill, canvas grid dots */
+  --gray-4: #2a2a2f; /* Default borders */
+  --gray-5: #3a3a40; /* Strong borders, edges */
+  --gray-6: #5a5a63; /* Disabled text/icons */
+  --gray-7: #85858f; /* Tertiary text, labels */
+  --gray-8: #a9a9b2; /* Secondary text */
+  --gray-9: #d4d4d8; /* Emphasis on secondary surfaces */
+  --gray-10: #fafafa; /* Primary text, accent, focus ring */
+
+  /* ── §2.2 Semantic aliases ──────────────────────────────────────── */
+  --surface-canvas: var(--gray-0);
+  --surface-node: var(--gray-1);
+  --surface-raised: var(--gray-2);
+  --surface-hover: var(--gray-3);
+
+  --border-default: var(--gray-4);
+  --border-strong: var(--gray-5);
+  --border-focus: var(--gray-10);
+
+  --text-primary: var(--gray-10);
+  --text-secondary: var(--gray-8);
+  --text-tertiary: var(--gray-7);
+  --text-disabled: var(--gray-6);
+
+  --accent: var(--gray-10);
+
+  /* ── §2.3 Color outside the neutrals ────────────────────────────── */
+  --dmg-physical: #d4877e; /* Physical damage (muted red) */
+  --dmg-magic: #8db3df; /* Magic damage (muted light blue) */
+  --dmg-true: var(--gray-10); /* True damage */
+  --danger: #c56b63; /* Destructive actions and validation errors only */
+
+  /* Fill variants for bars/areas: same hue at 72% opacity. */
+  --dmg-physical-fill: color-mix(in srgb, var(--dmg-physical) 72%, transparent);
+  --dmg-magic-fill: color-mix(in srgb, var(--dmg-magic) 72%, transparent);
+  --dmg-true-fill: color-mix(in srgb, var(--dmg-true) 72%, transparent);
+
+  /* Dimmed state for a non-hovered data series. */
+  --opacity-dimmed: 0.25;
+
+  /* ── §3 Typography ───────────────────────────────────────────────── */
+  --font-sans: "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* size / line-height, per the §3 scale table */
+  --font-size-2xs: 11px;
+  --line-height-2xs: 16px;
+  --font-size-xs: 12px;
+  --line-height-xs: 16px;
+  --font-size-sm: 13px;
+  --line-height-sm: 20px;
+  --font-size-md: 14px;
+  --line-height-md: 20px;
+  --font-size-lg: 16px;
+  --line-height-lg: 24px;
+  --font-size-xl: 20px;
+  --line-height-xl: 28px;
+  --font-size-2xl: 24px;
+  --line-height-2xl: 32px;
+
+  --label-letter-spacing: 0.06em;
+
+  /* ── §4 Space, shape, elevation ──────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-control: 4px; /* controls and icons */
+  --radius-node: 8px; /* nodes and popovers */
+
+  --border-width-hairline: 1px;
+
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.5);
+
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+
+  /* ── §5 Motion ────────────────────────────────────────────────────── */
+  --motion-fast: 120ms; /* Hover, press */
+  --motion-base: 180ms; /* Popover open, collapse/expand */
+  --motion-data: 200ms; /* Chart and value tweens */
+  --motion-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Under reduced motion every duration collapses to instant. Components only
+   ever read the duration tokens above, so this single override is global. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-data: 0ms;
+  }
+}
