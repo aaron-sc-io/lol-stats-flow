@@ -1,7 +1,12 @@
 import type { ChampionData } from "../../data/snapshot-schema"
 import type { ComboAction, Kit, PassiveRule } from "../sim/types"
 import type { ResolvedStats } from "../stats/types"
-import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpers"
+import {
+  abilityEvalContext,
+  basicAttackCastTimeMs,
+  compileAbilityCalc,
+  withAbilityData,
+} from "./helpers"
 
 const ABLAZE_COUNTER = "BrandAblaze"
 const MAX_ABLAZE_STACKS = 3
@@ -100,6 +105,11 @@ export function buildBrandKit(
           0,
         )
         api.setBuffCounter(event.sourceId, ABLAZE_COUNTER, 0)
+        // The burn ends the instant the stacks detonate (wiki: "Upon
+        // stacking up to 3 times, the target... takes [the detonation] and
+        // the duration resets") — cancel any still-ticking Ablaze burn so
+        // it doesn't keep dealing damage after the explosion consumes it.
+        api.cancelDot(event.sourceId, "Ablaze")
         return
       }
       // Burn DoT: this engine merges all live Ablaze stacks into one
@@ -132,7 +142,7 @@ export function buildBrandKit(
       slot: "AA",
       damageType: "physical",
       modeled: true,
-      castTimeMs: 1000 / Math.max(0.01, stats.total.attackSpeed),
+      castTimeMs: basicAttackCastTimeMs(stats),
       rank: 1,
       forceCrit: false,
       components: [
