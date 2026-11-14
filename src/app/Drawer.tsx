@@ -37,13 +37,19 @@ export type DrawerProps = {
  */
 export function Drawer({ isOpen, onClose, effectivePatch }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState("")
   const [summaries, setSummaries] = useState(() => listCanvasSummaries())
   const activeId = usePersistenceStore((state) => state.active.id)
   const toast = useToast()
 
-  useFocusTrap(panelRef, isOpen, onClose)
+  useFocusTrap({
+    containerRef: panelRef,
+    active: isOpen,
+    onEscape: onClose,
+    initialFocusRef: searchInputRef,
+  })
 
   useEffect(() => {
     if (isOpen) {
@@ -143,6 +149,7 @@ export function Drawer({ isOpen, onClose, effectivePatch }: DrawerProps) {
 
         <div className={styles.searchRow}>
           <SearchField
+            ref={searchInputRef}
             value={query}
             onChange={setQuery}
             placeholder="Search canvases…"
