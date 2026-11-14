@@ -1,0 +1,26 @@
+.edge {
+  stroke: var(--border-strong);
+  stroke-width: 1.5px;
+}
+
+.edge.highlighted {
+  stroke: var(--gray-10);
+  stroke-dasharray: 6 4;
+  animation: flow-dash 600ms linear infinite;
+}
+
+.edge.dimmed {
+  opacity: var(--opacity-dimmed);
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge.highlighted {
+    animation: none;
+  }
+}

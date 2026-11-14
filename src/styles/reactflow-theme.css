@@ -8,6 +8,17 @@
  * literals — only token references and color-mix() of tokens.
  */
 
+/* `global.css` sets `svg { max-width: 100% }` for content images. React
+   Flow wraps each edge in its own bare <svg> with no width/height attribute
+   and relies on the UA's default replaced-element sizing (it's absolutely
+   positioned with `overflow: visible`, so it never needs to actually be
+   "sized" to paint its child path) — but `max-width: 100%` resolves against
+   a 0-width containing block in that specific layout, collapsing the whole
+   edge to an invisible 0×0 box. Exempt every React Flow-internal svg. */
+.react-flow svg {
+  max-width: none;
+}
+
 .react-flow {
   /* Canvas */
   --xy-background-color: var(--surface-canvas);
@@ -42,6 +53,14 @@
   --xy-controls-button-color-hover: var(--text-primary);
   --xy-controls-button-border-color: var(--border-default);
 
+  /* MiniMap */
+  --xy-minimap-background-color: var(--surface-raised);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--surface-canvas) 65%, transparent);
+  --xy-minimap-mask-stroke-color: var(--border-default);
+  --xy-minimap-mask-stroke-width: 1;
+  --xy-minimap-node-background-color: var(--border-strong);
+  --xy-minimap-node-stroke-color: transparent;
+
   /* Attribution (kept visible per license, restyled to match chrome) */
   --xy-attribution-background-color: transparent;
 }
@@ -64,6 +83,20 @@
   border-color: var(--text-primary);
 }
 
+/* Connection feedback while dragging a new edge: a valid drop target fills
+   solid; an invalid one gets a dashed, muted ring. Neutral only (no color)
+   per DESIGN.md §7/§9 — "valid"/"invalid" are shape/fill states, not hues. */
+.react-flow__handle.connectingto.valid {
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.react-flow__handle.connectingto:not(.valid) {
+  background-color: transparent;
+  border-color: var(--text-disabled);
+  border-style: dashed;
+}
+
 /* Controls: one hairline-bordered group instead of a floating button stack. */
 .react-flow__panel {
   margin: var(--space-4);
@@ -81,6 +114,12 @@
   transition:
     background-color var(--motion-fast) var(--motion-easing),
     color var(--motion-fast) var(--motion-easing);
+}
+
+.react-flow__minimap {
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  overflow: hidden;
 }
 
 .react-flow__attribution {
