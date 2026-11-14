@@ -4,7 +4,12 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
 
     "target": "ES2023",
-    "lib": ["ES2023"],
+    // "DOM" is for tests/e2e/**'s page.evaluate()/addInitScript() callback
+    // bodies — real code, type-checked like any other, that happens to
+    // execute in the browser instead of this (Node) process; `window`/
+    // `navigator`/`localStorage` need to resolve as the real DOM types,
+    // not `any`, for those callbacks to typecheck at all.
+    "lib": ["ES2023", "DOM"],
     "types": ["node"],
 
     "module": "ESNext",
