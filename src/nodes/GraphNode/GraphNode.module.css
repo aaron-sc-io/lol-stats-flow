@@ -21,13 +21,26 @@
 .targetsPanel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
-  padding: var(--space-2);
+  padding: var(--space-3);
 }
 
-.targetRow {
+.targetBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+}
+
+.targetBlock:last-of-type {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.targetHeader {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -35,14 +48,15 @@
 }
 
 .targetName {
-  width: 100px;
+  width: 120px;
   flex-shrink: 0;
   border: none;
   border-bottom: var(--border-width-hairline) solid transparent;
   background: transparent;
   color: var(--text-primary);
-  font-size: var(--font-size-xs);
-  line-height: var(--line-height-xs);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .targetName:hover,
@@ -52,7 +66,34 @@
 
 .targetPresets {
   display: flex;
+  flex: 1 1 auto;
+  justify-content: flex-end;
   gap: var(--space-1);
+}
+
+.targetFields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.targetField {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.targetFieldLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.targetFieldInput {
+  width: 100%;
 }
 
 /* ── Chart ──────────────────────────────────────────────────────────── */
@@ -71,8 +112,16 @@
   fill: var(--text-tertiary);
 }
 
-.line {
-  stroke: var(--text-primary);
+.hatchBg {
+  fill: var(--dmg-magic-fill);
+}
+
+.hatchLine {
+  stroke: var(--dmg-magic);
+  stroke-width: 2;
+}
+
+.lineSegment {
   fill: none;
   stroke-width: 1.5;
 }
@@ -82,13 +131,18 @@
   cursor: pointer;
 }
 
+.endLabel {
+  fill: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+}
+
 .barPhysical {
   fill: var(--dmg-physical-fill);
   stroke: var(--dmg-physical);
 }
 
 .barMagic {
-  fill: var(--dmg-magic-fill);
+  fill: url(#magic-hatch);
   stroke: var(--dmg-magic);
 }
 
@@ -138,7 +192,9 @@
 .tooltip {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  min-width: 220px;
+  max-width: 320px;
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
   background-color: var(--surface-raised);
@@ -154,6 +210,11 @@
   letter-spacing: var(--label-letter-spacing);
 }
 
+.tooltipCombo + .tooltipCombo {
+  padding-top: var(--space-2);
+  border-top: var(--border-width-hairline) solid var(--border-default);
+}
+
 .tooltipRow {
   display: flex;
   justify-content: space-between;
@@ -161,6 +222,31 @@
   color: var(--text-primary);
   font-size: var(--font-size-xs);
   line-height: var(--line-height-xs);
+}
+
+.tooltipInstances {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tooltipInstance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.tooltipInstanceMeta {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Comparison table ───────────────────────────────────────────────── */
@@ -179,10 +265,53 @@
   text-transform: uppercase;
   letter-spacing: var(--label-letter-spacing);
   font-size: var(--font-size-2xs);
+  white-space: nowrap;
 }
 
 .table td {
   border-bottom: var(--border-width-hairline) solid var(--border-default);
   padding: var(--space-1) var(--space-2);
   color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.table td.num {
+  text-align: right;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  color: var(--text-primary);
+}
+
+.sortIcon {
+  flex-shrink: 0;
+  opacity: var(--opacity-dimmed);
+  transition: transform var(--motion-fast) var(--motion-easing);
+}
+
+.sortIconActive {
+  opacity: 1;
+}
+
+.sortIconAsc {
+  transform: rotate(180deg);
+}
+
+.damageCluster {
+  display: flex;
+  gap: var(--space-2);
 }

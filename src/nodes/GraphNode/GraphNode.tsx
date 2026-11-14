@@ -15,7 +15,7 @@ import { DamageChart } from "./DamageChart"
 import styles from "./GraphNode.module.css"
 import { TargetsPanel } from "./TargetsPanel"
 
-const DEFAULT_WIDTH = 640
+const DEFAULT_WIDTH = 800
 
 const CHART_TYPE_OPTIONS: ReadonlyArray<{ readonly value: ChartType; readonly label: string }> = [
   { value: "bars", label: "Per-step bars" },
@@ -48,7 +48,12 @@ export function GraphNode({ id, data, selected }: NodeProps<GraphFlowNode>) {
   const activeTarget = data.targets.find((target) => target.id === data.activeTargetId) ?? null
 
   return (
-    <NodeFrame label="Graph" title="Graph" selected={selected} width={DEFAULT_WIDTH}>
+    <NodeFrame
+      label="Graph"
+      title={activeTarget === null ? "No target" : `vs ${activeTarget.name}`}
+      selected={selected}
+      width={DEFAULT_WIDTH}
+    >
       <div className={cx(styles.body, "nodrag")}>
         <div className={styles.controlsRow}>
           <SegmentedControl

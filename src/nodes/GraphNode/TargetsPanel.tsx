@@ -11,6 +11,17 @@ const TARGET_PRESETS = [
   { label: "Tank", maxHp: 4200, armor: 150, magicResist: 100 },
 ] as const
 
+const STAT_FIELDS: ReadonlyArray<{
+  readonly key: "maxHp" | "bonusHp" | "armor" | "magicResist"
+  readonly label: string
+  readonly min: number
+}> = [
+  { key: "maxHp", label: "HP", min: 1 },
+  { key: "bonusHp", label: "Bonus HP", min: 0 },
+  { key: "armor", label: "Armor", min: 0 },
+  { key: "magicResist", label: "MR", min: 0 },
+]
+
 function TargetRow({
   graphNodeId,
   target,
@@ -24,57 +35,47 @@ function TargetRow({
   const removeTarget = useGraphStore((s) => s.removeTarget)
 
   return (
-    <div className={styles.targetRow}>
-      <input
-        type="text"
-        className={styles.targetName}
-        value={target.name}
-        onChange={(event) => renameTarget(graphNodeId, target.id, event.target.value)}
-        aria-label="Target name"
-      />
-      <NumberField
-        value={target.maxHp}
-        onChange={(value) => updateTargetStat(graphNodeId, target.id, "maxHp", value)}
-        min={1}
-        unit="HP"
-        aria-label={`${target.name} max HP`}
-      />
-      <NumberField
-        value={target.bonusHp}
-        onChange={(value) => updateTargetStat(graphNodeId, target.id, "bonusHp", value)}
-        min={0}
-        unit="bonus HP"
-        aria-label={`${target.name} bonus HP`}
-      />
-      <NumberField
-        value={target.armor}
-        onChange={(value) => updateTargetStat(graphNodeId, target.id, "armor", value)}
-        unit="armor"
-        aria-label={`${target.name} armor`}
-      />
-      <NumberField
-        value={target.magicResist}
-        onChange={(value) => updateTargetStat(graphNodeId, target.id, "magicResist", value)}
-        unit="MR"
-        aria-label={`${target.name} magic resist`}
-      />
-      <div className={styles.targetPresets}>
-        {TARGET_PRESETS.map((preset) => (
-          <Button
-            key={preset.label}
-            variant="ghost"
-            onClick={() => applyTargetPreset(graphNodeId, target.id, preset)}
-          >
-            {preset.label}
-          </Button>
+    <div className={styles.targetBlock}>
+      <div className={styles.targetHeader}>
+        <input
+          type="text"
+          className={styles.targetName}
+          value={target.name}
+          onChange={(event) => renameTarget(graphNodeId, target.id, event.target.value)}
+          aria-label="Target name"
+        />
+        <div className={styles.targetPresets}>
+          {TARGET_PRESETS.map((preset) => (
+            <Button
+              key={preset.label}
+              variant="ghost"
+              onClick={() => applyTargetPreset(graphNodeId, target.id, preset)}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+        <IconButton
+          icon="trash"
+          aria-label={`Remove target ${target.name}`}
+          size={24}
+          onClick={() => removeTarget(graphNodeId, target.id)}
+        />
+      </div>
+      <div className={styles.targetFields}>
+        {STAT_FIELDS.map((field) => (
+          <div key={field.key} className={styles.targetField}>
+            <span className={styles.targetFieldLabel}>{field.label}</span>
+            <NumberField
+              value={target[field.key]}
+              onChange={(value) => updateTargetStat(graphNodeId, target.id, field.key, value)}
+              min={field.min}
+              aria-label={`${target.name} ${field.label}`}
+              className={styles.targetFieldInput}
+            />
+          </div>
         ))}
       </div>
-      <IconButton
-        icon="trash"
-        aria-label={`Remove target ${target.name}`}
-        size={24}
-        onClick={() => removeTarget(graphNodeId, target.id)}
-      />
     </div>
   )
 }
