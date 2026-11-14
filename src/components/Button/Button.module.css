@@ -1,0 +1,78 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  border: var(--border-width-hairline) solid transparent;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-fast) var(--motion-easing),
+    border-color var(--motion-fast) var(--motion-easing),
+    color var(--motion-fast) var(--motion-easing),
+    opacity var(--motion-fast) var(--motion-easing),
+    transform var(--motion-fast) var(--motion-easing);
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── primary: white-on-black, inverted from the rest of the UI ──────── */
+.primary {
+  background-color: var(--text-primary);
+  color: var(--surface-canvas);
+}
+
+.primary:hover:not(:disabled),
+.primary[data-demo-state="hover"] {
+  background-color: var(--gray-9);
+}
+
+/* ── secondary: hairline border, quiet by default ───────────────────── */
+.secondary {
+  background-color: transparent;
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.secondary:hover:not(:disabled),
+.secondary[data-demo-state="hover"] {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+/* ── ghost: no border, lowest emphasis ───────────────────────────────── */
+.ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.ghost:hover:not(:disabled),
+.ghost[data-demo-state="hover"] {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* ── danger: the one place outside data-viz that --danger may appear ── */
+.danger {
+  background-color: transparent;
+  border-color: var(--border-default);
+  color: var(--danger);
+}
+
+.danger:hover:not(:disabled),
+.danger[data-demo-state="hover"] {
+  border-color: var(--danger);
+}
