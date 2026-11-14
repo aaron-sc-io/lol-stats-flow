@@ -27,6 +27,57 @@ describe("CanvasDocumentSchema", () => {
     expect(parsed.graph.edges).toHaveLength(2)
   })
 
+  it("maps a legacy 'bars' chart type onto 'cumulative'", () => {
+    const doc = {
+      schemaVersion: CANVAS_SCHEMA_VERSION,
+      ...BASE_FIELDS,
+      graph: {
+        nodes: [
+          {
+            id: "g1",
+            type: "graph",
+            position: { x: 0, y: 0 },
+            data: { targets: [], activeTargetIds: [], chartType: "bars", xMode: "step" },
+          },
+        ],
+        edges: [],
+      },
+    }
+
+    const parsed = CanvasDocumentSchema.parse(doc)
+
+    expect(parsed.graph.nodes[0]?.data).toMatchObject({ chartType: "cumulative" })
+  })
+
+  it("accepts a legacy graph node with single activeTargetId and migrates it to activeTargetIds", () => {
+    const doc = {
+      schemaVersion: CANVAS_SCHEMA_VERSION,
+      ...BASE_FIELDS,
+      graph: {
+        nodes: [
+          {
+            id: "g1",
+            type: "graph",
+            position: { x: 0, y: 0 },
+            data: {
+              targets: [
+                { id: "t1", name: "Target 1", maxHp: 2000, bonusHp: 0, armor: 80, magicResist: 50 },
+              ],
+              activeTargetId: "t1",
+              chartType: "cumulative",
+              xMode: "step",
+            },
+          },
+        ],
+        edges: [],
+      },
+    }
+
+    const parsed = CanvasDocumentSchema.parse(doc)
+
+    expect(parsed.graph.nodes[0]?.data).toMatchObject({ activeTargetIds: ["t1"] })
+  })
+
   it("rejects a document with the wrong schemaVersion literal", () => {
     const { nodes, edges } = createDefaultCanvas()
     const doc = {

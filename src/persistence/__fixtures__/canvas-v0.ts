@@ -53,6 +53,26 @@ export const CANVAS_V0_FIXTURE = {
           collapsedSections: [],
         },
       },
+      {
+        id: "graph-legacy-1",
+        type: "graph",
+        position: { x: 1040, y: 0 },
+        data: {
+          targets: [
+            {
+              id: "target-legacy-1",
+              name: "Target 1",
+              maxHp: 2000,
+              bonusHp: 0,
+              armor: 80,
+              magicResist: 50,
+            },
+          ],
+          activeTargetId: "target-legacy-1",
+          chartType: "cumulative",
+          xMode: "step",
+        },
+      },
     ],
     edges: [
       {
@@ -61,6 +81,14 @@ export const CANVAS_V0_FIXTURE = {
         sourceHandle: "itemset:itemset-legacy-1",
         target: "combo-legacy-1",
         targetHandle: "sources",
+        type: "flow",
+      },
+      {
+        id: "edge-legacy-2",
+        source: "combo-legacy-1",
+        sourceHandle: "out",
+        target: "graph-legacy-1",
+        targetHandle: "combos",
         type: "flow",
       },
     ],

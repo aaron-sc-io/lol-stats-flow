@@ -72,15 +72,45 @@ const TargetSpecSchema = z.object({
   magicResist: z.number(),
 })
 
-const ChartTypeSchema = z.enum(["bars", "cumulative", "hp"])
+// "bars" (per-step bars) was removed as a chart option; canvases saved or
+// shared before then still parse, landing on the cumulative chart instead.
+const ChartTypeSchema = z
+  .enum(["bars", "cumulative", "hp"])
+  .transform((value) => (value === "bars" ? "cumulative" : value))
 const XModeSchema = z.enum(["step", "tick"])
 
-const GraphNodeDataSchema = z.object({
-  targets: z.array(TargetSpecSchema),
-  activeTargetId: z.string(),
-  chartType: ChartTypeSchema,
-  xMode: XModeSchema,
-})
+const GraphNodeDataSchema = z
+  .object({
+    targets: z.array(TargetSpecSchema),
+    activeTargetIds: z.array(z.string()).optional(),
+    // Backward-compat: legacy canvases stored a single active target.
+    activeTargetId: z.string().optional(),
+    chartType: ChartTypeSchema,
+    xMode: XModeSchema,
+  })
+  .transform((value) => {
+    const validTargetIds = new Set(value.targets.map((target) => target.id))
+    const legacyActiveTargetIds = value.activeTargetId === undefined ? [] : [value.activeTargetId]
+    const rawActiveTargetIds = value.activeTargetIds ?? legacyActiveTargetIds
+    const activeTargetIds = rawActiveTargetIds.filter((targetId, index, all) => {
+      if (!validTargetIds.has(targetId)) {
+        return false
+      }
+      return all.indexOf(targetId) === index
+    })
+    const normalizedActiveTargetIds =
+      activeTargetIds.length > 0
+        ? activeTargetIds
+        : value.targets[0]?.id === undefined
+          ? []
+          : [value.targets[0].id]
+    return {
+      targets: value.targets,
+      activeTargetIds: normalizedActiveTargetIds,
+      chartType: value.chartType,
+      xMode: value.xMode,
+    }
+  })
 
 export const PersistedNodeSchema = z.discriminatedUnion("type", [
   z.object({

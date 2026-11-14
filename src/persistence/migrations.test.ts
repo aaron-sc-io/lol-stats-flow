@@ -15,8 +15,11 @@ describe("migrateToLatest", () => {
     expect(result.value.id).toBe(CANVAS_V0_FIXTURE.id)
     expect(result.value.name).toBe(CANVAS_V0_FIXTURE.name)
     expect(result.value.createdAt).toBe(CANVAS_V0_FIXTURE.createdAt)
-    expect(result.value.graph.nodes).toHaveLength(2)
-    expect(result.value.graph.edges).toHaveLength(1)
+    expect(result.value.graph.nodes).toHaveLength(3)
+    expect(result.value.graph.edges).toHaveLength(2)
+    const graphNode = result.value.graph.nodes.find((node) => node.type === "graph")
+    expect(graphNode).toBeDefined()
+    expect(graphNode?.data).toMatchObject({ activeTargetIds: ["target-legacy-1"] })
   })
 
   it("passes an already-current (v1) document through unchanged", () => {
