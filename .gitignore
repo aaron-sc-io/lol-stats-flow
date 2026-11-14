@@ -7,6 +7,9 @@ dist-ssr/
 *.tsbuildinfo
 node_modules/.tmp/
 
+# Build-time data pipeline download cache (scripts/data/fetch.ts)
+.cache/
+
 # Testing
 coverage/
 playwright-report/

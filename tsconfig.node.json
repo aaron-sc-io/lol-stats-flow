@@ -36,6 +36,11 @@
     "vitest.config.ts",
     "playwright.config.ts",
     "scripts/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "src/data/schema.ts",
+    "src/data/formula-schema.ts",
+    "src/data/snapshot-schema.ts",
+    "src/data/stat-ids.ts",
+    "src/data/snapshot-selectors.ts"
   ]
 }
