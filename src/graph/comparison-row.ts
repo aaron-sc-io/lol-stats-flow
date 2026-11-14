@@ -3,6 +3,8 @@ import type { ComboStep, SimResult, TargetSpec } from "@/engine"
 export type ComparisonRow = {
   readonly comboId: string
   readonly comboName: string
+  readonly variantId: string
+  readonly variantName: string
   readonly targetId: string
   readonly targetName: string
   readonly total: number
@@ -37,10 +39,10 @@ function resolveKillStepLabel(result: SimResult, steps: readonly ComboStep[]): s
 
 /** One comparison-table row (plan D12): total damage, % of target HP,
  * kill y/n with step/time, overkill, duration, DPS, and the phys/magic/true
- * split — everything derived from a single `SimResult`, never stored. */
+ * split for one combo item-set variant vs one target — everything derived
+ * from a single `SimResult`, never stored. */
 export function buildComparisonRow(
-  comboId: string,
-  comboName: string,
+  combo: Pick<ComparisonRow, "comboId" | "comboName" | "variantId" | "variantName">,
   target: TargetSpec,
   result: SimResult,
   steps: readonly ComboStep[],
@@ -49,8 +51,10 @@ export function buildComparisonRow(
   const total = physical + magic + trueDamage
   const durationSeconds = result.duration / 1000
   return {
-    comboId,
-    comboName,
+    comboId: combo.comboId,
+    comboName: combo.comboName,
+    variantId: combo.variantId,
+    variantName: combo.variantName,
     targetId: target.id,
     targetName: target.name,
     total,

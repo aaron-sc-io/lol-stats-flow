@@ -1,7 +1,6 @@
 import type { Snapshot } from "@/data/schema"
 import { buildKit, type Kit } from "@/engine"
 import { resolveItemSlots } from "./item-rules"
-import type { ConnectedItemSetSource } from "./selectors"
 import type { AbilitySlotWithRank, ItemSet } from "./types"
 
 const RANK_SLOTS: readonly AbilitySlotWithRank[] = ["Q", "W", "E", "R"]
@@ -56,29 +55,4 @@ export function getOrBuildKit(
   }
   cache.set(key, kit)
   return kit
-}
-
-/** Builds (or reuses the cached) `Kit` for every one of a combo's currently
- * connected itemSet sources, keyed by itemSetId — the shape both
- * `ComboNode` (for its ability palette) and `GraphNode` (for its per-combo
- * simulation) need. Sources whose champion isn't modeled are silently
- * skipped (their steps are excluded from simulation, same as orphaned
- * ones — `canBuildKit`-less sources just never appear as a key here). */
-export function buildKitsForSources(
-  snapshot: Snapshot,
-  sources: readonly ConnectedItemSetSource[],
-): Record<string, Kit> {
-  const kits: Record<string, Kit> = {}
-  for (const source of sources) {
-    const kit = getOrBuildKit(
-      snapshot,
-      source.championNode.data.championId,
-      source.championNode.data.level,
-      source.itemSet,
-    )
-    if (kit !== undefined) {
-      kits[source.itemSetId] = kit
-    }
-  }
-  return kits
 }

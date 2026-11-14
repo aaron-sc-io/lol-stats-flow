@@ -11,6 +11,7 @@ import {
   getConnectedGraphTarget,
   getConnectedItemSetSources,
   isStepOrphaned,
+  resolveStepChampionNodeId,
 } from "./selectors"
 import { fixtureAction, fixtureKit } from "./test-support/fixtures"
 import type {
@@ -49,7 +50,7 @@ function graphNode(id: string): GraphFlowNode {
     id,
     type: "graph",
     position: { x: 0, y: 0 },
-    data: { targets: [], activeTargetId: "", chartType: "bars", xMode: "step" },
+    data: { targets: [], activeTargetIds: [], chartType: "cumulative", xMode: "step" },
   }
 }
 
@@ -110,7 +111,7 @@ describe("isStepOrphaned", () => {
     const sources = [
       { itemSetId: "is-1", itemSet: itemSet("is-1", "x"), championNode: championNode("c", []) },
     ]
-    const kits = { "is-1": fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
+    const kits = { c: fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
     expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, sources, kits)).toBe(false)
     expect(
       isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q-empowered" }, sources, kits),
@@ -118,8 +119,21 @@ describe("isStepOrphaned", () => {
   })
 
   it("given kits, is still true when disconnected even if the actionId happens to be valid elsewhere", () => {
-    const kits = { "is-1": fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
+    const kits = { c: fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
     expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, [], kits)).toBe(true)
+  })
+
+  it("resolves a champion-node sourceId, and a legacy item-set sourceId via any connected sibling item set", () => {
+    const champion = championNode("c", [itemSet("is-1", "IE"), itemSet("is-2", "BotRK")])
+    const sources = [
+      { itemSetId: "is-2", itemSet: itemSet("is-2", "BotRK"), championNode: champion },
+    ]
+    const kits = { c: fixtureKit({ actions: [fixtureAction({ id: "Q" })] }) }
+
+    expect(resolveStepChampionNodeId({ id: "s1", sourceId: "c", actionId: "Q" }, sources)).toBe("c")
+    // "is-1" itself isn't connected, but its champion still is (via is-2).
+    expect(isStepOrphaned({ id: "s1", sourceId: "is-1", actionId: "Q" }, sources, kits)).toBe(false)
+    expect(isStepOrphaned({ id: "s1", sourceId: "other", actionId: "Q" }, sources, kits)).toBe(true)
   })
 })
 
@@ -148,8 +162,8 @@ describe("getConnectedGraphTarget", () => {
           { id: "t1", name: "Squishy", maxHp: 1800, bonusHp: 0, armor: 30, magicResist: 30 },
           { id: "t2", name: "Tank", maxHp: 4000, bonusHp: 0, armor: 150, magicResist: 100 },
         ],
-        activeTargetId: "t2",
-        chartType: "bars",
+        activeTargetIds: ["t2"],
+        chartType: "cumulative",
         xMode: "step",
       },
     }
@@ -219,5 +233,21 @@ describe("computeHighlightState", () => {
     ]
     const state = computeHighlightState([...nodes, soloChamp], extraEdges, "combo-1")
     expect(state.dimmedNodeIds.has("champ-3")).toBe(true)
+  })
+
+  it("hovering an item set highlights that row, every combo it feeds, and the feeding edges — dims nothing", () => {
+    const state = computeHighlightState(nodes, edges, null, ["is-2"])
+
+    expect(state.highlightedItemSetIds).toEqual(new Set(["is-2"]))
+    expect(state.highlightedNodeIds).toEqual(new Set(["combo-1", "combo-2"]))
+    expect(state.highlightedEdgeIds).toEqual(new Set(["e2", "e3"]))
+    expect(state.dimmedNodeIds.size).toBe(0)
+    expect(state.dimmedEdgeIds.size).toBe(0)
+  })
+
+  it("a hovered combo takes precedence over a hovered item set", () => {
+    const state = computeHighlightState(nodes, edges, "combo-2", ["is-1"])
+
+    expect(state.highlightedNodeIds).toEqual(new Set(["combo-2", "champ-2"]))
   })
 })

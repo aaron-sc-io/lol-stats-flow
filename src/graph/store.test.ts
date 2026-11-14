@@ -166,7 +166,7 @@ describe("graph store — combo steps", () => {
 })
 
 describe("graph store — targets", () => {
-  it("removeTarget reassigns activeTargetId to a remaining target", () => {
+  it("removeTarget keeps activeTargetIds valid and non-empty", () => {
     const store = freshStore()
     const secondId = (() => {
       store.getState().addTarget(DEFAULT_GRAPH_NODE_ID)
@@ -177,15 +177,24 @@ describe("graph store — targets", () => {
 
     const graphBefore = store.getState().nodes.find((n) => n.id === DEFAULT_GRAPH_NODE_ID)
     const activeBefore =
-      graphBefore !== undefined && isGraphNode(graphBefore) ? graphBefore.data.activeTargetId : ""
+      graphBefore !== undefined && isGraphNode(graphBefore)
+        ? [...graphBefore.data.activeTargetIds]
+        : []
 
-    store.getState().removeTarget(DEFAULT_GRAPH_NODE_ID, activeBefore)
+    store.getState().removeTarget(DEFAULT_GRAPH_NODE_ID, activeBefore[0] ?? "")
 
     const graphAfter = store.getState().nodes.find((n) => n.id === DEFAULT_GRAPH_NODE_ID)
     const activeAfter =
-      graphAfter !== undefined && isGraphNode(graphAfter) ? graphAfter.data.activeTargetId : ""
-    expect(activeAfter).toBe(secondId)
-    expect(activeAfter).not.toBe(activeBefore)
+      graphAfter !== undefined && isGraphNode(graphAfter) ? graphAfter.data.activeTargetIds : []
+    expect(activeAfter).toEqual([secondId])
+  })
+
+  it("toggleActiveTarget never allows zero selected targets", () => {
+    const store = freshStore()
+    store.getState().toggleActiveTarget(DEFAULT_GRAPH_NODE_ID, DEFAULT_TARGET_ID)
+    const graph = store.getState().nodes.find((n) => n.id === DEFAULT_GRAPH_NODE_ID)
+    const active = graph !== undefined && isGraphNode(graph) ? graph.data.activeTargetIds : []
+    expect(active).toEqual([DEFAULT_TARGET_ID])
   })
 
   it("applyTargetPreset sets maxHp/armor/magicResist and resets bonusHp", () => {
@@ -232,6 +241,13 @@ describe("graph store — undo/redo (zundo temporal)", () => {
     const store = freshStore()
     const pastBefore = store.temporal.getState().pastStates.length
     store.getState().setHoveredCombo(DEFAULT_COMBO_NODE_ID)
+    expect(store.temporal.getState().pastStates.length).toBe(pastBefore)
+  })
+
+  it("does not record hoveredGraphSeriesId changes in history (transient, not user input)", () => {
+    const store = freshStore()
+    const pastBefore = store.temporal.getState().pastStates.length
+    store.getState().setHoveredGraphSeries("combo-1__target-1")
     expect(store.temporal.getState().pastStates.length).toBe(pastBefore)
   })
 })

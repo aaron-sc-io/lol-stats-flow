@@ -37,7 +37,7 @@ const INFINITY_EDGE_ITEM_ID = 3031
  * ownership; a width drift there is harmless (still ≥ the 64px minimum
  * gap below, just not pixel-perfect), never a broken/overlapping layout. */
 const CHAMPION_NODE_WIDTH = 560
-const COMBO_NODE_WIDTH = 380
+const COMBO_NODE_WIDTH = 480
 const NODE_GAP = 80
 const ROW_Y = 0
 
@@ -70,10 +70,10 @@ export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly ed
     data: {
       name: "Combo 1",
       steps: [
-        { id: "step-1", sourceId: DEFAULT_ITEM_SET_ID, actionId: "Q" },
-        { id: "step-2", sourceId: DEFAULT_ITEM_SET_ID, actionId: "AA" },
-        { id: "step-3", sourceId: DEFAULT_ITEM_SET_ID, actionId: "E" },
-        { id: "step-4", sourceId: DEFAULT_ITEM_SET_ID, actionId: "Q-empowered" },
+        { id: "step-1", sourceId: DEFAULT_CHAMPION_NODE_ID, actionId: "Q" },
+        { id: "step-2", sourceId: DEFAULT_CHAMPION_NODE_ID, actionId: "AA" },
+        { id: "step-3", sourceId: DEFAULT_CHAMPION_NODE_ID, actionId: "E" },
+        { id: "step-4", sourceId: DEFAULT_CHAMPION_NODE_ID, actionId: "Q-empowered" },
       ],
       collapsedSections: [],
     },
@@ -94,8 +94,8 @@ export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly ed
           magicResist: 50,
         },
       ],
-      activeTargetId: DEFAULT_TARGET_ID,
-      chartType: "bars",
+      activeTargetIds: [DEFAULT_TARGET_ID],
+      chartType: "cumulative",
       xMode: "step",
     },
   }

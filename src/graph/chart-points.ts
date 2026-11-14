@@ -105,6 +105,26 @@ function buildTickPoints(result: SimResult): ChartPoint[] {
   })
 }
 
+/** The chart's origin `x` — sorts before every real point (step indices and
+ * tick-mode seconds are both ≥ 0). The x-axis is categorical, so this value
+ * is only an ordering/merge key, never a plotted coordinate. */
+export const ORIGIN_X = -1
+
+/** The zero-damage "Step 0" every plotted line starts from, so the first
+ * real step's damage draws as a rising segment inside the plot instead of
+ * the line starting mid-air at step 1's value. */
+export function originPoint(target: TargetSpec, xMode: XMode): ChartPoint {
+  return {
+    x: ORIGIN_X,
+    xLabel: xMode === "step" ? "Step 0" : "Start",
+    ...emptyDelta(),
+    total: 0,
+    cumulative: 0,
+    targetHpAfter: startingHp(target),
+    instances: [],
+  }
+}
+
 export function buildChartPoints(
   result: SimResult,
   steps: readonly ComboStep[],

@@ -6,24 +6,45 @@ function defaultTarget(name: string): TargetSpec {
   return { id: generateId("target"), name, maxHp: 2000, bonusHp: 0, armor: 80, magicResist: 50 }
 }
 
+function normalizeActiveTargetIds(
+  targetIds: readonly string[],
+  candidateIds: readonly string[],
+): readonly string[] {
+  const allowed = new Set(targetIds)
+  const deduped = candidateIds.filter((targetId, index, all) => {
+    if (!allowed.has(targetId)) {
+      return false
+    }
+    return all.indexOf(targetId) === index
+  })
+  return deduped.length === 0 ? (targetIds[0] === undefined ? [] : [targetIds[0]]) : deduped
+}
+
 /** Graph node data mutations (plan §5/§6/deliverable 5): target list CRUD,
- * the active target, chart type, and x-axis mode. Removing the currently
- * active target reassigns `activeTargetId` to whatever target is left
- * (or `""` if none), instead of leaving it dangling. */
+ * active targets, chart type, and x-axis mode. `activeTargetIds` is
+ * normalized on every target-list mutation to avoid dangling ids and always
+ * keep at least one selected whenever targets exist. */
 export function createGraphSlice(set: GraphSet): GraphSlice {
   return {
     addTarget: (nodeId) => {
       set((state) => ({
-        nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => ({
-          ...node,
-          data: {
-            ...node.data,
-            targets: [
-              ...node.data.targets,
-              defaultTarget(`Target ${node.data.targets.length + 1}`),
-            ],
-          },
-        })),
+        nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => {
+          const targets = [
+            ...node.data.targets,
+            defaultTarget(`Target ${node.data.targets.length + 1}`),
+          ]
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              targets,
+              activeTargetIds: normalizeActiveTargetIds(
+                targets.map((target) => target.id),
+                node.data.activeTargetIds,
+              ),
+            },
+          }
+        }),
       }))
     },
 
@@ -31,11 +52,17 @@ export function createGraphSlice(set: GraphSet): GraphSlice {
       set((state) => ({
         nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => {
           const targets = node.data.targets.filter((target) => target.id !== targetId)
-          const activeTargetId =
-            node.data.activeTargetId === targetId
-              ? (targets[0]?.id ?? "")
-              : node.data.activeTargetId
-          return { ...node, data: { ...node.data, targets, activeTargetId } }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              targets,
+              activeTargetIds: normalizeActiveTargetIds(
+                targets.map((target) => target.id),
+                node.data.activeTargetIds,
+              ),
+            },
+          }
         }),
       }))
     },
@@ -90,11 +117,37 @@ export function createGraphSlice(set: GraphSet): GraphSlice {
       }))
     },
 
-    setActiveTarget: (nodeId, targetId) => {
+    toggleActiveTarget: (nodeId, targetId) => {
+      set((state) => ({
+        nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => {
+          const targetIds = node.data.targets.map((target) => target.id)
+          const selected = new Set(normalizeActiveTargetIds(targetIds, node.data.activeTargetIds))
+          if (selected.has(targetId)) {
+            if (selected.size > 1) {
+              selected.delete(targetId)
+            }
+          } else if (targetIds.includes(targetId)) {
+            selected.add(targetId)
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              activeTargetIds: normalizeActiveTargetIds(targetIds, [...selected]),
+            },
+          }
+        }),
+      }))
+    },
+
+    setAllTargetsActive: (nodeId) => {
       set((state) => ({
         nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => ({
           ...node,
-          data: { ...node.data, activeTargetId: targetId },
+          data: {
+            ...node.data,
+            activeTargetIds: node.data.targets.map((target) => target.id),
+          },
         })),
       }))
     },

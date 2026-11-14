@@ -41,16 +41,16 @@ export type ChampionNodeData = {
 export type ComboNodeData = {
   readonly name: string
   readonly steps: readonly ComboStep[]
-  /** itemSetIds whose ability-palette `Collapsible` section is collapsed. */
+  /** Champion node ids whose ability-palette `Collapsible` section is collapsed. */
   readonly collapsedSections: readonly string[]
 }
 
-export type ChartType = "bars" | "cumulative" | "hp"
+export type ChartType = "cumulative" | "hp"
 export type XMode = "step" | "tick"
 
 export type GraphNodeData = {
   readonly targets: readonly TargetSpec[]
-  readonly activeTargetId: string
+  readonly activeTargetIds: readonly string[]
   readonly chartType: ChartType
   readonly xMode: XMode
 }

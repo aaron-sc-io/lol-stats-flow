@@ -82,13 +82,13 @@ export function createComboSlice(set: GraphSet): ComboSlice {
       }))
     },
 
-    toggleComboSectionCollapsed: (nodeId, itemSetId) => {
+    toggleComboSectionCollapsed: (nodeId, sectionId) => {
       set((state) => ({
         nodes: mapNode(state.nodes, nodeId, isComboFlowNode, (node) => {
-          const isCollapsed = node.data.collapsedSections.includes(itemSetId)
+          const isCollapsed = node.data.collapsedSections.includes(sectionId)
           const collapsedSections = isCollapsed
-            ? node.data.collapsedSections.filter((id) => id !== itemSetId)
-            : [...node.data.collapsedSections, itemSetId]
+            ? node.data.collapsedSections.filter((id) => id !== sectionId)
+            : [...node.data.collapsedSections, sectionId]
           return { ...node, data: { ...node.data, collapsedSections } }
         }),
       }))

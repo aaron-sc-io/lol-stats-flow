@@ -70,16 +70,40 @@ export type GraphSet = (
 ) => void
 export type GraphGet = () => GraphState
 
+/** One hovered chart line segment — a single point's worth of damage on one
+ * graph series — and the combo-timeline damage chip it maps back to
+ * (`comboId` × `variantId` × `stepId`). Transient hover state only. */
+export type HoveredDamage = {
+  readonly seriesId: string
+  readonly comboId: string
+  readonly variantId: string
+  /** The combo step that dealt this damage — `null` only if a point has no
+   * owning step (never for real step/tick points). */
+  readonly stepId: string | null
+  /** The merged chart row's `x` (step index or tick seconds). */
+  readonly x: number
+}
+
 export type FlowSlice = {
   readonly nodes: FlowNode[]
   readonly edges: FlowEdge[]
   readonly hoveredComboId: string | null
+  readonly hoveredGraphSeriesId: string | null
   readonly hoveredStepId: string | null
+  readonly hoveredStepIds: readonly string[]
+  readonly hoveredItemSetId: string | null
+  readonly hoveredItemSetIds: readonly string[]
+  readonly hoveredDamage: HoveredDamage | null
   readonly onNodesChange: OnNodesChange<FlowNode>
   readonly onEdgesChange: OnEdgesChange<FlowEdge>
   readonly onConnect: (connection: Connection) => void
   readonly setHoveredCombo: (comboId: string | null) => void
+  readonly setHoveredGraphSeries: (seriesId: string | null) => void
   readonly setHoveredStep: (stepId: string | null) => void
+  readonly setHoveredSteps: (stepIds: readonly string[]) => void
+  readonly setHoveredItemSet: (itemSetId: string | null) => void
+  readonly setHoveredItemSets: (itemSetIds: readonly string[]) => void
+  readonly setHoveredDamage: (damage: HoveredDamage | null) => void
   readonly addChampionNode: (position?: XYPosition) => string
   readonly addComboNode: (position?: XYPosition) => string
   readonly addGraphNode: (position?: XYPosition) => string
@@ -113,7 +137,7 @@ export type ComboSlice = {
   readonly restoreComboStep: (nodeId: string, step: ComboStepInput, atIndex: number) => void
   readonly reorderComboSteps: (nodeId: string, fromIndex: number, toIndex: number) => void
   readonly setComboStepDelay: (nodeId: string, stepId: string, delayMs: number) => void
-  readonly toggleComboSectionCollapsed: (nodeId: string, itemSetId: string) => void
+  readonly toggleComboSectionCollapsed: (nodeId: string, sectionId: string) => void
 }
 
 export type TargetStatField = "maxHp" | "bonusHp" | "armor" | "magicResist"
@@ -135,7 +159,8 @@ export type GraphSlice = {
     value: number,
   ) => void
   readonly applyTargetPreset: (nodeId: string, targetId: string, preset: TargetPreset) => void
-  readonly setActiveTarget: (nodeId: string, targetId: string) => void
+  readonly toggleActiveTarget: (nodeId: string, targetId: string) => void
+  readonly setAllTargetsActive: (nodeId: string) => void
   readonly setChartType: (nodeId: string, chartType: ChartType) => void
   readonly setXMode: (nodeId: string, xMode: XMode) => void
 }

@@ -32,7 +32,7 @@ function graphNode(id: string): GraphFlowNode {
     id,
     type: "graph",
     position: { x: 0, y: 0 },
-    data: { targets: [], activeTargetId: "", chartType: "bars", xMode: "step" },
+    data: { targets: [], activeTargetIds: [], chartType: "cumulative", xMode: "step" },
   }
 }
 

@@ -49,32 +49,51 @@ export function getConnectedItemSetSources(
   return sources
 }
 
-/** A step is orphaned once its source itemSet's edge into the combo no
- * longer exists — kept in `steps`, greyed, excluded from simulation, and
+/** The connected champion node a step belongs to. A step's `sourceId` is
+ * the champion node id (the combo palette is one row per champion, and the
+ * same step list is replayed against every connected item set of that
+ * champion); canvases saved before that stored the item set id the step was
+ * added from, so any item set owned by a connected champion still resolves
+ * to it. `undefined` once no item set of that champion feeds the combo. */
+export function resolveStepChampionNodeId(
+  step: ComboStep,
+  connectedSources: readonly ConnectedItemSetSource[],
+): string | undefined {
+  const source = connectedSources.find(
+    ({ itemSetId, championNode }) =>
+      championNode.id === step.sourceId ||
+      itemSetId === step.sourceId ||
+      championNode.data.itemSets.some((set) => set.id === step.sourceId),
+  )
+  return source?.championNode.id
+}
+
+/** A step is orphaned once no item set of its champion is wired into the
+ * combo — kept in `steps`, greyed, excluded from simulation, and
  * automatically "restored" the instant a matching edge reappears (plan §5),
  * all without any separate stored flag.
  *
- * Also orphaned (when `kits` is given): the step's `actionId` no longer
- * exists in its source's *current* kit — e.g. the item set stayed
- * connected but the champion backing it was switched to one without that
- * exact ability/variant id (`RosterPicker` lets this happen at any time;
- * see plan §5's "dependent steps become orphaned, not silently deleted").
- * Without this check a stale step reaches `simulate()` with an action id
- * its new kit can't resolve. `kits` is optional and back-compat-false when
- * omitted, since not every caller has a kit lookup on hand. */
+ * Also orphaned (when `kits` — keyed by champion node id — is given): the
+ * step's `actionId` no longer exists in its champion's *current* kit — e.g.
+ * the champion node was switched to one without that exact ability/variant
+ * id (`RosterPicker` lets this happen at any time; see plan §5's "dependent
+ * steps become orphaned, not silently deleted"). Without this check a stale
+ * step reaches `simulate()` with an action id its new kit can't resolve.
+ * `kits` is optional and back-compat-false when omitted, since not every
+ * caller has a kit lookup on hand. */
 export function isStepOrphaned(
   step: ComboStep,
   connectedSources: readonly ConnectedItemSetSource[],
   kits?: Readonly<Record<string, Kit>>,
 ): boolean {
-  const source = connectedSources.find((source) => source.itemSetId === step.sourceId)
-  if (source === undefined) {
+  const championNodeId = resolveStepChampionNodeId(step, connectedSources)
+  if (championNodeId === undefined) {
     return true
   }
   if (kits === undefined) {
     return false
   }
-  const kit = kits[step.sourceId]
+  const kit = kits[championNodeId]
   return kit === undefined || !kit.actions.some((action) => action.id === step.actionId)
 }
 
@@ -109,7 +128,11 @@ export function getConnectedGraphTarget(
     return undefined
   }
   const graphNode = nodes.filter(isGraphNode).find((node) => node.id === graphEdge.target)
-  return graphNode?.data.targets.find((target) => target.id === graphNode.data.activeTargetId)
+  const firstActiveTargetId = graphNode?.data.activeTargetIds[0]
+  if (firstActiveTargetId !== undefined) {
+    return graphNode?.data.targets.find((target) => target.id === firstActiveTargetId)
+  }
+  return graphNode?.data.targets[0]
 }
 
 export type HighlightState = {
@@ -138,19 +161,47 @@ function edgeTouchesCombo(edge: FlowEdge, comboId: string): boolean {
   )
 }
 
-/** DESIGN.md §6/plan D11: hovering a combo (legend or chart series)
- * highlights that combo node, its connected item-set rows, their champion
- * nodes, and the 2 kinds of connecting edges (incoming sources + its own
- * outgoing edge to the graph); every other combo's own exclusive upstream
- * path — and its own edges — dims instead, mirroring the chart's "hovered
- * series full opacity, everything else 25%" rule at the node-graph level. */
+function computeItemSetHighlight(
+  edges: readonly FlowEdge[],
+  hoveredItemSetIds: readonly string[],
+): HighlightState {
+  const hoveredItemSetIdSet = new Set(hoveredItemSetIds)
+  const feedEdges = edges.filter(
+    (edge) =>
+      edge.targetHandle === COMBO_SOURCES_HANDLE &&
+      hoveredItemSetIdSet.has(parseItemSetHandleId(edge.sourceHandle) ?? ""),
+  )
+  return {
+    highlightedNodeIds: new Set(feedEdges.map((edge) => edge.target)),
+    highlightedItemSetIds: hoveredItemSetIdSet,
+    highlightedEdgeIds: new Set(feedEdges.map((edge) => edge.id)),
+    dimmedNodeIds: new Set(),
+    dimmedEdgeIds: new Set(),
+  }
+}
+
+/** DESIGN.md §6/plan D11: hovering a combo (legend, chart series, or the
+ * combo node itself) highlights that combo node, its connected item-set
+ * rows, their champion nodes, and the 2 kinds of connecting edges (incoming
+ * sources + its own outgoing edge to the graph); every other combo's own
+ * exclusive upstream path — and its own edges — dims instead, mirroring the
+ * chart's "hovered series full opacity, everything else 25%" rule at the
+ * node-graph level.
+ *
+ * Hovering an item-set row (when no combo is hovered) is the reverse
+ * lookup: it highlights that row, every combo it feeds, and the edges
+ * between them — highlight only, nothing dims. */
 export function computeHighlightState(
   nodes: readonly FlowNode[],
   edges: readonly FlowEdge[],
   hoveredComboId: string | null,
+  hoveredItemSetIds: readonly string[] = [],
 ): HighlightState {
+  const hoveredItemSetIdSet = new Set(hoveredItemSetIds)
   if (hoveredComboId === null) {
-    return EMPTY_HIGHLIGHT
+    return hoveredItemSetIdSet.size === 0
+      ? EMPTY_HIGHLIGHT
+      : computeItemSetHighlight(edges, [...hoveredItemSetIdSet])
   }
   const comboNode = getComboNodeById(hoveredComboId, nodes)
   if (comboNode === undefined) {
@@ -158,12 +209,30 @@ export function computeHighlightState(
   }
 
   const hoveredSources = getConnectedItemSetSources(hoveredComboId, nodes, edges)
-  const highlightedChampionIds = new Set(hoveredSources.map((source) => source.championNode.id))
-  const highlightedNodeIds = new Set<string>([hoveredComboId, ...highlightedChampionIds])
-  const highlightedItemSetIds = new Set(hoveredSources.map((source) => source.itemSetId))
-  const highlightedEdgeIds = new Set(
-    edges.filter((edge) => edgeTouchesCombo(edge, hoveredComboId)).map((edge) => edge.id),
+  const relevantSources =
+    hoveredItemSetIdSet.size === 0
+      ? hoveredSources
+      : hoveredSources.filter((source) => hoveredItemSetIdSet.has(source.itemSetId))
+  const sourcesForHighlight = relevantSources.length === 0 ? hoveredSources : relevantSources
+  const highlightedChampionIds = new Set(
+    sourcesForHighlight.map((source) => source.championNode.id),
   )
+  const highlightedNodeIds = new Set<string>([hoveredComboId, ...highlightedChampionIds])
+  const highlightedItemSetIds = new Set(sourcesForHighlight.map((source) => source.itemSetId))
+  const highlightedEdgeIds = new Set<string>(
+    edges
+      .filter((edge) => edge.source === hoveredComboId && edge.sourceHandle === COMBO_OUT_HANDLE)
+      .map((edge) => edge.id),
+  )
+  for (const edge of edges) {
+    if (edge.target !== hoveredComboId || edge.targetHandle !== COMBO_SOURCES_HANDLE) {
+      continue
+    }
+    const itemSetId = parseItemSetHandleId(edge.sourceHandle)
+    if (itemSetId !== null && highlightedItemSetIds.has(itemSetId)) {
+      highlightedEdgeIds.add(edge.id)
+    }
+  }
 
   const dimmedNodeIds = new Set<string>()
   const dimmedEdgeIds = new Set<string>()
