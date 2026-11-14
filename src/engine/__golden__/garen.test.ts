@@ -110,4 +110,17 @@ describe("Garen golden — level 16, rank 5, with Infinity Edge, vs 100 armor / 
     const stats = kit.ctx.stats
     expect(stats.total.attackDamage).toBeCloseTo(totalAD, 1)
   })
+
+  it("E tick count grows by +1 per 25% bonus attack speed (wiki, cited above) on top of the rank-5 base", () => {
+    const bonusAsPercent = kit.ctx.stats.total.attackSpeed / garen.stats.attackSpeed - 1
+    const expectedExtraSpins = Math.floor(bonusAsPercent / 0.25)
+    const baseTicks = garen.abilities.E.dataValues.NumTicks?.[5] ?? 7
+    const result = simulate({
+      steps: [{ id: "s", sourceId: "Garen", actionId: "E" }],
+      kits: { Garen: kit },
+      target: dummy(5000, 0, 0),
+    })
+    const ticks = result.instances.filter((i) => i.isTick)
+    expect(ticks).toHaveLength(baseTicks + expectedExtraSpins)
+  })
 })

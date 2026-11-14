@@ -1,7 +1,12 @@
 import type { ChampionData } from "../../data/snapshot-schema"
 import type { ComboAction, Kit, PassiveRule } from "../sim/types"
 import type { ResolvedStats } from "../stats/types"
-import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpers"
+import {
+  abilityEvalContext,
+  basicAttackCastTimeMs,
+  compileAbilityCalc,
+  withAbilityData,
+} from "./helpers"
 
 /** Garen (key 86). Q (Decisive Strike) physical hit, E (Judgment) a 7-tick
  * spin (normal + crit variant), R (Demacian Justice) %missing-HP true damage
@@ -13,10 +18,15 @@ import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpe
  * 25% bonus attack speed) times over 3 seconds ... Physical Damage Per
  * Spin: 4/7/10/13/16 (+40/43/46/49/52% AD)" — matches `BaseDamagePerTick`/
  * `ADRatioPerTick` exactly. Modeled as `NumTicks` instant hits over the 3s
- * duration (bonus-AS-driven extra spins not modeled — documented
- * simplification, fixed tick count per rank). `CriticalDamage`'s raw calc
- * is `(sum of 0 parts) × (1 + productOfSubParts([]))` — the same
- * tooltip-helper-calc-referencing-a-sibling pattern as Darius's
+ * duration, where `NumTicks` is extended by `floor(bonusAttackSpeed% / 25)`
+ * extra spins per the wiki formula above — "bonus attack speed" here is
+ * Riot's standard stat-panel definition (base AS × (1 + bonus%)), i.e.
+ * exactly the `levelAsBonusPercent + itemAsPercent` term `statsAt` folds
+ * into `total.attackSpeed` (see `stats/stats-at.ts`), recovered here as
+ * `stats.total.attackSpeed / champion.stats.attackSpeed - 1` since
+ * `ResolvedStats` doesn't carry a separate bonus-AS-percent field.
+ * `CriticalDamage`'s raw calc is `(sum of 0 parts) × (1 + productOfSubParts([]))`
+ * — the same tooltip-helper-calc-referencing-a-sibling pattern as Darius's
  * `HandleDamage`/`MaximumDamage` and Yasuo's `BonusDamagePerStack` (always
  * evaluates to 0) — the crit variant is computed directly here as
  * `TotalDamage × (1 + CritMod)` per tick.
@@ -42,7 +52,12 @@ export function buildGarenKit(
 
   const qTotal = withAbilityData(q, qRank, compileAbilityCalc(q, "TotalDamage"))
   const eTotal = withAbilityData(e, eRank, compileAbilityCalc(e, "TotalDamage"))
-  const numTicks = e.dataValues.NumTicks?.[eRank] ?? 7
+  const baseTicks = e.dataValues.NumTicks?.[eRank] ?? 7
+  // "+1 per 25% bonus attack speed" (wiki, cited above) — floor division,
+  // never fewer than the base tick count.
+  const bonusAttackSpeedPercent = stats.total.attackSpeed / champion.stats.attackSpeed - 1
+  const extraSpins = Math.max(0, Math.floor(bonusAttackSpeedPercent / 0.25))
+  const numTicks = baseTicks + extraSpins
   const spinDurationMs = (e.dataValues.Duration?.[eRank] ?? 3) * 1000
   const tickIntervalMs = spinDurationMs / numTicks
   const critMod = e.dataValues.CritMod?.[eRank] ?? 0.3
@@ -129,7 +144,7 @@ export function buildGarenKit(
       slot: "AA",
       damageType: "physical",
       modeled: true,
-      castTimeMs: 1000 / Math.max(0.01, stats.total.attackSpeed),
+      castTimeMs: basicAttackCastTimeMs(stats),
       rank: 1,
       forceCrit: false,
       components: [
