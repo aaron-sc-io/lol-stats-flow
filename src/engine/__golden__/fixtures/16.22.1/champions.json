@@ -1,0 +1,1344 @@
+[
+  {
+    "id": "Brand",
+    "key": 63,
+    "name": "Brand",
+    "title": "the Burning Vengeance",
+    "roles": ["Mage", "Support"],
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/champion/Brand.png",
+    "splashUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Brand_0.jpg",
+    "loadingUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Brand_0.jpg",
+    "stats": {
+      "hp": 570,
+      "hpPerLevel": 105,
+      "mp": 469,
+      "mpPerLevel": 21,
+      "armor": 24,
+      "armorPerLevel": 4.199999809265137,
+      "magicResist": 30,
+      "magicResistPerLevel": 1.2999999523162842,
+      "attackDamage": 57,
+      "attackDamagePerLevel": 3,
+      "attackSpeed": 0.6809999942779541,
+      "attackSpeedPerLevel": 2,
+      "attackSpeedRatio": 0.625,
+      "attackRange": 550,
+      "moveSpeed": 340,
+      "hpRegen": 1.100000023841858,
+      "hpRegenPerLevel": 0.10999999940395355,
+      "critDamageMultiplier": 2
+    },
+    "abilities": {
+      "P": {
+        "slot": "P",
+        "name": "Blaze",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/BrandP.png",
+        "maxRank": 1,
+        "castTime": null,
+        "cooldowns": [],
+        "dataValues": {
+          "MonsterMod": [270, 270, 270, 270, 270, 270, 270],
+          "PercentHealthDamage": [2, 2, 2, 2, 2, 2, 2],
+          "EpicMonsterDPSCap": [80, 80, 80, 80, 80, 80, 80],
+          "JungleMonsterDPSCap": [50, 50, 50, 50, 50, 50, 50],
+          "ManaRestoration": [20, 20, 25, 30, 35, 40, 40]
+        },
+        "calculations": {
+          "ManaRestore": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 20,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 3,
+                    "additionalBonusAtThisLevel": 3.3299999237060547
+                  },
+                  {
+                    "level": 6,
+                    "additionalBonusAtThisLevel": 3.3299999237060547
+                  },
+                  {
+                    "level": 9,
+                    "additionalBonusAtThisLevel": 3.3299999237060547
+                  },
+                  {
+                    "level": 12,
+                    "additionalBonusAtThisLevel": 3.3299999237060547
+                  },
+                  {
+                    "level": 15,
+                    "additionalBonusAtThisLevel": 3.3329999446868896
+                  },
+                  {
+                    "level": 18,
+                    "additionalBonusAtThisLevel": 3.3299999237060547
+                  }
+                ]
+              }
+            ]
+          },
+          "ExplosionDamage": {
+            "parts": [
+              {
+                "kind": "byCharLevelInterpolation",
+                "startValue": 6,
+                "endValue": 12,
+                "startLevel": 1,
+                "endLevel": 18,
+                "scaleByStatProgression": false
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 0.019999999552965164,
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ],
+            "multiplier": {
+              "kind": "number",
+              "value": 0.009999999776482582
+            },
+            "precision": 2,
+            "displayAsPercent": true
+          },
+          "{4124b2bf}": {
+            "parts": [
+              {
+                "kind": "productOfSubParts",
+                "subparts": []
+              }
+            ]
+          },
+          "{afbf404a}": {
+            "parts": [
+              {
+                "kind": "productOfSubParts",
+                "subparts": []
+              }
+            ]
+          },
+          "JungleMonsterExplosionFlatCap": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 270,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 6,
+                    "additionalBonusAtThisLevel": 85
+                  },
+                  {
+                    "level": 11,
+                    "additionalBonusAtThisLevel": 85
+                  },
+                  {
+                    "level": 16,
+                    "additionalBonusAtThisLevel": 85
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Blaze",
+        "locKeys": {
+          "name": "Spell_BrandPassive_Name",
+          "tooltip": "Spell_BrandPassive_Tooltip",
+          "summary": "Spell_BrandPassive_Summary"
+        }
+      },
+      "Q": {
+        "slot": "Q",
+        "name": "Sear",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BrandQ.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [8.5, 8, 7.5, 7, 6.5, 6, 6],
+        "dataValues": {
+          "StunDuration": [1.75, 1.75, 1.75, 1.75, 1.75, 1.75, 1.75],
+          "SpellBaseDamage": [40, 70, 100, 130, 160, 190, 220]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "SpellBaseDamage"
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 0.6499999761581421,
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Brand launches a fireball that deals <magicDamage>{{ totaldamage }} magic damage</magicDamage> to the first enemy hit.<br /><br />If the target is <keywordMajor>Ablaze</keywordMajor>, they will be <status>Stunned</status> for {{ stunduration }} seconds.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_BrandQ_Name",
+          "tooltip": "Spell_BrandQ_Tooltip",
+          "summary": "Spell_BrandQ_Summary"
+        }
+      },
+      "W": {
+        "slot": "W",
+        "name": "Pillar of Flame",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BrandW.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [10.5, 10, 9.5, 9, 8.5, 8, 8],
+        "dataValues": {
+          "APRatio": [
+            0.699999988079071, 0.699999988079071, 0.699999988079071, 0.699999988079071,
+            0.699999988079071, 0.699999988079071, 0.699999988079071
+          ],
+          "BaseDamage": [30, 75, 120, 165, 210, 255, 300],
+          "PDamageBonus": [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          },
+          "EmpoweredDamage": {
+            "parts": [],
+            "multiplier": {
+              "kind": "number",
+              "value": 1.25
+            }
+          }
+        },
+        "tooltipRaw": "Brand creates a pillar of pure fire, dealing <magicDamage>{{ totaldamage }} magic damage</magicDamage>.<br /><br />Units that are <keywordMajor>Ablaze</keywordMajor> take <magicDamage>{{ empowereddamage }} damage</magicDamage> instead.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_BrandW_Name",
+          "tooltip": "Spell_BrandW_Tooltip",
+          "summary": "Spell_BrandW_Summary"
+        }
+      },
+      "E": {
+        "slot": "E",
+        "name": "Conflagration",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BrandE.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [13, 13, 12, 11, 10, 9, 9],
+        "dataValues": {
+          "BaseDamage": [30, 55, 80, 105, 130, 155, 180],
+          "APRatio": [
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579, 0.6000000238418579,
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579
+          ]
+        },
+        "calculations": {
+          "EDamageCalc": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Brand conjures a powerful blast at his target, dealing <magicDamage>{{ edamagecalc }} magic damage</magicDamage> to surrounding units.<br /><br />If the target is <keywordMajor>Ablaze</keywordMajor>, the spread range is doubled.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_BrandE_Name",
+          "tooltip": "Spell_BrandE_Tooltip",
+          "summary": "Spell_BrandE_Summary"
+        }
+      },
+      "R": {
+        "slot": "R",
+        "name": "Pyroclasm",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BrandR.png",
+        "maxRank": 3,
+        "castTime": 0.25,
+        "cooldowns": [100, 100, 90, 80, 80, 80, 80],
+        "dataValues": {
+          "BaseDamage": [25, 100, 175, 250, 325, 400, 475],
+          "SlowAmount": [15, 30, 45, 60, 75, 90, 105],
+          "SlowDuration": [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+          "APRatio": [
+            0.30000001192092896, 0.30000001192092896, 0.30000001192092896, 0.30000001192092896,
+            0.30000001192092896, 0.30000001192092896, 0.30000001192092896
+          ]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Brand unleashes a devastating torrent of fire that can bounce to Brand or another enemy up to 5 times, dealing <magicDamage>{{ totaldamage }} magic damage</magicDamage> to enemies each bounce. Bounces prioritize stacking <keywordMajor>Blaze</keywordMajor> to max on champions.<br /><br />If the target is <keywordMajor>Ablaze</keywordMajor>, they are briefly <status>Slowed</status> by {{ slowamount }}%.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_BrandR_Name",
+          "tooltip": "Spell_BrandR_Tooltip",
+          "summary": "Spell_BrandR_Summary"
+        }
+      }
+    },
+    "modeled": true
+  },
+  {
+    "id": "Darius",
+    "key": 122,
+    "name": "Darius",
+    "title": "the Hand of Noxus",
+    "roles": ["Fighter", "Tank"],
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/champion/Darius.png",
+    "splashUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Darius_0.jpg",
+    "loadingUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Darius_0.jpg",
+    "stats": {
+      "hp": 652,
+      "hpPerLevel": 114,
+      "mp": 263,
+      "mpPerLevel": 58,
+      "armor": 37,
+      "armorPerLevel": 5.199999809265137,
+      "magicResist": 32,
+      "magicResistPerLevel": 2.049999952316284,
+      "attackDamage": 64,
+      "attackDamagePerLevel": 5,
+      "attackSpeed": 0.625,
+      "attackSpeedPerLevel": 1,
+      "attackSpeedRatio": 0.625,
+      "attackRange": 175,
+      "moveSpeed": 340,
+      "hpRegen": 2,
+      "hpRegenPerLevel": 0.1899999976158142,
+      "critDamageMultiplier": 2
+    },
+    "abilities": {
+      "P": {
+        "slot": "P",
+        "name": "Hemorrhage",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Darius_Icon_Hemorrhage.png",
+        "maxRank": 1,
+        "castTime": 0.25,
+        "cooldowns": [],
+        "dataValues": {
+          "MonsterMod": [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+          "SecondsPerTick": [
+            1.2599999904632568, 1.2599999904632568, 1.2599999904632568, 1.2599999904632568,
+            1.2599999904632568, 1.2599999904632568, 1.2599999904632568
+          ],
+          "BleedDuration": [5, 5, 5, 5, 5, 5, 5],
+          "MaxStacks": [5, 5, 5, 5, 5, 5, 5]
+        },
+        "calculations": {
+          "BleedDamagePerStack": {
+            "parts": [
+              {
+                "kind": "byCharLevelInterpolation",
+                "startValue": 13,
+                "endValue": 30,
+                "startLevel": 1,
+                "endLevel": 18,
+                "scaleByStatProgression": false
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 0.30000001192092896,
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "bonus"
+              }
+            ]
+          },
+          "NoxianMightBonusAD": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 30,
+                "initialBonusPerLevel": 5,
+                "breakpoints": [
+                  {
+                    "level": 11,
+                    "bonusPerLevelAtAndAfter": 10
+                  },
+                  {
+                    "level": 14,
+                    "bonusPerLevelAtAndAfter": 25
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Hemorrhage",
+        "locKeys": {
+          "name": "Spell_DariusHemoMarker_Name",
+          "tooltip": "Spell_DariusHemoMarker_Tooltip",
+          "summary": "Spell_DariusHemoMarker_Summary"
+        }
+      },
+      "Q": {
+        "slot": "Q",
+        "name": "Decimate",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DariusCleave.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [10, 9, 8, 7, 6, 5, 5],
+        "dataValues": {
+          "MissingHealthHeal": [17, 17, 17, 17, 17, 17, 17],
+          "TotalADRatio": [90, 100, 110, 120, 130, 140, 150],
+          "BaseDamage": [10, 50, 80, 110, 140, 170, 200],
+          "InnerCircleDamagePercent": [35, 35, 35, 35, 35, 35, 35],
+          "MissingHealPercent": [51, 51, 51, 51, 51, 51, 51]
+        },
+        "calculations": {
+          "BladeDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statBySubPart",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total",
+                "subpart": {
+                  "kind": "productOfSubParts",
+                  "subparts": []
+                }
+              }
+            ]
+          },
+          "HandleDamage": {
+            "parts": [],
+            "multiplier": {
+              "kind": "number",
+              "value": 0.3499999940395355
+            }
+          }
+        },
+        "tooltipRaw": "Darius hefts his axe then swings it around, dealing <physicalDamage>{{ bladedamage }} physical damage</physicalDamage> with the edge and <physicalDamage>{{ handledamage }} damage</physicalDamage> with the handle. Enemies hit with the handle do not take a <keywordMajor>Hemorrhage</keywordMajor> stack.<br /><br />Darius restores <healing>{{ missinghealthheal }}% missing Health</healing> per enemy champion and large jungle monster hit with the edge, up to a max of <healing>{{ missinghealpercent }}%</healing>.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_DariusQ_Name",
+          "tooltip": "Spell_DariusQ_Tooltip",
+          "summary": "Spell_DariusQ_Summary"
+        }
+      },
+      "W": {
+        "slot": "W",
+        "name": "Crippling Strike",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DariusNoxianTacticsONH.png",
+        "maxRank": 5,
+        "castTime": 0.5217499732971191,
+        "cooldowns": [5, 5, 5, 5, 5, 5, 5],
+        "dataValues": {
+          "SlowPercent": [90, 90, 90, 90, 90, 90, 90],
+          "PercentCDRefund": [50, 50, 50, 50, 50, 50, 50],
+          "ADRatio": [
+            1.5, 1.399999976158142, 1.4500000476837158, 1.5, 1.5499999523162842, 1.600000023841858,
+            1.649999976158142
+          ],
+          "SlowDuration": [1, 1, 1, 1, 1, 1, 1]
+        },
+        "calculations": {
+          "EmpoweredAttackDamage": {
+            "parts": [
+              {
+                "kind": "statBySubPart",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total",
+                "subpart": {
+                  "kind": "namedDataValue",
+                  "dataValue": "ADRatio"
+                }
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Darius' next Attack deals <physicalDamage>{{ empoweredattackdamage }} physical damage</physicalDamage> and <status>Slows</status> by {{ slowpercent }}% for {{ slowduration }} second.<br /><br />This Ability refunds its Mana cost and reduces its Cooldown by {{ percentcdrefund }}% if it kills the target.<br /><br /><rules>This Ability triggers spell effects upon dealing damage.</rules>{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_DariusW_Name",
+          "tooltip": "Spell_DariusW_Tooltip",
+          "summary": "Spell_DariusW_Summary"
+        }
+      },
+      "E": {
+        "slot": "E",
+        "name": "Apprehend",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DariusAxeGrabCone.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [26, 26, 23.5, 21, 18.5, 16, 16],
+        "dataValues": {
+          "PassivePercentArmorPen": [20, 20, 25, 30, 35, 40, 45],
+          "SlowPercent": [40, 40, 40, 40, 40, 40, 40],
+          "SlowDuration": [1, 1, 1, 1, 1, 1, 1]
+        },
+        "calculations": {},
+        "tooltipRaw": "<spellPassive>Passive:</spellPassive> Darius gains {{ passivepercentarmorpen }}% Armor Penetration.<br /><br /><spellActive>Active:</spellActive> Darius hooks with his axe, <status>Pulling</status>, and <status>Knocking Up</status> and <status>Slowing</status> by {{ slowpercent }}% for {{ slowduration }} second.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_DariusE_Name",
+          "tooltip": "Spell_DariusE_Tooltip",
+          "summary": "Spell_DariusE_Summary"
+        }
+      },
+      "R": {
+        "slot": "R",
+        "name": "Noxian Guillotine",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DariusExecute.png",
+        "maxRank": 3,
+        "castTime": 0.25,
+        "cooldowns": [120, 120, 100, 80, 6, 6, 6],
+        "dataValues": {
+          "RBaseDamage": [0, 125, 250, 375, 500, 625, 750],
+          "RDamagePercentPerHemoStack": [
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224, 0.20000000298023224,
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224
+          ],
+          "RRecastDuration": [20, 20, 20, 20, 20, 20, 20]
+        },
+        "calculations": {
+          "Damage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RBaseDamage"
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 0.75,
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "bonus"
+              }
+            ]
+          },
+          "MaximumDamage": {
+            "parts": [],
+            "multiplier": {
+              "kind": "number",
+              "value": 2
+            }
+          }
+        },
+        "tooltipRaw": "Darius leaps to an enemy and strikes a lethal blow, dealing <trueDamage>{{ damage }} true damage</trueDamage>. For each <keywordMajor>Hemorrhage</keywordMajor> on the target, this Ability deals an additional {{ rdamagepercentperhemostack*100 }}% damage, up to a max of <trueDamage>{{ maximumdamage }} damage</trueDamage>.<br /><br />If this kills the target, Darius may <recast>Recast</recast> this Ability once within {{ rrecastduration }} seconds. At rank 3, this Ability has no Mana cost and kills refresh the Cooldown completely.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_DariusR_Name",
+          "tooltip": "Spell_DariusR_Tooltip",
+          "summary": "Spell_DariusR_Summary"
+        }
+      }
+    },
+    "modeled": true
+  },
+  {
+    "id": "Garen",
+    "key": 86,
+    "name": "Garen",
+    "title": "The Might of Demacia",
+    "roles": ["Fighter", "Tank"],
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/champion/Garen.png",
+    "splashUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Garen_0.jpg",
+    "loadingUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Garen_0.jpg",
+    "stats": {
+      "hp": 690,
+      "hpPerLevel": 98,
+      "mp": 0,
+      "mpPerLevel": 0,
+      "armor": 38,
+      "armorPerLevel": 4.199999809265137,
+      "magicResist": 32,
+      "magicResistPerLevel": 1.5499999523162842,
+      "attackDamage": 69,
+      "attackDamagePerLevel": 4.5,
+      "attackSpeed": 0.625,
+      "attackSpeedPerLevel": 3.6500000953674316,
+      "attackSpeedRatio": 0.625,
+      "attackRange": 175,
+      "moveSpeed": 340,
+      "hpRegen": 1.600000023841858,
+      "hpRegenPerLevel": 0.10000000149011612,
+      "critDamageMultiplier": 2
+    },
+    "abilities": {
+      "P": {
+        "slot": "P",
+        "name": "Perseverance",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Garen_Passive.png",
+        "maxRank": 1,
+        "castTime": null,
+        "cooldowns": [],
+        "dataValues": {
+          "DamageTimer": [8, 8, 8, 8, 8, 8, 8]
+        },
+        "calculations": {
+          "RegenCalc": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 1.5,
+                "initialBonusPerLevel": 0.20000000298023224,
+                "breakpoints": [
+                  {
+                    "level": 7,
+                    "bonusPerLevelAtAndAfter": 0.800000011920929
+                  },
+                  {
+                    "level": 14,
+                    "bonusPerLevelAtAndAfter": 0.4000000059604645
+                  }
+                ]
+              }
+            ],
+            "multiplier": {
+              "kind": "number",
+              "value": 0.009999999776482582
+            },
+            "precision": 1,
+            "displayAsPercent": true
+          }
+        },
+        "tooltipRaw": "Perseverance",
+        "locKeys": {
+          "name": "Spell_GarenPassive_Name",
+          "tooltip": "Spell_GarenPassive_Tooltip",
+          "summary": "Spell_GarenPassive_Summary"
+        }
+      },
+      "Q": {
+        "slot": "Q",
+        "name": "Decisive Strike",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GarenQ.png",
+        "maxRank": 5,
+        "castTime": 0.5217499732971191,
+        "cooldowns": [8, 8, 8, 8, 8, 8, 8],
+        "dataValues": {
+          "BaseDamage": [0, 30, 60, 90, 120, 150, 180],
+          "SilenceDuration": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+          "MovementSpeedDuration": [
+            0.8500000238418579, 1.399999976158142, 1.9500000476837158, 2.5, 3.049999952316284,
+            3.5999999046325684, 4.150000095367432
+          ],
+          "MovementSpeedAmount": [
+            0.3499999940395355, 0.3499999940395355, 0.3499999940395355, 0.3499999940395355,
+            0.3499999940395355, 0.3499999940395355, 0.3499999940395355
+          ],
+          "AttackWindow": [4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5],
+          "tADRatio": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "tADRatio",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Garen removes all <status>Slowing</status> effects on him and gains <speed>{{ movementspeedamount*100 }}% Move Speed</speed> for {{ movementspeedduration }} second(s).<br /><br />His next Attack <status>Silences</status> for {{ silenceduration }} seconds and does <physicalDamage>{{ totaldamage }} physical damage</physicalDamage>.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_GarenQ_Name",
+          "tooltip": "Spell_GarenQ_Tooltip",
+          "summary": "Spell_GarenQ_Summary"
+        }
+      },
+      "W": {
+        "slot": "W",
+        "name": "Courage",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GarenW.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [22, 22, 19.5, 17, 14.5, 12, 12],
+        "dataValues": {
+          "BuffCounterPerKill": [1, 1, 1, 1, 1, 1, 1],
+          "ResistGainOnKill": [
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224, 0.20000000298023224,
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224
+          ],
+          "ResistGainOnKillTooltip": [
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224, 0.20000000298023224,
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224
+          ],
+          "ResistMax": [30, 30, 30, 30, 30, 30, 30],
+          "DRPercent": [
+            0.20999999344348907, 0.25, 0.28999999165534973, 0.33000001311302185, 0.3700000047683716,
+            0.4099999964237213, 0.44999998807907104
+          ],
+          "DRDuration": [4, 4, 4, 4, 4, 4, 4],
+          "UpfrontTenacity": [
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579, 0.6000000238418579,
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579
+          ],
+          "UpfrontDuration": [0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 0.75],
+          "LargeMonsterStacks": [1, 1, 1, 1, 1, 1, 1],
+          "EpicMonsterStacks": [1, 1, 1, 1, 1, 1, 1],
+          "ShieldHealthRatio": [
+            0.18000000715255737, 0.18000000715255737, 0.18000000715255737, 0.18000000715255737,
+            0.18000000715255737, 0.18000000715255737, 0.18000000715255737
+          ],
+          "BaseShield": [45, 65, 85, 105, 125, 145, 165]
+        },
+        "calculations": {
+          "TotalShield": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseShield"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "ShieldHealthRatio",
+                "stat": 12,
+                "statKey": "health",
+                "statFormula": "bonus"
+              }
+            ]
+          },
+          "ResistsForTooltip": {
+            "parts": [
+              {
+                "kind": "buffCounterByNamedDataValue",
+                "buffName": "{9e10ce18}",
+                "dataValue": "ResistGainOnKill"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "<spellPassive>Passive:</spellPassive> Garen has <scaleArmor>{{ resistsfortooltip }} bonus Armor</scaleArmor> and <scaleMR>{{ resistsfortooltip }} bonus Magic Resist</scaleMR>. Killing units permanently grants <attention>{{ resistgainonkilltooltip }} resists</attention>, up to a max of <attention>{{ resistmax }}</attention>.<br /><br /><spellActive>Active:</spellActive> Garen steels his courage for {{ drduration }} seconds, reducing incoming damage by {{ drpercent*100 }}%. He also gains <shield>{{ totalshield }} Shield</shield> and <slow>{{ upfronttenacity*100 }}% Tenacity</slow> for {{ upfrontduration }} seconds.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_GarenW_Name",
+          "tooltip": "Spell_GarenW_Tooltip",
+          "summary": "Spell_GarenW_Summary"
+        }
+      },
+      "E": {
+        "slot": "E",
+        "name": "Judgment",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GarenE.png",
+        "maxRank": 5,
+        "castTime": null,
+        "cooldowns": [9, 9, 8.25, 7.5, 6.75, 6, 6],
+        "dataValues": {
+          "NumTicks": [7, 7, 7, 7, 7, 7, 7],
+          "ASPerTick": [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+          "BaseDamagePerTick": [1, 4, 7, 10, 13, 16, 19],
+          "ADRatioPerTick": [
+            0.3700000047683716, 0.4000000059604645, 0.4300000071525574, 0.46000000834465027,
+            0.49000000953674316, 0.5199999809265137, 0.550000011920929
+          ],
+          "ShredDuration": [6, 6, 6, 6, 6, 6, 6],
+          "StacksToShred": [6, 6, 6, 6, 6, 6, 6],
+          "Duration": [3, 3, 3, 3, 3, 3, 3],
+          "ShredAmount": [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+          "NearestEnemyBonus": [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+          "CritMod": [
+            0.30000001192092896, 0.30000001192092896, 0.30000001192092896, 0.30000001192092896,
+            0.30000001192092896, 0.30000001192092896, 0.30000001192092896
+          ]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamagePerTick"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "ADRatioPerTick",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total"
+              }
+            ]
+          },
+          "CriticalDamage": {
+            "parts": [],
+            "multiplier": {
+              "kind": "sumOfSubParts",
+              "subparts": [
+                {
+                  "kind": "number",
+                  "value": 1
+                },
+                {
+                  "kind": "productOfSubParts",
+                  "subparts": []
+                }
+              ]
+            }
+          },
+          "NumberOfStrikes": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "NumTicks"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Garen rapidly spins his sword for {{ duration }} seconds, dealing <physicalDamage>{{ totaldamage }} physical damage</physicalDamage> {{ f1 }} times over the duration. The nearest enemy takes <physicalDamage>{{ nearestenemybonus*100 }}% increased damage</physicalDamage>. Champions hit by {{ stackstoshred }} strikes lose <scaleArmor>{{ shredamount*100 }}% Armor</scaleArmor> for {{ shredduration }} seconds.<br /><br /><recast>Recast</recast>: Garen ends this Ability early.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_GarenE_Name",
+          "tooltip": "Spell_GarenE_Tooltip",
+          "summary": "Spell_GarenE_Summary"
+        }
+      },
+      "R": {
+        "slot": "R",
+        "name": "Demacian Justice",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GarenR.png",
+        "maxRank": 3,
+        "castTime": 0.4350000023841858,
+        "cooldowns": [120, 120, 100, 80, 120, 120, 120],
+        "dataValues": {
+          "BaseDamage": [50, 125, 200, 275, 350, 425, 500],
+          "ExecuteDamage": [
+            0.20000000298023224, 0.25, 0.30000001192092896, 0.3499999940395355, 0.4000000059604645,
+            0.44999998807907104, 0.5
+          ],
+          "RevealDuration": [1, 1, 1, 1, 1, 1, 1]
+        },
+        "calculations": {},
+        "tooltipRaw": "Garen calls upon the might of Demacia to slay his enemy, dealing <trueDamage>{{ basedamage }} plus {{ executedamage*100 }}% missing Health true damage</trueDamage>.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_GarenR_Name",
+          "tooltip": "Spell_GarenR_Tooltip",
+          "summary": "Spell_GarenR_Summary"
+        }
+      }
+    },
+    "modeled": true
+  },
+  {
+    "id": "Vayne",
+    "key": 67,
+    "name": "Vayne",
+    "title": "the Night Hunter",
+    "roles": ["Marksman", "Assassin"],
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/champion/Vayne.png",
+    "splashUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Vayne_0.jpg",
+    "loadingUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Vayne_0.jpg",
+    "stats": {
+      "hp": 580,
+      "hpPerLevel": 98,
+      "mp": 232,
+      "mpPerLevel": 35,
+      "armor": 23,
+      "armorPerLevel": 4.599999904632568,
+      "magicResist": 33,
+      "magicResistPerLevel": 1.100000023841858,
+      "attackDamage": 60,
+      "attackDamagePerLevel": 2.3499999046325684,
+      "attackSpeed": 0.6579999923706055,
+      "attackSpeedPerLevel": 2.799999952316284,
+      "attackSpeedRatio": 0.6700000166893005,
+      "attackRange": 550,
+      "moveSpeed": 330,
+      "hpRegen": 1.100000023841858,
+      "hpRegenPerLevel": 0.07999999821186066,
+      "critDamageMultiplier": 2
+    },
+    "abilities": {
+      "P": {
+        "slot": "P",
+        "name": "Night Hunter",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Vayne_NightHunter.png",
+        "maxRank": 1,
+        "castTime": null,
+        "cooldowns": [],
+        "dataValues": {
+          "MovementSpeed": [30, 30, 30, 30, 30, 30, 30],
+          "Range": [2000, 2000, 2000, 2000, 2000, 2000, 2000]
+        },
+        "calculations": {},
+        "tooltipRaw": "Night Hunter",
+        "locKeys": {
+          "name": "game_character_passiveName_Vayne",
+          "tooltip": "game_character_passiveDescription_Vayne",
+          "summary": "game_character_passiveSummary_Vayne"
+        }
+      },
+      "Q": {
+        "slot": "Q",
+        "name": "Tumble",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VayneTumble.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [6, 6, 5, 4, 3, 2, 2],
+        "dataValues": {
+          "TotalADRatio": [
+            0.6499999761581421, 0.75, 0.8500000238418579, 0.949999988079071, 1.0499999523162842,
+            1.149999976158142, 1.25
+          ],
+          "Duration": [3, 3, 3, 3, 3, 3, 3],
+          "APRatio": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+        },
+        "calculations": {
+          "ADRatioBonus": {
+            "parts": [
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "TotalADRatio",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Vayne rolls a short distance, and deals an additional <physicalDamage>{{ adratiobonus }} physical damage</physicalDamage> on her next Attack.<br /><br /><rules>This Ability triggers spell effects upon dealing damage.</rules>{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_VayneQ_Name",
+          "tooltip": "Spell_VayneQ_Tooltip",
+          "summary": "Spell_VayneQ_Summary"
+        }
+      },
+      "W": {
+        "slot": "W",
+        "name": "Silver Bolts",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VayneSilveredBolts.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [0, 0, 0, 0, 0, 0, 0],
+        "dataValues": {
+          "MaxHealthRatio": [
+            0.02500000037252903, 0.03999999910593033, 0.054999999701976776, 0.07000000029802322,
+            0.08500000089406967, 0.10000000149011612, 0.11500000208616257
+          ],
+          "DamageFloor": [25, 40, 55, 70, 85, 100, 115],
+          "DamageVsMonsters": [125, 140, 155, 170, 185, 200, 215],
+          "DebuffDuration": [3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MaxHealthRatio"
+              }
+            ],
+            "displayAsPercent": true
+          }
+        },
+        "tooltipRaw": "<spellPassive>Passive</spellPassive>: Every third consecutive Attack or Ability against an enemy deals an additional <trueDamage>{{ totaldamage }} max Health true damage</trueDamage>.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_VayneW_Name",
+          "tooltip": "Spell_Vayne_W_Tooltip",
+          "summary": "Spell_VayneW_Summary"
+        }
+      },
+      "E": {
+        "slot": "E",
+        "name": "Condemn",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VayneCondemn.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [22, 20, 18, 16, 14, 12, 12],
+        "dataValues": {
+          "Damage": [15, 50, 85, 120, 155, 190, 225],
+          "StunDamage": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+          "StunDuration": [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+          "KnockbackDistance": [475, 475, 475, 475, 475, 475, 475]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "Damage"
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 0.5,
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "bonus"
+              }
+            ]
+          },
+          "EmpoweredDamageTT": {
+            "parts": [],
+            "multiplier": {
+              "kind": "namedDataValue",
+              "dataValue": "StunDamage"
+            }
+          }
+        },
+        "tooltipRaw": "Vayne fires a bolt that <status>Knocks Back</status> and deals <physicalDamage>{{ totaldamage }} physical damage</physicalDamage>. If the target collides with terrain, they take <physicalDamage>{{ empowereddamagett }} bonus physical damage</physicalDamage> and become <status>Stunned</status> for {{ stunduration }} seconds. {{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_VayneE_Name",
+          "tooltip": "Spell_VayneE_Tooltip",
+          "summary": "Spell_VayneE_Summary"
+        }
+      },
+      "R": {
+        "slot": "R",
+        "name": "Final Hour",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VayneInquisition.png",
+        "maxRank": 3,
+        "castTime": 0.4043000042438507,
+        "cooldowns": [100, 100, 85, 70, 70, 70, 70],
+        "dataValues": {
+          "BonusAttackDamage": [20, 35, 50, 65, 80, 95, 110],
+          "BaseDuration": [6, 8, 10, 12, 14, 16, 18],
+          "TumbleStealthDuration": [1, 1, 1, 1, 1, 1, 1],
+          "MovementSpeed": [90, 90, 90, 90, 90, 90, 90],
+          "DurationToAdd": [4, 4, 4, 4, 4, 4, 4],
+          "DamagedMarkerDuration": [3, 3, 3, 3, 3, 3, 3],
+          "TumbleCDReduction": [20, 30, 40, 50, 60, 70, 80]
+        },
+        "calculations": {},
+        "tooltipRaw": "Vayne gains <physicalDamage>{{ bonusattackdamage }} Attack Damage</physicalDamage> for {{ baseduration }} seconds, extended by {{ durationtoadd }} seconds whenever a champion damaged by Vayne dies within {{ damagedmarkerduration }} seconds. Additionally, during the duration:<li><spellName>Night Hunter</spellName> instead grants <speed>{{ movementspeed }} Move Speed</speed>.<li>The Cooldown of <spellName>Tumble</spellName> is reduced by {{ tumblecdreduction }}%, and grants <keywordStealth>Invisibility</keywordStealth> for {{ tumblestealthduration }} second.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_VayneR_Name",
+          "tooltip": "Spell_VayneR_Tooltip",
+          "summary": "Spell_VayneR_Summary"
+        }
+      }
+    },
+    "modeled": true
+  },
+  {
+    "id": "Yasuo",
+    "key": 157,
+    "name": "Yasuo",
+    "title": "the Unforgiven",
+    "roles": ["Fighter", "Assassin"],
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/champion/Yasuo.png",
+    "splashUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg",
+    "loadingUrl": "https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Yasuo_0.jpg",
+    "stats": {
+      "hp": 590,
+      "hpPerLevel": 110,
+      "mp": 100,
+      "mpPerLevel": 0,
+      "armor": 32,
+      "armorPerLevel": 4.599999904632568,
+      "magicResist": 32,
+      "magicResistPerLevel": 2.049999952316284,
+      "attackDamage": 60,
+      "attackDamagePerLevel": 2.5,
+      "attackSpeed": 0.6970000267028809,
+      "attackSpeedPerLevel": 3.5,
+      "attackSpeedRatio": 0.6700000166893005,
+      "attackRange": 175,
+      "moveSpeed": 345,
+      "hpRegen": 1.2999999523162842,
+      "hpRegenPerLevel": 0.18000000715255737,
+      "critDamageMultiplier": 2
+    },
+    "abilities": {
+      "P": {
+        "slot": "P",
+        "name": "Way of the Wanderer",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Yasuo_Passive.png",
+        "maxRank": 1,
+        "castTime": 0.25,
+        "cooldowns": [],
+        "dataValues": {
+          "YasuoCritToAD": [50, 50, 50, 50, 50, 50, 50],
+          "CritChanceMultiplier": [1, 1, 1, 1, 1, 1, 1],
+          "CritDamageMod": [
+            0.949999988079071, 0.949999988079071, 0.949999988079071, 0.949999988079071,
+            0.949999988079071, 0.949999988079071, 0.949999988079071
+          ]
+        },
+        "calculations": {
+          "ShieldValue": {
+            "parts": [
+              {
+                "kind": "byCharLevelInterpolation",
+                "startValue": 125,
+                "endValue": 600,
+                "startLevel": 1,
+                "endLevel": 18,
+                "scaleByStatProgression": true
+              }
+            ]
+          },
+          "{74ce5438}": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 55,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 7,
+                    "additionalBonusAtThisLevel": -5
+                  },
+                  {
+                    "level": 13,
+                    "additionalBonusAtThisLevel": -5
+                  },
+                  {
+                    "level": 19,
+                    "additionalBonusAtThisLevel": -5
+                  },
+                  {
+                    "level": 25,
+                    "additionalBonusAtThisLevel": -5
+                  }
+                ]
+              }
+            ]
+          },
+          "CurrentCritDamage": {
+            "parts": [
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 1,
+                "stat": 9,
+                "statKey": "criticalStrikeDamageMultiplier",
+                "statFormula": "total"
+              }
+            ],
+            "displayAsPercent": true
+          }
+        },
+        "tooltipRaw": "Way of the Wanderer",
+        "locKeys": {
+          "name": "Spell_YasuoPassive_Name",
+          "tooltip": "Spell_YasuoPassive_Tooltip",
+          "summary": "Spell_YasuoPassive_Summary"
+        }
+      },
+      "Q": {
+        "slot": "Q",
+        "name": "Steel Tempest",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoQ1Wrapper.png",
+        "maxRank": 5,
+        "castTime": 0.125,
+        "cooldowns": [4, 4, 4, 4, 4, 4, 4],
+        "dataValues": {
+          "BaseDamage": [-5, 20, 45, 70, 95, 120, 145],
+          "StabRange": [450, 450, 450, 450, 450, 450, 450],
+          "TornadoRange": [1100, 1100, 1100, 1100, 1100, 1100, 1100],
+          "Cooldown": [4, 4, 4, 4, 4, 4, 4],
+          "StabWidth": [80, 80, 80, 80, 80, 80, 80],
+          "SpinWidth": [260, 260, 260, 260, 260, 260, 260],
+          "GatheringStormDuration": [6, 6, 6, 6, 6, 6, 6],
+          "KnockUpDurationTOOLTIPONLY": [1, 1, 1, 1, 1, 1, 1],
+          "ADRatio": [1, 1, 1, 1, 1, 1, 1]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "ADRatio",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total"
+              }
+            ]
+          },
+          "TotalDamageCrit": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statBySubPart",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "total",
+                "subpart": {
+                  "kind": "statByNamedDataValue",
+                  "dataValue": "ADRatio",
+                  "stat": 9,
+                  "statKey": "criticalStrikeDamageMultiplier",
+                  "statFormula": "total"
+                }
+              }
+            ],
+            "precision": 1
+          }
+        },
+        "tooltipRaw": "Yasuo thrusts, dealing <physicalDamage>{{ totaldamage }} physical damage</physicalDamage>. If he hits, he gains a stack for {{ gatheringstormduration }} seconds. While he has 2 stacks, his next use of this Ability fires a whirlwind from range, dealing the same damage and <status>Knocking Up</status> for {{ knockupdurationtooltiponly }} second.<br /><br />If used while dashing, this Ability strikes in a circle rather than a stab.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_YasuoQ1Wrapper_Name",
+          "tooltip": "Spell_YasuoQ1Wrapper_Tooltip",
+          "summary": "Spell_YasuoQ1Wrapper_Summary"
+        }
+      },
+      "W": {
+        "slot": "W",
+        "name": "Wind Wall",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoW.png",
+        "maxRank": 5,
+        "castTime": 0,
+        "cooldowns": [27, 25, 23, 21, 19, 17, 15],
+        "dataValues": {
+          "WallLife": [4, 4, 4, 4, 4, 4, 4],
+          "Width": [250, 320, 390, 460, 530, 600, 670],
+          "TravelRange": [450, 450, 450, 450, 450, 450, 450],
+          "BubbleRadius": [300, 300, 300, 300, 300, 300, 300],
+          "Thickness": [100, 100, 100, 100, 100, 100, 100]
+        },
+        "calculations": {},
+        "tooltipRaw": "Yasuo creates a drifting wall of wind that blocks all enemy projectiles for 4 seconds.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_YasuoW_Name",
+          "tooltip": "Spell_YasuoW_Tooltip",
+          "summary": "Spell_YasuoW_Summary"
+        }
+      },
+      "E": {
+        "slot": "E",
+        "name": "Sweeping Blade",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoE.png",
+        "maxRank": 5,
+        "castTime": 0.25,
+        "cooldowns": [
+          0.5, 0.5, 0.4000000059604645, 0.30000001192092896, 0.20000000298023224,
+          0.10000000149011612, 0.10000000149011612
+        ],
+        "dataValues": {
+          "MaxStacks": [4, 4, 4, 4, 4, 4, 4],
+          "StackDuration": [5, 5, 5, 5, 5, 5, 5],
+          "BaseDamage": [55, 70, 85, 100, 115, 130, 145],
+          "APRatio": [
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579, 0.6000000238418579,
+            0.6000000238418579, 0.6000000238418579, 0.6000000238418579
+          ],
+          "ADRatio": [
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224, 0.20000000298023224,
+            0.20000000298023224, 0.20000000298023224, 0.20000000298023224
+          ],
+          "PerTargetCooldown": [11, 10, 9, 8, 7, 6, 6],
+          "BaseDashSpeed": [750, 750, 750, 750, 750, 750, 750]
+        },
+        "calculations": {
+          "TotalDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "ADRatio",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "bonus"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          },
+          "BonusDamagePerStack": {
+            "parts": [],
+            "multiplier": {
+              "kind": "number",
+              "value": 0.25
+            }
+          }
+        },
+        "tooltipRaw": "Yasuo dashes through a target, dealing <magicDamage>{{ totaldamage }} magic damage</magicDamage>. Each use of this Ability grants <magicDamage>{{ bonusdamageperstack }}</magicDamage> bonus damage to subsequent uses for {{ stackduration }} seconds, stacking up to {{ maxstacks }} times.<br /><br />This Ability has a {{ pertargetcooldown }} second per-target Cooldown.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_YasuoE_Name",
+          "tooltip": "Spell_YasuoE_Tooltip",
+          "summary": "Spell_YasuoE_Summary"
+        }
+      },
+      "R": {
+        "slot": "R",
+        "name": "Last Breath",
+        "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoR.png",
+        "maxRank": 3,
+        "castTime": 0.25,
+        "cooldowns": [105, 70, 50, 30, 30, 30, 30],
+        "dataValues": {
+          "RBaseDamage": [50, 200, 350, 500, 650, 800, 950],
+          "RPercentArmorPen": [60, 60, 60, 60, 60, 60, 60],
+          "RBuffDuration": [15, 15, 15, 15, 15, 15, 15],
+          "RKnockupDuration": [1, 1, 1, 1, 1, 1, 1],
+          "RRadius": [400, 400, 400, 400, 400, 400, 400],
+          "RCastSearchRadius": [1100, 1100, 1100, 1100, 1100, 1100, 1100]
+        },
+        "calculations": {
+          "Damage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RBaseDamage"
+              },
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 1.5,
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "bonus"
+              }
+            ]
+          }
+        },
+        "tooltipRaw": "Yasuo teleports to an <status>Airborne</status> enemy champion, dealing <physicalDamage>{{ damage }} physical damage</physicalDamage> and holding all nearby <status>Airborne</status> enemies up for an additional {{ rknockupduration }} second. Yasuo also gains maximum <keywordMajor>Flow</keywordMajor>, but loses all <spellName>Steel Tempest</spellName> stacks.<br /><br />Afterwards, Yasuo's critical strikes ignore <scaleArmor>{{ rpercentarmorpen }}% bonus Armor</scaleArmor> for {{ rbuffduration }} seconds.{{ spellmodifierdescriptionappend }}",
+        "locKeys": {
+          "name": "Spell_YasuoR_Name",
+          "tooltip": "Spell_YasuoR_Tooltip",
+          "summary": "Spell_YasuoR_Summary"
+        }
+      }
+    },
+    "modeled": true
+  }
+]

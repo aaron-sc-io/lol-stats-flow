@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { buildKit } from "../kit"
-import { simulate } from "../sim/simulate"
-import { loadSnapshotFixture } from "../test-support/load-snapshot"
+import { buildKit } from "../../kit"
+import { simulate } from "../../sim/simulate"
+import { loadPinnedSnapshotFixture } from "../../test-support/load-snapshot"
 
-const snapshot = loadSnapshotFixture()
+/** Pinned to patch 16.22.1 (plan §3.3 item 2) — see `pinned/darius.test.ts`
+ * module doc comment for why this suite loads the frozen fixture instead of
+ * `data/current.json`. */
+const PINNED_PATCH = "16.22.1"
+const snapshot = loadPinnedSnapshotFixture(PINNED_PATCH)
 const dummy = (maxHp: number, armor: number, magicResist: number) => ({
   id: "dummy",
   name: "Dummy",
@@ -33,7 +37,7 @@ const dummy = (maxHp: number, armor: number, magicResist: number) => ({
  *     of 0 parts) × namedDataValue(StunDamage)` (always evaluates to 0 —
  *     same tooltip-helper-calc pattern as Darius/Garen/Yasuo) — the real
  *     bonus is computed here as `TotalDamage(ctx) × StunDamage`. */
-describe("Vayne golden — level 1, rank 1, no items", () => {
+describe("Vayne golden (pinned 16.22.1) — level 1, rank 1, no items", () => {
   const kit = buildKit(snapshot, {
     championId: "Vayne",
     level: 1,
@@ -67,7 +71,7 @@ describe("Vayne golden — level 1, rank 1, no items", () => {
   })
 })
 
-describe("Vayne golden — level 11, rank 5, with Blade of The Ruined King, vs 100 armor / 100 MR target", () => {
+describe("Vayne golden (pinned 16.22.1) — level 11, rank 5, with Blade of The Ruined King, vs 100 armor / 100 MR target", () => {
   const kit = buildKit(snapshot, {
     championId: "Vayne",
     level: 11,

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { buildKit } from "../kit"
-import { simulate } from "../sim/simulate"
-import { loadSnapshotFixture } from "../test-support/load-snapshot"
+import { buildKit } from "../../kit"
+import { simulate } from "../../sim/simulate"
+import { loadPinnedSnapshotFixture } from "../../test-support/load-snapshot"
 
-const snapshot = loadSnapshotFixture()
+/** Pinned to patch 16.22.1 (plan §3.3 item 2) — see `pinned/darius.test.ts`
+ * module doc comment for why this suite loads the frozen fixture instead of
+ * `data/current.json`. */
+const PINNED_PATCH = "16.22.1"
+const snapshot = loadPinnedSnapshotFixture(PINNED_PATCH)
 const dummy = (maxHp: number, armor: number, magicResist: number) => ({
   id: "dummy",
   name: "Dummy",
@@ -24,7 +28,7 @@ const dummy = (maxHp: number, armor: number, magicResist: number) => ({
  * `ActionComponent.isDot`, ignoring the real game's bonus-AS-driven extra
  * spins (documented simplification: fixed `NumTicks` per rank). The bonus
  * attack speed scaling of the tick COUNT is intentionally not modeled. */
-describe("Garen golden — level 1, rank 1, no items", () => {
+describe("Garen golden (pinned 16.22.1) — level 1, rank 1, no items", () => {
   const kit = buildKit(snapshot, {
     championId: "Garen",
     level: 1,
@@ -63,7 +67,7 @@ describe("Garen golden — level 1, rank 1, no items", () => {
   })
 })
 
-describe("Garen golden — level 16, rank 5, with Infinity Edge, vs 100 armor / 100 MR target", () => {
+describe("Garen golden (pinned 16.22.1) — level 16, rank 5, with Infinity Edge, vs 100 armor / 100 MR target", () => {
   const kit = buildKit(snapshot, {
     championId: "Garen",
     level: 16,

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest"
-import { buildKit } from "../kit"
-import { simulate } from "../sim/simulate"
-import { loadSnapshotFixture } from "../test-support/load-snapshot"
+import { buildKit } from "../../kit"
+import { simulate } from "../../sim/simulate"
+import { loadPinnedSnapshotFixture } from "../../test-support/load-snapshot"
 
-const snapshot = loadSnapshotFixture()
+/** Pinned to patch 16.22.1 (plan §3.3 item 2) — see `pinned/darius.test.ts`
+ * module doc comment for why this suite loads the frozen fixture instead of
+ * `data/current.json`. See `reference/items.test.ts` for the patch-agnostic
+ * counterpart `data:gates` re-runs against every new patch. */
+const PINNED_PATCH = "16.22.1"
+const snapshot = loadPinnedSnapshotFixture(PINNED_PATCH)
 const dummy = (maxHp: number, armor: number, magicResist: number) => ({
   id: "dummy",
   name: "Dummy",
@@ -15,7 +20,7 @@ const dummy = (maxHp: number, armor: number, magicResist: number) => ({
 
 /** Golden tests for the 12 modeled items' mechanics (plan §1 "Fully modeled
  * items v1"). Each test cites the wiki page for the mechanic it locks in. */
-describe("Item mechanic golden tests", () => {
+describe("Item mechanic golden tests (pinned 16.22.1)", () => {
   it("Infinity Edge: +75 AD, +25% crit chance, +30% crit damage — pure stats, no passive (https://wiki.leagueoflegends.com/en-us/Infinity_Edge)", () => {
     const kit = buildKit(snapshot, { championId: "Yasuo", level: 1, items: ["Infinity Edge"] })
     expect(kit.ctx.stats.total.attackDamage).toBeCloseTo(60 + 75)

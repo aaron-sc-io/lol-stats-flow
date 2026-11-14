@@ -1,0 +1,798 @@
+[
+  {
+    "id": 3031,
+    "name": "Infinity Edge",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3031.png",
+    "goldBase": 725,
+    "goldTotal": 3500,
+    "goldSell": 2450,
+    "purchasable": true,
+    "statCategories": ["CriticalStrike", "Damage"],
+    "stats": {
+      "criticalStrikeChance": 0.25,
+      "attackDamage": 75,
+      "criticalStrikeDamageBonus": 0.30000001192092896
+    },
+    "from": ["1038", "1037", "1018"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{aca3ffce}", "{0321bdeb}"],
+    "maxStack": 1,
+    "passivesAndActives": [],
+    "modeled": true
+  },
+  {
+    "id": 3036,
+    "name": "Lord Dominik's Regards",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3036.png",
+    "goldBase": 550,
+    "goldTotal": 3300,
+    "goldSell": 2310,
+    "purchasable": true,
+    "statCategories": ["Damage", "CriticalStrike", "ArmorPenetration"],
+    "stats": {
+      "criticalStrikeChance": 0.25,
+      "attackDamage": 35,
+      "armorPenetrationPercent": 0.3499999940395355
+    },
+    "from": ["3035", "6670"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "Items/ItemGroups/LastWhisper"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Lord Dominik's Regards",
+        "dataValues": {
+          "MaxBonusDamagePercent": 0.15000000596046448,
+          "MaxBonusHealth": 1500
+        },
+        "calculations": {},
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3057,
+    "name": "Sheen",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3057.png",
+    "goldBase": 650,
+    "goldTotal": 900,
+    "goldSell": 630,
+    "purchasable": true,
+    "statCategories": ["OnHit", "AbilityHaste"],
+    "stats": {
+      "abilityHaste": 10
+    },
+    "from": ["2022"],
+    "into": ["3078", "3100", "2510", "3508", "6632", "6662"],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{8b55a7b3}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Sheen",
+        "dataValues": {
+          "SpellbladeCooldown": 1.5,
+          "Cooldown": 1.5
+        },
+        "calculations": {
+          "SpellbladeDamage": {
+            "parts": [
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 1,
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "base"
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3071,
+    "name": "Black Cleaver",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3071.png",
+    "goldBase": 225,
+    "goldTotal": 3000,
+    "goldSell": 2100,
+    "purchasable": true,
+    "statCategories": [
+      "Health",
+      "Damage",
+      "CooldownReduction",
+      "OnHit",
+      "NonbootsMovement",
+      "ArmorPenetration",
+      "AbilityHaste"
+    ],
+    "stats": {
+      "health": 400,
+      "attackDamage": 45,
+      "abilityHaste": 20
+    },
+    "from": ["3044", "3067", "1037"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{24adb712}", "Items/ItemGroups/LastWhisper"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Black Cleaver",
+        "dataValues": {
+          "DebuffDuration": 6,
+          "MoveSpeedBonus": 20,
+          "MoveSpeedDuration": 2,
+          "InternalCD": 0.009999999776482582,
+          "MaxStacks": 5,
+          "ShredPerStack": 0.05999999865889549,
+          "RangedMod": 0.5
+        },
+        "calculations": {
+          "MSBonusSplit": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MoveSpeedBonus"
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3078,
+    "name": "Trinity Force",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3078.png",
+    "goldBase": 133,
+    "goldTotal": 3333,
+    "goldSell": 2333,
+    "purchasable": true,
+    "statCategories": [
+      "Health",
+      "Damage",
+      "AttackSpeed",
+      "CooldownReduction",
+      "OnHit",
+      "NonbootsMovement",
+      "AbilityHaste"
+    ],
+    "stats": {
+      "health": 333,
+      "attackDamage": 36,
+      "attackSpeedPercent": 0.3,
+      "abilityHaste": 15
+    },
+    "from": ["3057", "3044", "3051"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{2dadc53d}", "{8b55a7b3}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Trinity Force",
+        "dataValues": {
+          "SpellbladeMultiplier": 2,
+          "MoveSpeedBonus": 20,
+          "MSDuration": 2,
+          "SpellbladeCooldown": 1.5,
+          "Cooldown": 1.5
+        },
+        "calculations": {
+          "SpellbladeDamage": {
+            "parts": [
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "SpellbladeMultiplier",
+                "stat": 2,
+                "statKey": "attackDamage",
+                "statFormula": "base"
+              }
+            ]
+          },
+          "{6e4cefdc}": {
+            "parts": [
+              {
+                "kind": "number",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3089,
+    "name": "Rabadon's Deathcap",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3089.png",
+    "goldBase": 1100,
+    "goldTotal": 3500,
+    "goldSell": 2450,
+    "purchasable": true,
+    "statCategories": ["SpellDamage"],
+    "stats": {
+      "abilityPower": 130
+    },
+    "from": ["1058", "1058"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{ac92b6ad}", "Items/ItemGroups/APMultiplier"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Rabadon's Deathcap",
+        "dataValues": {
+          "APAmp": 0.30000001192092896
+        },
+        "calculations": {},
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3135,
+    "name": "Void Staff",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3135.png",
+    "goldBase": 1050,
+    "goldTotal": 3000,
+    "goldSell": 2100,
+    "purchasable": true,
+    "statCategories": ["MagicPenetration", "SpellDamage"],
+    "stats": {
+      "abilityPower": 95,
+      "magicPenetrationPercent": 0.4000000059604645
+    },
+    "from": ["4630", "1026"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "Items/ItemGroups/VoidPen"],
+    "maxStack": 1,
+    "passivesAndActives": [],
+    "modeled": true
+  },
+  {
+    "id": 3152,
+    "name": "Hextech Rocketbelt",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3152.png",
+    "goldBase": 350,
+    "goldTotal": 2650,
+    "goldSell": 1855,
+    "purchasable": true,
+    "statCategories": [
+      "Health",
+      "SpellDamage",
+      "Active",
+      "CooldownReduction",
+      "NonbootsMovement",
+      "AbilityHaste"
+    ],
+    "stats": {
+      "health": 350,
+      "abilityPower": 60,
+      "abilityHaste": 10
+    },
+    "from": ["3145", "3067", "1028"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{9631810e}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Hextech Rocketbelt",
+        "dataValues": {
+          "Cooldown": 50,
+          "BaseDamage": 135,
+          "APRatio": 0.15000000596046448
+        },
+        "calculations": {
+          "FireboltDamage": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "BaseDamage"
+              },
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "APRatio",
+                "stat": 0,
+                "statKey": "abilityPower",
+                "statFormula": "total"
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 3153,
+    "name": "Blade of The Ruined King",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/3153.png",
+    "goldBase": 725,
+    "goldTotal": 3200,
+    "goldSell": 2240,
+    "purchasable": true,
+    "statCategories": ["Damage", "AttackSpeed", "LifeSteal", "Slow", "OnHit"],
+    "stats": {
+      "attackDamage": 40,
+      "attackSpeedPercent": 0.25,
+      "lifeSteal": 0.1
+    },
+    "from": ["1053", "1043", "1037"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{973182a1}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Blade of The Ruined King",
+        "dataValues": {
+          "MoveSpeedMod": -0.30000001192092896,
+          "MoveSpeedDuration": 1,
+          "Cooldown": 15,
+          "RangedValue": 0.05999999865889549,
+          "MeleeValue": 0.09000000357627869,
+          "MonsterDamageCap": 100,
+          "AttackCounterDuration": 6,
+          "RangedMoveSpeedMod": -0.15000000596046448
+        },
+        "calculations": {
+          "ChampRange": {
+            "parts": []
+          },
+          "SiphonDamage": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 40,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 10,
+                    "bonusPerLevelAtAndAfter": 7
+                  }
+                ]
+              }
+            ]
+          },
+          "MeleeItemCalcValue": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MeleeValue"
+              }
+            ],
+            "displayAsPercent": true
+          },
+          "RangedItemCalcValue": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RangedValue"
+              }
+            ],
+            "displayAsPercent": true
+          },
+          "{792cf56b}": {
+            "parts": [
+              {
+                "kind": "number",
+                "value": 1
+              }
+            ]
+          },
+          "{06387172}": {
+            "parts": [
+              {
+                "kind": "number",
+                "value": 2
+              }
+            ]
+          },
+          "{c0b34d7a}": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MoveSpeedMod"
+              }
+            ]
+          },
+          "{fe7dca43}": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RangedMoveSpeedMod"
+              }
+            ]
+          },
+          "MeleeItemCalcValueB": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MoveSpeedMod"
+              }
+            ],
+            "multiplier": {
+              "kind": "number",
+              "value": -1
+            },
+            "displayAsPercent": true
+          },
+          "RangedItemCalcValueB": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RangedMoveSpeedMod"
+              }
+            ],
+            "multiplier": {
+              "kind": "number",
+              "value": -1
+            },
+            "displayAsPercent": true
+          },
+          "{d96e60e3}": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "MeleeValue"
+              }
+            ]
+          },
+          "{42565e68}": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "RangedValue"
+              }
+            ]
+          },
+          "{79b6144b}": {
+            "parts": []
+          },
+          "{405deeb1}": {
+            "parts": [
+              {
+                "kind": "statByCoefficient",
+                "coefficient": 1,
+                "stat": 13,
+                "statKey": null,
+                "statFormula": "total"
+              }
+            ],
+            "multiplier": {
+              "kind": "spellCalculationRef",
+              "calculationKey": "{79b6144b}"
+            }
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 4633,
+    "name": "Riftmaker",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/4633.png",
+    "goldBase": 950,
+    "goldTotal": 3100,
+    "goldSell": 2170,
+    "purchasable": true,
+    "statCategories": ["Health", "SpellDamage", "CooldownReduction", "SpellVamp"],
+    "stats": {
+      "health": 350,
+      "abilityPower": 70,
+      "abilityHaste": 15
+    },
+    "from": ["3147", "3108"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{bb6bb679}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Riftmaker",
+        "dataValues": {
+          "SecondsInCombat": 4,
+          "EternityDamageIncreasePerSecond": 0.019999999552965164,
+          "EternityDamageIncreaseMax": 0.07999999821186066,
+          "BuffCounterDuration": 4,
+          "HealthToAPConversionPercent": 0.019999999552965164,
+          "MaxAPMultiplier": 0.05000000074505806,
+          "VampAmountMelee": 0.10000000149011612,
+          "VampAmountRanged": 0.05999999865889549
+        },
+        "calculations": {
+          "{1247259a}": {
+            "parts": [
+              {
+                "kind": "statByNamedDataValue",
+                "dataValue": "HealthToAPConversionPercent",
+                "stat": 12,
+                "statKey": "health",
+                "statFormula": "bonus"
+              }
+            ]
+          },
+          "MeleeItemCalcValue": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "VampAmountMelee"
+              }
+            ],
+            "displayAsPercent": true
+          },
+          "RangedItemCalcValue": {
+            "parts": [
+              {
+                "kind": "namedDataValue",
+                "dataValue": "VampAmountRanged"
+              }
+            ],
+            "displayAsPercent": true
+          },
+          "ChampRange": {
+            "parts": []
+          },
+          "{792cf56b}": {
+            "parts": [
+              {
+                "kind": "number",
+                "value": 1
+              }
+            ]
+          },
+          "{06387172}": {
+            "parts": [
+              {
+                "kind": "number",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 6653,
+    "name": "Liandry's Torment",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/6653.png",
+    "goldBase": 800,
+    "goldTotal": 3000,
+    "goldSell": 2100,
+    "purchasable": true,
+    "statCategories": ["Health", "SpellDamage"],
+    "stats": {
+      "health": 300,
+      "abilityPower": 60
+    },
+    "from": ["3147", "2508"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{42600c7d}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Liandry's Torment",
+        "dataValues": {
+          "BurnDuration": 3,
+          "BurnPercentHealthDamage": 0.019999999552965164,
+          "DamageIncreasePerSecond": 0.019999999552965164,
+          "DamageIncreaseMax": 0.05999999865889549,
+          "TickFrequency": 0.5,
+          "MonsterDamageCap": 40,
+          "MaxDamageHPThreshold": 1250,
+          "BuffCounterDuration": 3,
+          "MaxStackNumber": 3
+        },
+        "calculations": {},
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 6672,
+    "name": "Kraken Slayer",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/6672.png",
+    "goldBase": 325,
+    "goldTotal": 3000,
+    "goldSell": 2100,
+    "purchasable": true,
+    "statCategories": ["Damage", "AttackSpeed", "OnHit", "NonbootsMovement"],
+    "stats": {
+      "attackDamage": 45,
+      "attackSpeedPercent": 0.4,
+      "moveSpeedPercent": 0.04
+    },
+    "from": ["6690", "3051", "1043"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "{a9652bd0}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Kraken Slayer",
+        "dataValues": {
+          "AttackCount": 3,
+          "BuffDuration": 4,
+          "MaxAmpNumber": 1.75,
+          "RangedDamageMultiplier": 0.800000011920929
+        },
+        "calculations": {
+          "DamageAmount": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 150,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 9,
+                    "bonusPerLevelAtAndAfter": 5
+                  }
+                ]
+              }
+            ]
+          },
+          "MaximumDamage": {
+            "parts": [],
+            "multiplier": {
+              "kind": "namedDataValue",
+              "dataValue": "MaxAmpNumber"
+            }
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  },
+  {
+    "id": 6673,
+    "name": "Immortal Shieldbow",
+    "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/item/6673.png",
+    "goldBase": 825,
+    "goldTotal": 3000,
+    "goldSell": 2100,
+    "purchasable": true,
+    "statCategories": ["Damage", "CriticalStrike"],
+    "stats": {
+      "criticalStrikeChance": 0.25,
+      "attackDamage": 55
+    },
+    "from": ["1037", "6670"],
+    "into": [],
+    "maps": {
+      "11": true,
+      "12": true,
+      "22": false,
+      "30": false,
+      "453": true
+    },
+    "uniqueGroups": ["Items/ItemGroups/Default", "Items/ItemGroups/LifelineItems", "{aa652d63}"],
+    "maxStack": 1,
+    "passivesAndActives": [
+      {
+        "name": "Immortal Shieldbow",
+        "dataValues": {
+          "ShieldDuration": 3,
+          "Cooldown": 90,
+          "BuffDuration": 8,
+          "HealthThreshold": 0.30000001192092896
+        },
+        "calculations": {
+          "ShieldAmount": {
+            "parts": [
+              {
+                "kind": "byCharLevelBreakpoints",
+                "level1Value": 400,
+                "initialBonusPerLevel": 0,
+                "breakpoints": [
+                  {
+                    "level": 9,
+                    "bonusPerLevelAtAndAfter": 30
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "isActive": false
+      }
+    ],
+    "modeled": true
+  }
+]
