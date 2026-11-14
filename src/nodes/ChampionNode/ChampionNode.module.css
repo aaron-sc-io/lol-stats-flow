@@ -1,0 +1,153 @@
+.layout {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+.portraitColumn {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 120px;
+}
+
+.portraitImg {
+  width: 64px;
+  height: 64px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+}
+
+.portraitFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  color: var(--text-tertiary);
+}
+
+.name {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.levelRow {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.levelLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.itemSetsColumn {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-left: var(--border-width-hairline) solid var(--border-default);
+  padding-left: var(--space-4);
+}
+
+.itemSetRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-6) var(--space-1) 0;
+}
+
+.itemSetName {
+  width: 96px;
+  flex-shrink: 0;
+  border: none;
+  border-bottom: var(--border-width-hairline) solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.itemSetName:hover,
+.itemSetName:focus-visible {
+  border-bottom-color: var(--border-default);
+}
+
+.slots {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.emptySlot {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-hairline) dashed var(--border-default);
+  border-radius: var(--radius-control);
+  color: var(--text-tertiary);
+}
+
+.filledSlot {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  transition: border-color var(--motion-fast) var(--motion-easing);
+}
+
+.filledSlot:hover {
+  border-color: var(--danger);
+}
+
+.slotIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rowActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-1);
+}
+
+.itemSetHandle {
+  right: -4px;
+}
+
+.pickerItemIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-control);
+}
+
+.pickerItemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unmodeledBadge {
+  flex-shrink: 0;
+}

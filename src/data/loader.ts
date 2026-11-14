@@ -45,7 +45,7 @@ async function loadCurrentPatch(): Promise<string> {
 
 let snapshotPromise: Promise<Snapshot> | null = null
 
-async function loadSnapshot(): Promise<Snapshot> {
+async function loadSnapshotOnce(): Promise<Snapshot> {
   const patch = await loadCurrentPatch()
   const metaLoader = moduleForPatch(metaModules, patch)
   const championsLoader = moduleForPatch(championsModules, patch)
@@ -62,8 +62,13 @@ async function loadSnapshot(): Promise<Snapshot> {
   return validateSnapshotInDev(snapshot, import.meta.env.DEV)
 }
 
-function getSnapshot(): Promise<Snapshot> {
-  snapshotPromise ??= loadSnapshot()
+/** Exported for the graph derivation layer (`src/graph/`), which needs the
+ * full `Snapshot` object to call the engine's `buildKit`/`simulate` — the
+ * narrower `getChampion`/`listChampions`/`getItem`/`listItems` helpers below
+ * only expose single-entity lookups. Still the same memoized singleton
+ * promise, so calling this alongside the helpers never double-fetches. */
+export function getSnapshot(): Promise<Snapshot> {
+  snapshotPromise ??= loadSnapshotOnce()
   return snapshotPromise
 }
 

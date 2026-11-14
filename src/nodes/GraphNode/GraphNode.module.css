@@ -1,0 +1,188 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.emptyState {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+/* ── Targets panel ──────────────────────────────────────────────────── */
+.targetsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  padding: var(--space-2);
+}
+
+.targetRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.targetName {
+  width: 100px;
+  flex-shrink: 0;
+  border: none;
+  border-bottom: var(--border-width-hairline) solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.targetName:hover,
+.targetName:focus-visible {
+  border-bottom-color: var(--border-default);
+}
+
+.targetPresets {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* ── Chart ──────────────────────────────────────────────────────────── */
+.chartWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.grid {
+  stroke: var(--border-default);
+}
+
+.axis {
+  font-size: var(--font-size-2xs);
+  fill: var(--text-tertiary);
+}
+
+.line {
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.markerFill {
+  fill: var(--text-primary);
+  cursor: pointer;
+}
+
+.barPhysical {
+  fill: var(--dmg-physical-fill);
+  stroke: var(--dmg-physical);
+}
+
+.barMagic {
+  fill: var(--dmg-magic-fill);
+  stroke: var(--dmg-magic);
+}
+
+.barTrue {
+  fill: transparent;
+  stroke: var(--dmg-true);
+}
+
+/* ── Legend ─────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  transition: opacity var(--motion-fast) var(--motion-easing);
+}
+
+.legendItem[data-dimmed="true"] {
+  opacity: var(--opacity-dimmed);
+}
+
+.legendSwatch {
+  overflow: visible;
+}
+
+.legendLine {
+  stroke: var(--text-primary);
+  stroke-width: 1.5;
+}
+
+.legendMarker {
+  fill: var(--text-primary);
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────────── */
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--surface-raised);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-popover);
+}
+
+.tooltipLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+/* ── Comparison table ───────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.table th {
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-tertiary);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+  font-size: var(--font-size-2xs);
+}
+
+.table td {
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-primary);
+}

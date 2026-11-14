@@ -1,0 +1,174 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.nameInput {
+  border: none;
+  border-bottom: var(--border-width-hairline) solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.nameInput:hover,
+.nameInput:focus-visible {
+  border-bottom-color: var(--border-default);
+}
+
+.emptyState {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.rankRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.rankField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.rankLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.paletteGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.paletteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  transition: border-color var(--motion-fast) var(--motion-easing);
+}
+
+.paletteButton:hover {
+  border-color: var(--border-strong);
+}
+
+.paletteIconWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2);
+}
+
+.paletteIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-control);
+}
+
+.paletteKey {
+  color: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+}
+
+.stackControl {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  padding: var(--space-1);
+}
+
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.timelineEntry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  padding: var(--space-1) var(--space-2);
+  transition:
+    opacity var(--motion-fast) var(--motion-easing),
+    border-color var(--motion-fast) var(--motion-easing);
+}
+
+.timelineEntry[data-highlighted="true"] {
+  border-color: var(--border-focus);
+}
+
+.orphaned {
+  opacity: var(--opacity-dimmed);
+}
+
+.dragHandle {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  cursor: grab;
+}
+
+.sourceMonogram {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+}
+
+.entryLabel {
+  overflow: hidden;
+  flex: 1 1 auto;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delayField {
+  flex-shrink: 0;
+  width: 92px;
+}
+
+.runningTotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: var(--border-width-hairline) solid var(--border-default);
+  padding-top: var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+  font-weight: var(--font-weight-medium);
+}
