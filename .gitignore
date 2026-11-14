@@ -31,9 +31,13 @@ blob-report/
 npm-debug.log*
 *.log
 
+# justfile background server state
+.just-server.*
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db
+.omo
