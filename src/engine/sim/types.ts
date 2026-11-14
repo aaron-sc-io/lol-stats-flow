@@ -1,4 +1,4 @@
-import type { DamageType } from "../effects/types"
+import type { AmplifierEffect, DamageType } from "../effects/types"
 import type { EvalContext } from "../formula/types"
 
 export type TargetSpec = {
@@ -71,6 +71,11 @@ export type PassiveTriggerApi = {
   ): void
   armSpellblade(sourceId: string, formula: (ctx: EvalContext) => number): void
   consumeSpellblade(sourceId: string): ((ctx: EvalContext) => number) | null
+  /** Arms a persistent `Amplifier` effect for `sourceId`, starting its
+   * elapsed-time clock at the moment of this call (e.g. Riftmaker's "damage
+   * ramps up the longer you're in combat"). Idempotent calls are the
+   * caller's responsibility — arming twice stacks two amplifiers. */
+  armAmplifier(sourceId: string, effect: AmplifierEffect): void
   scheduleBonusHit(
     sourceId: string,
     label: string,

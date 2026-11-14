@@ -1,4 +1,5 @@
-import type { DamageType } from "../effects/types"
+import { resolveAmplifierMultiplier } from "../effects/primitives"
+import type { AmplifierEffect, DamageType } from "../effects/types"
 import type { EvalContext } from "../formula/types"
 import { calculateMitigatedDamage } from "../mitigation"
 import type {
@@ -62,6 +63,7 @@ type ResistShredState = {
   armorPercent: number
   magicResistPercent: number
 }
+type DotToken = { cancelled: boolean }
 
 function buildTargetState(spec: TargetSpec): MutableTarget {
   return {
@@ -101,6 +103,15 @@ export function simulate(params: SimulateParams): SimResult {
     magicResistPercent: 0,
   }
   const spellblade: SpellbladeState = new Map()
+  // Keyed by `${sourceId}::${label}` — re-applying a DoT with the same
+  // source+label refreshes it (cancels remaining unfired ticks of the prior
+  // application and starts a fresh tick sequence from "now"), matching how
+  // League's own stacking burns/bleeds behave: the same effect "resets its
+  // timer" rather than stacking independent parallel streams (Hemorrhage,
+  // Liandry's Torment, Brand's Ablaze all reset-on-reapply in this engine's
+  // model — see bindings for per-effect citations).
+  const activeDots = new Map<string, DotToken>()
+  const amplifiers = new Map<string, Array<{ effect: AmplifierEffect; armedAt: number }>>()
   let killedAt: { stepId: string; time: number } | undefined
   let overkill = 0
 
@@ -117,7 +128,7 @@ export function simulate(params: SimulateParams): SimResult {
     stepId: string,
     label: string,
     damageType: DamageType,
-    raw: number,
+    rawIn: number,
     time: number,
     isTick: boolean,
     cause: string,
@@ -126,6 +137,16 @@ export function simulate(params: SimulateParams): SimResult {
       return
     }
     const kit = kits[sourceId]
+    // Attacker amplifiers (plan §4.4 order: raw → crit → attacker amplifiers
+    // → resist reductions → penetration → mitigation).
+    const armed = amplifiers.get(sourceId) ?? []
+    const raw = armed.reduce((acc, { effect, armedAt }) => {
+      const multiplier =
+        kit === undefined
+          ? 1
+          : resolveAmplifierMultiplier(effect, kit.ctx, time - armedAt, damageType, false)
+      return acc * multiplier
+    }, rawIn)
     const attackerPen =
       damageType === "physical"
         ? {
@@ -195,17 +216,32 @@ export function simulate(params: SimulateParams): SimResult {
         spellblade.delete(src)
         return formula
       },
+      armAmplifier: (src, effect) => {
+        const list = amplifiers.get(src) ?? []
+        list.push({ effect, armedAt: time })
+        amplifiers.set(src, list)
+      },
       scheduleBonusHit: (src, label, damageType, raw, delayMs) => {
         queue.push(time + delayMs, () =>
           resolveInstance(src, "passive", label, damageType, raw, time + delayMs, false, "passive"),
         )
       },
       scheduleDot: (src, label, damageType, perTick, tickIntervalMs, ticks) => {
+        const key = `${src}::${label}`
+        const previous = activeDots.get(key)
+        if (previous !== undefined) {
+          previous.cancelled = true
+        }
+        const token: DotToken = { cancelled: false }
+        activeDots.set(key, token)
         for (let i = 1; i <= ticks; i++) {
           const tickTime = time + i * tickIntervalMs
-          queue.push(tickTime, () =>
-            resolveInstance(src, "dot", label, damageType, perTick(ctx), tickTime, true, "dot"),
-          )
+          queue.push(tickTime, () => {
+            if (token.cancelled) {
+              return
+            }
+            resolveInstance(src, "dot", label, damageType, perTick(ctx), tickTime, true, "dot")
+          })
         }
       },
     }

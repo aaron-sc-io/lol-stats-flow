@@ -1,4 +1,5 @@
 import type { ChampionData } from "../../data/snapshot-schema"
+import type { EvalContext } from "../formula/types"
 import type { ComboAction, Kit, PassiveRule } from "../sim/types"
 import type { ResolvedStats } from "../stats/types"
 import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpers"
@@ -31,8 +32,21 @@ export function buildDariusKit(
   const wRank = ranks.W ?? w.maxRank
   const rRank = ranks.R ?? r.maxRank
 
-  const blade = withAbilityData(q, qRank, compileAbilityCalc(q, "BladeDamage"))
-  const handle = withAbilityData(q, qRank, compileAbilityCalc(q, "HandleDamage"))
+  // Binding override: `Q.BladeDamage`'s AD-ratio term is wrapped in an empty
+  // `productOfSubParts` (always evaluates to the constant 1 = 100% AD,
+  // regardless of rank) and `Q.HandleDamage` is `(sum of 0 parts) × 0.35`
+  // (always 0) — both are the same "tooltip-helper calc referencing a
+  // sibling value" pattern CDragon ships for several abilities (see Darius
+  // R's `MaximumDamage`, Yasuo E's `BonusDamagePerStack`). Computed directly
+  // off `Q.dataValues` instead, verified against
+  // https://wiki.leagueoflegends.com/en-us/Darius: "Physical Damage (Blade):
+  // 50/80/110/140/170 (+100/110/120/130/140% AD)", "Reduced Damage (Handle):
+  // 17.5/28/38.5/49/59.5 (+35/38.5/42/45.5/49% AD)" — Handle is exactly 35%
+  // of Blade at every rank.
+  const qBaseDamage = q.dataValues.BaseDamage?.[qRank] ?? 0
+  const qTotalAdRatio = (q.dataValues.TotalADRatio?.[qRank] ?? 0) / 100
+  const blade = (ctx: EvalContext) => qBaseDamage + qTotalAdRatio * ctx.stats.total.attackDamage
+  const handle = (ctx: EvalContext) => blade(ctx) * 0.35
   const empoweredAA = withAbilityData(w, wRank, compileAbilityCalc(w, "EmpoweredAttackDamage"))
   const rDamage = withAbilityData(r, rRank, compileAbilityCalc(r, "Damage"))
   const bleedPerStack = withAbilityData(p, 1, compileAbilityCalc(p, "BleedDamagePerStack"))

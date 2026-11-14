@@ -7,13 +7,29 @@ import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpe
 const STACK_STATE_KEY = "VayneW"
 
 /** Vayne (key 67). Q (Tumble) on-hit AD-ratio bonus, E (Condemn) + empowered
- * stun-vs-wall variant, AA/AA-crit. Passive + W (Silver Bolts): Vayne's
- * every-3rd-hit true %max-HP mechanic is plan §1's chosen default for her —
- * modeled here as a `StackCounter` primitive (`advanceStackCounter`) that
- * fires `W.TotalDamage` (true damage, `%MaxHealthRatio` + `DamageFloor`) on
- * every 3rd Q/AA hit. https://wiki.leagueoflegends.com/en-us/Vayne —
- * "Silver Bolts: ...dealing...bonus true damage" every 3rd consecutive
- * attack on the same target. */
+ * stun-vs-wall variant, W (Silver Bolts, also usable as its own combo step)
+ * + automatic every-3rd-hit passive proc, AA/AA-crit.
+ *
+ * W's real formula is `max(DamageFloor[rank], MaxHealthRatio[rank] *
+ * target.maxHp)` — https://wiki.leagueoflegends.com/en-us/Vayne
+ * ("Template:Data Vayne/Silver_Bolts"): "Bonus True Damage: 4/5.5/7/8.5/10%
+ * of target's maximum health", "Minimum Bonus Damage: 40/55/70/85/100". The
+ * compiled `W.TotalDamage` calc's own output is the *fraction*
+ * (`displayAsPercent: true`), not a flat number, and the floor isn't in any
+ * calc at all — both are combined directly off `W.dataValues` here (same
+ * %maxHp-fraction pattern as Brand's `ExplosionDamage`).
+ *
+ * E's `EmpoweredDamageTT` (wall-collision bonus) raw calc is `(sum of 0
+ * parts) × namedDataValue(StunDamage)` (always evaluates to 0 — the same
+ * tooltip-helper-calc pattern as Darius/Garen/Yasuo); the real bonus is
+ * `TotalDamage(ctx) × StunDamage` (a constant 1.5× multiplier), matching
+ * "Template:Data Vayne/Condemn": "Bonus Physical Damage: 75/127.5/180/
+ * 232.5/285 (+75% bonus AD)" = exactly 1.5× the normal hit's "50/85/120/
+ * 155/190 (+50% bonus AD)" at every rank.
+ *
+ * Plan §1's chosen default for Vayne (every-3rd-hit true %max-HP) is
+ * modeled via a `StackCounter` primitive (`advanceStackCounter`) firing on
+ * every 3rd Q/AA hit. */
 export function buildVayneKit(
   champion: ChampionData,
   level: number,
@@ -28,9 +44,11 @@ export function buildVayneKit(
   const eRank = ranks.E ?? e.maxRank
 
   const qBonus = withAbilityData(q, qRank, compileAbilityCalc(q, "ADRatioBonus"))
-  const wTotal = withAbilityData(w, wRank, compileAbilityCalc(w, "TotalDamage"))
   const eTotal = withAbilityData(e, eRank, compileAbilityCalc(e, "TotalDamage"))
-  const eEmpowered = withAbilityData(e, eRank, compileAbilityCalc(e, "EmpoweredDamageTT"))
+  const wDamageFloor = w.dataValues.DamageFloor?.[wRank] ?? 0
+  const wMaxHealthRatio = w.dataValues.MaxHealthRatio?.[wRank] ?? 0
+  const stunDamageMultiplier = e.dataValues.StunDamage?.[eRank] ?? 1.5
+  const silverBolts = (targetMaxHp: number) => Math.max(wDamageFloor, wMaxHealthRatio * targetMaxHp)
 
   const silverBoltsTrigger: PassiveRule = {
     id: "vayne-silver-bolts",
@@ -40,7 +58,13 @@ export function buildVayneKit(
       const { state: next, triggered } = advanceStackCounter(state, 3)
       api.setBuffCounter(event.sourceId, STACK_STATE_KEY, next.hits)
       if (triggered) {
-        api.scheduleBonusHit(event.sourceId, "Silver Bolts", "true", wTotal(api.ctx), 0)
+        api.scheduleBonusHit(
+          event.sourceId,
+          "Silver Bolts",
+          "true",
+          silverBolts(api.getTargetState().maxHp),
+          0,
+        )
       }
     },
   }
@@ -70,6 +94,26 @@ export function buildVayneKit(
           damageType: "physical",
           canCrit: false,
           compute: (ctx) => qBonus(ctx),
+        },
+      ],
+    },
+    {
+      id: "W",
+      label: "Silver Bolts (W)",
+      keyLabel: "W",
+      slot: "W",
+      damageType: "true",
+      modeled: true,
+      castTimeMs: 0,
+      rank: wRank,
+      forceCrit: false,
+      components: [
+        {
+          id: "main",
+          label: "Silver Bolts",
+          damageType: "true",
+          canCrit: false,
+          compute: (_ctx, _time, target) => silverBolts(target.maxHp),
         },
       ],
     },
@@ -116,7 +160,7 @@ export function buildVayneKit(
           label: "Condemn (wall bonus)",
           damageType: "physical",
           canCrit: false,
-          compute: (ctx) => eEmpowered(ctx),
+          compute: (ctx) => eTotal(ctx) * stunDamageMultiplier,
         },
       ],
     },

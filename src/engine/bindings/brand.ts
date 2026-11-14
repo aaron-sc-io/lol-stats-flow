@@ -4,16 +4,28 @@ import type { ResolvedStats } from "../stats/types"
 import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpers"
 
 const ABLAZE_COUNTER = "BrandAblaze"
+const MAX_ABLAZE_STACKS = 3
+/** Ablaze burn tick cadence/duration per
+ * https://wiki.leagueoflegends.com/en-us/Brand ("Template:Data Brand/Blaze"):
+ * "2% of their maximum health over 4 seconds ... every 0.25 seconds". No
+ * dataValue carries these (duration/cadence aren't in `P.dataValues`), so
+ * they're hardcoded here, cited to the wiki. */
+const ABLAZE_TICK_INTERVAL_MS = 250
+const ABLAZE_DURATION_MS = 4000
+const ABLAZE_TICKS = ABLAZE_DURATION_MS / ABLAZE_TICK_INTERVAL_MS
 
 /** Brand (key 63). Q/W/E/R main damage (all magic, AP ratios). Passive
- * (Blaze): every ability hit "ablazes" the target; a second ability hit
- * while ablaze detonates it for bonus true damage (`ExplosionDamage`).
- * Modeled as a buff-counter passive trigger that fires on every Q/W/E/R hit:
- * first hit sets the counter, a hit while already set schedules the
- * detonation and clears it (https://wiki.leagueoflegends.com/en-us/Brand —
- * "Blaze" passive, patch 16.22 wording: "deals ... bonus damage and ignites
- * them ... if the target is already ablaze, this spell instead detonates
- * the blaze"). `EmpoweredDamage` (W bonus vs ablaze) is bound separately. */
+ * (Blaze): every ability hit applies a stack of Ablaze (up to 3, refreshing
+ * all stacks' duration on each application) and starts/refreshes a burn DoT
+ * dealing magic damage over time. At 3 stacks, the target instead detonates
+ * for a burst of magic damage equal to `P.ExplosionDamage`'s *fraction* of
+ * target max HP (see module doc comment — the calc's own output is a
+ * fraction like 0.06, not a flat number, and must be multiplied by
+ * `target.maxHp`). Sources: https://wiki.leagueoflegends.com/en-us/Brand
+ * ("Blaze" passive — "stacking up to 3 times", "dealt magic damage equal to
+ * 2% of their maximum health over 4 seconds", "[detonation] dealt magic
+ * damage equal to 6% – 12% (based on level) (+ 2% per 100 AP)").
+ * `EmpoweredDamage` (W bonus vs ablaze) is bound separately. */
 export function buildBrandKit(
   champion: ChampionData,
   level: number,
@@ -36,6 +48,9 @@ export function buildBrandKit(
   const eTotal = withAbilityData(e, eRank, compileAbilityCalc(e, "EDamageCalc"))
   const rTotal = withAbilityData(r, rRank, compileAbilityCalc(r, "TotalDamage"))
   const explosion = withAbilityData(p, 1, compileAbilityCalc(p, "ExplosionDamage"))
+  // P.dataValues.PercentHealthDamage is a plain percent number (2 = 2%), not
+  // a fraction — divide by 100 before using as a %maxHp multiplier.
+  const burnPercentOverDuration = (p.dataValues.PercentHealthDamage?.[0] ?? 2) / 100
 
   function hit(
     id: string,
@@ -70,13 +85,37 @@ export function buildBrandKit(
       event.action.slot === "E" ||
       event.action.slot === "R",
     effect: (api, event) => {
-      const ablaze = api.getBuffCounter(event.sourceId, ABLAZE_COUNTER)
-      if (ablaze > 0) {
-        api.scheduleBonusHit(event.sourceId, "Blaze detonation", "true", explosion(api.ctx), 0)
+      const stacks = Math.min(
+        MAX_ABLAZE_STACKS,
+        api.getBuffCounter(event.sourceId, ABLAZE_COUNTER) + 1,
+      )
+      api.setBuffCounter(event.sourceId, ABLAZE_COUNTER, stacks)
+      if (stacks >= MAX_ABLAZE_STACKS) {
+        const targetMaxHp = api.getTargetState().maxHp
+        api.scheduleBonusHit(
+          event.sourceId,
+          "Blaze detonation",
+          "magic",
+          explosion(api.ctx) * targetMaxHp,
+          0,
+        )
         api.setBuffCounter(event.sourceId, ABLAZE_COUNTER, 0)
-      } else {
-        api.setBuffCounter(event.sourceId, ABLAZE_COUNTER, 1)
+        return
       }
+      // Burn DoT: this engine merges all live Ablaze stacks into one
+      // duration-refreshing stream (see module doc comment) whose per-tick
+      // value scales with the current stack count, rather than the real
+      // game's per-stack-independent ticking.
+      const targetMaxHp = api.getTargetState().maxHp
+      const perTickValue = (burnPercentOverDuration / ABLAZE_TICKS) * stacks * targetMaxHp
+      api.scheduleDot(
+        event.sourceId,
+        "Ablaze",
+        "magic",
+        () => perTickValue,
+        ABLAZE_TICK_INTERVAL_MS,
+        ABLAZE_TICKS,
+      )
     },
   }
 

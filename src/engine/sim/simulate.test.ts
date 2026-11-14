@@ -325,4 +325,76 @@ describe("simulate — order of operations", () => {
     })
     expect(result.instances[0]?.mitigated).toBeCloseTo(133.33, 1)
   })
+
+  it("Given a DoT re-applied (same sourceId+label) before its previous ticks finish, when simulated, then the old DoT's unfired ticks are cancelled and only the refreshed stream's ticks fire (no parallel streams)", () => {
+    const applyBurn: PassiveRule = {
+      id: "burn",
+      appliesTo: () => true,
+      effect: (api, event) => api.scheduleDot(event.sourceId, "Burn", "magic", () => 10, 500, 4), // 4 ticks @ 500ms = fires at +500,+1000,+1500,+2000
+    }
+    const hit1 = hitAction("hit1", 0)
+    const hit2 = hitAction("hit2", 0)
+    const kit: Kit = {
+      sourceId: "s1",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hit1, hit2],
+      passiveTriggers: [applyBurn],
+    }
+    // hit1 fires at t=0 (arms a 4-tick burn at 500/1000/1500/2000).
+    // hit2 fires at t=0 too (castTimeMs=0 for both, same source -> sequential
+    // cursor advances castTimeMs=0 so both fire at t=0) - force a delay so
+    // the second application happens mid-stream, at t=700 (between tick 1
+    // and tick 2 of the first application).
+    const result = simulate({
+      steps: [
+        { id: "a", sourceId: "s1", actionId: "hit1" },
+        { id: "b", sourceId: "s1", actionId: "hit2", delayMs: 700 },
+      ],
+      kits: { s1: kit },
+      target: basicTarget({ maxHp: 10000 }),
+    })
+    const burnTicks = result.instances.filter((i) => i.label === "Burn")
+    // Only tick times: 500 (from 1st application, before refresh at 700),
+    // then refreshed stream from 700: 1200, 1700, 2200, 2700. Total = 1 + 4 = 5,
+    // NEVER the un-refreshed 8 (4 old + 4 new) a naive "always schedule" bug would produce.
+    expect(burnTicks).toHaveLength(5)
+    expect(burnTicks.map((i) => i.time)).toEqual([500, 1200, 1700, 2200, 2700])
+  })
+
+  it("Given two DIFFERENT sources applying DoTs with the same label, when simulated, then each source's DoT refreshes independently (keyed by sourceId+label, not label alone)", () => {
+    const applyBurn: PassiveRule = {
+      id: "burn",
+      appliesTo: () => true,
+      effect: (api, event) => api.scheduleDot(event.sourceId, "Burn", "magic", () => 10, 500, 2),
+    }
+    const kitA: Kit = {
+      sourceId: "a",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("hit", 0)],
+      passiveTriggers: [applyBurn],
+    }
+    const kitB: Kit = {
+      sourceId: "b",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("hit", 0)],
+      passiveTriggers: [applyBurn],
+    }
+    const result = simulate({
+      steps: [
+        { id: "a1", sourceId: "a", actionId: "hit" },
+        { id: "b1", sourceId: "b", actionId: "hit" },
+      ],
+      kits: { a: kitA, b: kitB },
+      target: basicTarget({ maxHp: 10000 }),
+    })
+    const burnTicks = result.instances.filter((i) => i.label === "Burn")
+    // Both sources' 2-tick DoTs fire independently: 4 ticks total, not merged/cancelled.
+    expect(burnTicks).toHaveLength(4)
+  })
 })

@@ -58,6 +58,38 @@ describe("Item mechanic golden tests", () => {
     expect(totalBurn).toBeCloseTo(0.02 * 3 * 2000, 0) // 2%/s * 3s * maxHp
   })
 
+  it("Liandry's Torment: re-application (Q then W) refreshes the burn into ONE stream, never two overlapping/duplicate tick timestamps", () => {
+    const kit = buildKit(snapshot, { championId: "Brand", level: 9, items: ["Liandry's Torment"] })
+    const result = simulate({
+      steps: [
+        { id: "q", sourceId: "Brand", actionId: "Q" },
+        { id: "w", sourceId: "Brand", actionId: "W", delayMs: 100 },
+      ],
+      kits: { Brand: kit },
+      target: dummy(2000, 0, 0),
+    })
+    const tickTimes = result.instances
+      .filter((i) => i.label === "Liandry's Torment" && i.isTick)
+      .map((i) => i.time)
+    expect(new Set(tickTimes).size).toBe(tickTimes.length)
+  })
+
+  it("Darius Hemorrhage: re-application (two AAs) refreshes the bleed into ONE stream, never two overlapping/duplicate tick timestamps", () => {
+    const kit = buildKit(snapshot, { championId: "Darius", level: 11, items: [] })
+    const result = simulate({
+      steps: [
+        { id: "a1", sourceId: "Darius", actionId: "AA" },
+        { id: "a2", sourceId: "Darius", actionId: "AA", delayMs: 300 },
+      ],
+      kits: { Darius: kit },
+      target: dummy(5000, 0, 0),
+    })
+    const tickTimes = result.instances
+      .filter((i) => i.label === "Hemorrhage" && i.isTick)
+      .map((i) => i.time)
+    expect(new Set(tickTimes).size).toBe(tickTimes.length)
+  })
+
   it("Blade of The Ruined King: on-hit physical damage = 9% (melee) of target's current HP (https://wiki.leagueoflegends.com/en-us/Blade_of_the_Ruined_King), read at resolve time (after the auto attack's own damage has already landed)", () => {
     const kit = buildKit(snapshot, {
       championId: "Darius",
@@ -129,5 +161,23 @@ describe("Item mechanic golden tests", () => {
     const kit = buildKit(snapshot, { championId: "Yasuo", level: 1, items: ["Immortal Shieldbow"] })
     expect(kit.ctx.stats.total.attackDamage).toBeCloseTo(60 + 55)
     expect(kit.ctx.stats.total.criticalStrikeChance).toBeCloseTo(0.25)
+  })
+
+  it('Riftmaker: Void Corruption amplifies ALL pre-mitigation damage by 2%/sec in combat, capped at 8% after 4s (https://wiki.leagueoflegends.com/en-us/Riftmaker — "For each second in combat with champions, deal 2% increased damage, stacking up to 4 times for a total of 8% increased damage"; "based on pre-mitigation damage")', () => {
+    const kit = buildKit(snapshot, { championId: "Brand", level: 9, items: ["Riftmaker"] })
+    const result = simulate({
+      steps: [
+        { id: "q1", sourceId: "Brand", actionId: "Q" },
+        // Second Q cast far enough later that >=4s have elapsed since combat
+        // start (Riftmaker's amp clock starts on the first action).
+        { id: "q2", sourceId: "Brand", actionId: "Q", delayMs: 5000 },
+      ],
+      kits: { Brand: kit },
+      target: dummy(5000, 0, 0),
+    })
+    const qHits = result.instances.filter((i) => i.label === "Sear (Q)")
+    expect(qHits).toHaveLength(2)
+    // Second hit's raw (pre-mitigation) damage is 8% higher than the first.
+    expect(qHits[1]?.raw).toBeCloseTo((qHits[0]?.raw ?? 0) * 1.08, 1)
   })
 })

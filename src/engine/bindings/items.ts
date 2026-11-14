@@ -171,6 +171,36 @@ export function buildItemPassiveTriggers(
     }
   }
 
+  const riftmaker = find(items, "Riftmaker")
+  if (riftmaker !== undefined) {
+    const dv = riftmaker.passivesAndActives[0]?.dataValues ?? {}
+    const perSecond = dv.EternityDamageIncreasePerSecond ?? 0.02
+    const max = dv.EternityDamageIncreaseMax ?? 0.08
+    // https://wiki.leagueoflegends.com/en-us/Riftmaker — "Void Corruption:
+    // For each second in combat with champions, deal 2% increased damage,
+    // stacking up to 4 times for a total of 8% increased damage" — amplifies
+    // ALL damage types (explicitly "based on pre-mitigation damage ...
+    // amplifies all damage types, including true damage"), hence scope
+    // "allDamage". Arms once per source, on its first action (documented
+    // simplification for "combat start" — the real game's trigger is
+    // dealing/taking damage from champions, continuously refreshed).
+    rules.push({
+      id: "riftmaker-void-corruption",
+      appliesTo: () => true,
+      effect: (api, event) => {
+        if (api.getBuffCounter(event.sourceId, "RiftmakerArmed") > 0) {
+          return
+        }
+        api.setBuffCounter(event.sourceId, "RiftmakerArmed", 1)
+        api.armAmplifier(event.sourceId, {
+          kind: "amplifier",
+          scope: "allDamage",
+          percentFormula: (_ctx, elapsedMs) => Math.min(max, (elapsedMs / 1000) * perSecond),
+        })
+      },
+    })
+  }
+
   return rules
 }
 

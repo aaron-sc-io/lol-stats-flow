@@ -114,6 +114,27 @@ describe("Reference-evaluator cross-check (Brand / Darius / Garen / Vayne)", () 
     expect(result.instances[0]?.damageType).toBe("magic")
   })
 
+  it("Brand Q (Sear) rank 5 at level 16, with Void Staff (95 AP, 40% magic pen), vs 100 armor / 100 MR target: raw = BaseDamage[5] + 0.65*totalAP, mitigated with 40% magic pen applied", () => {
+    const brand = snapshot.champions.find((c) => c.name === "Brand")
+    if (brand === undefined) throw new Error("fixture missing")
+    const kit = buildKit(snapshot, {
+      championId: "Brand",
+      level: 16,
+      items: ["Void Staff"],
+      rankOverrides: { Q: 5 },
+    })
+    const result = simulate({
+      steps: [{ id: "s", sourceId: "Brand", actionId: "Q" }],
+      kits: { Brand: kit },
+      target: dummy(2000, 100, 100),
+    })
+    const baseDamage = brand.abilities.Q.dataValues.SpellBaseDamage?.[5] ?? 0
+    const expectedRaw = baseDamage + 0.65 * kit.ctx.stats.total.abilityPower
+    expect(result.instances[0]?.raw).toBeCloseTo(expectedRaw)
+    // 40% magic pen (Void Staff) on 100 MR -> effective MR = 60 -> mitigated = raw/1.6
+    expect(result.instances[0]?.mitigated).toBeCloseTo(expectedRaw / 1.6)
+  })
+
   it("Garen R (Demacian Justice) execute: deals true damage scaling with target's missing HP (plan's chosen default mechanic for Garen)", () => {
     const garen = snapshot.champions.find((c) => c.name === "Garen")
     if (garen === undefined) throw new Error("fixture missing")
