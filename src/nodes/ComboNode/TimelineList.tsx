@@ -62,7 +62,7 @@ export function TimelineList({
   const chartPoints =
     result === undefined || target === undefined
       ? []
-      : buildChartPoints(result, connectedSteps, kits, target, "step")
+      : buildChartPoints(result, connectedSteps, target, "step")
   const chartPointByStepId = new Map(
     connectedSteps.map((step, index) => [step.id, chartPoints[index]]),
   )

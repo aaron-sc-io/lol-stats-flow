@@ -48,13 +48,13 @@ export function deriveGraphNodeData(
       series.push({
         comboId,
         comboName: comboNode.data.name,
-        points: buildChartPoints(result, steps, kits, activeTarget, graphData.xMode),
+        points: buildChartPoints(result, steps, activeTarget, graphData.xMode),
       })
     }
 
     for (const target of graphData.targets) {
       const result = getOrSimulate(steps, kits, target)
-      rows.push(buildComparisonRow(comboId, comboNode.data.name, target, result, steps, kits))
+      rows.push(buildComparisonRow(comboId, comboNode.data.name, target, result, steps))
     }
   }
 

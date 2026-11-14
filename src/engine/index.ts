@@ -20,6 +20,7 @@ export type {
   ActionSlot,
   ComboAction,
   ComboStep,
+  DamageCause,
   DamageInstance,
   Kit,
   PassiveRule,

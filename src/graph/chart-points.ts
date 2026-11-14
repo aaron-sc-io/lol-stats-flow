@@ -1,5 +1,4 @@
-import type { ComboStep, DamageType, Kit, SimResult, TargetSpec } from "@/engine"
-import { computeStepFireTimes, resolveInstanceStepId } from "./step-timing"
+import type { ComboStep, DamageType, SimResult, TargetSpec } from "@/engine"
 import type { XMode } from "./types"
 
 export type ChartPoint = {
@@ -26,24 +25,22 @@ function emptyDelta(): Record<DamageType, number> {
 }
 
 /** Step mode (plan D10/§6): one point per combo step, with every instance
- * it caused — including passive/DoT damage folded in via
- * `resolveInstanceStepId` — summed into that step's bars. A step with zero
+ * it caused — including passive/DoT damage, since `DamageInstance.stepId`
+ * is always the real causing step (the engine threads it through directly,
+ * never a placeholder) — summed into that step's bars. A step with zero
  * instances (e.g. its action fizzled) still renders a flat point. */
 function buildStepPoints(
   result: SimResult,
   steps: readonly ComboStep[],
-  kits: Readonly<Record<string, Kit>>,
   target: TargetSpec,
 ): ChartPoint[] {
-  const fireTimes = computeStepFireTimes(steps, kits)
   const byStepId = new Map<string, Record<DamageType, number>>()
   const lastHpByStepId = new Map<string, number>()
   for (const instance of result.instances) {
-    const stepId = resolveInstanceStepId(instance, fireTimes)
-    const bucket = byStepId.get(stepId) ?? emptyDelta()
+    const bucket = byStepId.get(instance.stepId) ?? emptyDelta()
     bucket[instance.damageType] += instance.mitigated
-    byStepId.set(stepId, bucket)
-    lastHpByStepId.set(stepId, instance.targetHpAfter)
+    byStepId.set(instance.stepId, bucket)
+    lastHpByStepId.set(instance.stepId, instance.targetHpAfter)
   }
 
   let cumulative = 0
@@ -88,9 +85,8 @@ function buildTickPoints(result: SimResult): ChartPoint[] {
 export function buildChartPoints(
   result: SimResult,
   steps: readonly ComboStep[],
-  kits: Readonly<Record<string, Kit>>,
   target: TargetSpec,
   xMode: XMode,
 ): readonly ChartPoint[] {
-  return xMode === "step" ? buildStepPoints(result, steps, kits, target) : buildTickPoints(result)
+  return xMode === "step" ? buildStepPoints(result, steps, target) : buildTickPoints(result)
 }

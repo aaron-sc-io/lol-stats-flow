@@ -27,7 +27,7 @@ describe("buildComparisonRow", () => {
     const kits = { "src-a": kitWithHit(100) }
     const result = simulate({ steps, kits, target: target(1000) })
 
-    const row = buildComparisonRow("combo-1", "Combo", target(1000), result, steps, kits)
+    const row = buildComparisonRow("combo-1", "Combo", target(1000), result, steps)
 
     expect(row.total).toBe(100)
     expect(row.percentHp).toBeCloseTo(10)
@@ -36,7 +36,7 @@ describe("buildComparisonRow", () => {
     expect(row.physical).toBe(100)
   })
 
-  it("reports the real killing step (not the raw 'passive'/'dot' placeholder) and overkill", () => {
+  it("reports the real killing step (not an engine placeholder) and overkill", () => {
     // Given a 2-step combo where the second step (a lethal 500 hit) kills a
     // 400-HP target
     const steps: ComboStep[] = [
@@ -46,7 +46,7 @@ describe("buildComparisonRow", () => {
     const kits = { "src-a": kitWithHit(500) }
     const result = simulate({ steps, kits, target: target(400) })
 
-    const row = buildComparisonRow("combo-1", "Combo", target(400), result, steps, kits)
+    const row = buildComparisonRow("combo-1", "Combo", target(400), result, steps)
 
     expect(row.killed).toBe(true)
     expect(row.killStepLabel).toBe("Step 1")

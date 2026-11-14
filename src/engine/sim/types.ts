@@ -91,6 +91,14 @@ export type PassiveTriggerApi = {
     tickIntervalMs: number,
     ticks: number,
   ): void
+  /** Cancels a DoT previously armed by `scheduleDot` (keyed the same way,
+   * `sourceId`+`label`) — its remaining unfired ticks never resolve. For
+   * effects whose DoT must end early on some OTHER trigger rather than by
+   * being refreshed/replaced (e.g. Brand's Ablaze burn ending the instant
+   * 3 stacks detonate — https://wiki.leagueoflegends.com/en-us/Brand: "Upon
+   * stacking up to 3 ... the target takes [detonation] ... and this
+   * resets"). A no-op if no matching DoT is currently active. */
+  cancelDot(sourceId: string, label: string): void
 }
 
 export type PassiveRule = {
@@ -107,6 +115,16 @@ export type Kit = {
   readonly actions: readonly ComboAction[]
   readonly passiveTriggers: readonly PassiveRule[]
 }
+
+/** What produced a `DamageInstance`: `"direct"` — an action's own non-DoT
+ * component hitting immediately; `"dot"` — a damage-over-time tick, whether
+ * from an action's own `isDot` component or from a passive's
+ * `scheduleDot`; `"passive"` — an instant bonus hit from a passive's
+ * `scheduleBonusHit` (on-hit procs, spellblade, stack detonations). Every
+ * instance also carries `stepId`: the real `ComboStep.id` that caused it —
+ * DoT ticks inherit the stepId of the application that (re)armed them,
+ * passive procs inherit the triggering hit's stepId — never a placeholder. */
+export type DamageCause = "direct" | "passive" | "dot"
 
 export type ComboStep = {
   readonly id: string
@@ -127,7 +145,7 @@ export type DamageInstance = {
   readonly targetHpBefore: number
   readonly targetHpAfter: number
   readonly isTick: boolean
-  readonly cause: string
+  readonly cause: DamageCause
 }
 
 export type SimResult = {

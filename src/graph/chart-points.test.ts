@@ -6,9 +6,8 @@ import { fixtureAction, fixtureKit } from "./test-support/fixtures"
 
 /** Brand-with-Liandry's-shaped fixture: a single Q step that deals a flat
  * physical hit AND triggers a 3-tick magic DoT via a passive rule — the
- * same `scheduleDot` path real item/passive bindings use, which is exactly
- * where the engine's `stepId: "dot"` placeholder gap (documented in
- * `step-timing.ts`) shows up. */
+ * same `scheduleDot` path real item/passive bindings use, verifying the
+ * engine attributes every DoT tick's `stepId` to the step that armed it. */
 function kitWithDot(): Kit {
   const dotRule: PassiveRule = {
     id: "test-dot",
@@ -41,7 +40,7 @@ describe("buildChartPoints", () => {
   const result = simulate({ steps, kits, target: target() })
 
   it("step mode folds the DoT's 3 ticks into the single step that caused them", () => {
-    const points = buildChartPoints(result, steps, kits, target(), "step")
+    const points = buildChartPoints(result, steps, target(), "step")
 
     expect(points).toHaveLength(1)
     const point = points[0]
@@ -52,7 +51,7 @@ describe("buildChartPoints", () => {
   })
 
   it("tick mode renders every instance (the hit + 3 ticks) as its own point in time order", () => {
-    const points = buildChartPoints(result, steps, kits, target(), "tick")
+    const points = buildChartPoints(result, steps, target(), "tick")
 
     expect(points).toHaveLength(4)
     expect(points.map((p) => p.x)).toEqual([0, 0.5, 1, 1.5])
@@ -62,8 +61,8 @@ describe("buildChartPoints", () => {
   })
 
   it("switching from step to tick mode strictly increases the point count when DoTs are present", () => {
-    const stepPoints = buildChartPoints(result, steps, kits, target(), "step")
-    const tickPoints = buildChartPoints(result, steps, kits, target(), "tick")
+    const stepPoints = buildChartPoints(result, steps, target(), "step")
+    const tickPoints = buildChartPoints(result, steps, target(), "tick")
     expect(tickPoints.length).toBeGreaterThan(stepPoints.length)
   })
 })

@@ -397,4 +397,116 @@ describe("simulate — order of operations", () => {
     // Both sources' 2-tick DoTs fire independently: 4 ticks total, not merged/cancelled.
     expect(burnTicks).toHaveLength(4)
   })
+
+  it("Given a passive bonus hit (scheduleBonusHit) and a passive DoT (scheduleDot), when simulated, then both carry the triggering step's real stepId (never a placeholder) and the correct cause", () => {
+    const rule: PassiveRule = {
+      id: "procs",
+      appliesTo: () => true,
+      effect: (api, event) => {
+        api.scheduleBonusHit(event.sourceId, "Bonus", "true", 1, 0)
+        api.scheduleDot(event.sourceId, "Burn", "magic", () => 1, 100, 2)
+      },
+    }
+    const kit: Kit = {
+      sourceId: "s1",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("Q", 0)],
+      passiveTriggers: [rule],
+    }
+    const result = simulate({
+      steps: [{ id: "my-step", sourceId: "s1", actionId: "Q" }],
+      kits: { s1: kit },
+      target: basicTarget({ maxHp: 10000 }),
+    })
+    const bonus = result.instances.find((i) => i.label === "Bonus")
+    const burnTicks = result.instances.filter((i) => i.label === "Burn")
+    expect(bonus?.stepId).toBe("my-step")
+    expect(bonus?.cause).toBe("passive")
+    expect(burnTicks.length).toBeGreaterThan(0)
+    expect(burnTicks.every((i) => i.stepId === "my-step")).toBe(true)
+    expect(burnTicks.every((i) => i.cause === "dot")).toBe(true)
+  })
+
+  it("Given an action's own direct (non-DoT) hit, when simulated, then cause is 'direct' (not the action id)", () => {
+    const kit: Kit = {
+      sourceId: "s1",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("Q", 100)],
+      passiveTriggers: [],
+    }
+    const result = simulate({
+      steps: [{ id: "s", sourceId: "s1", actionId: "Q" }],
+      kits: { s1: kit },
+      target: basicTarget(),
+    })
+    expect(result.instances[0]?.cause).toBe("direct")
+  })
+
+  it("Given a DoT re-armed later by a DIFFERENT step, when the second application fires, then its ticks are attributed to the second step's stepId, not the first", () => {
+    const applyBurn: PassiveRule = {
+      id: "burn",
+      appliesTo: () => true,
+      effect: (api, event) => api.scheduleDot(event.sourceId, "Burn", "magic", () => 10, 500, 4),
+    }
+    const kit: Kit = {
+      sourceId: "s1",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("hit1", 0), hitAction("hit2", 0)],
+      passiveTriggers: [applyBurn],
+    }
+    const result = simulate({
+      steps: [
+        { id: "first", sourceId: "s1", actionId: "hit1" },
+        { id: "second", sourceId: "s1", actionId: "hit2", delayMs: 700 },
+      ],
+      kits: { s1: kit },
+      target: basicTarget({ maxHp: 10000 }),
+    })
+    const burnTicks = result.instances.filter((i) => i.label === "Burn")
+    // First application's one surviving tick (at t=500, before the t=700
+    // refresh) still carries "first"; every tick from the refreshed stream
+    // (armed by "second") carries "second".
+    expect(burnTicks.find((i) => i.time === 500)?.stepId).toBe("first")
+    expect(burnTicks.filter((i) => i.time > 500).every((i) => i.stepId === "second")).toBe(true)
+  })
+
+  it("Given cancelDot called for an active DoT, when its remaining ticks would have fired, then they never resolve", () => {
+    const rule: PassiveRule = {
+      id: "ablaze-like",
+      appliesTo: () => true,
+      effect: (api, event) => {
+        if (event.action.id === "apply") {
+          api.scheduleDot(event.sourceId, "Burn", "magic", () => 10, 500, 4)
+        } else if (event.action.id === "detonate") {
+          api.cancelDot(event.sourceId, "Burn")
+        }
+      },
+    }
+    const kit: Kit = {
+      sourceId: "s1",
+      championId: null,
+      level: 1,
+      ctx: fixtureCtx(),
+      actions: [hitAction("apply", 0), hitAction("detonate", 0)],
+      passiveTriggers: [rule],
+    }
+    const result = simulate({
+      steps: [
+        { id: "a", sourceId: "s1", actionId: "apply" },
+        { id: "b", sourceId: "s1", actionId: "detonate", delayMs: 700 },
+      ],
+      kits: { s1: kit },
+      target: basicTarget({ maxHp: 10000 }),
+    })
+    const burnTicks = result.instances.filter((i) => i.label === "Burn")
+    // Only the tick at t=500 (before cancellation at t=700) fires; the
+    // remaining ticks at 1000/1500/2000 never resolve.
+    expect(burnTicks.map((i) => i.time)).toEqual([500])
+  })
 })

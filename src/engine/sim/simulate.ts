@@ -6,6 +6,7 @@ import type {
   ActionFireEvent,
   ComboAction,
   ComboStep,
+  DamageCause,
   DamageInstance,
   Kit,
   PassiveTriggerApi,
@@ -131,7 +132,7 @@ export function simulate(params: SimulateParams): SimResult {
     rawIn: number,
     time: number,
     isTick: boolean,
-    cause: string,
+    cause: DamageCause,
   ): void {
     if (targetState.currentHp <= 0) {
       return
@@ -195,7 +196,7 @@ export function simulate(params: SimulateParams): SimResult {
     })
   }
 
-  function makeApi(time: number, ctx: EvalContext): PassiveTriggerApi {
+  function makeApi(time: number, ctx: EvalContext, stepId: string): PassiveTriggerApi {
     return {
       time,
       ctx,
@@ -223,7 +224,7 @@ export function simulate(params: SimulateParams): SimResult {
       },
       scheduleBonusHit: (src, label, damageType, raw, delayMs) => {
         queue.push(time + delayMs, () =>
-          resolveInstance(src, "passive", label, damageType, raw, time + delayMs, false, "passive"),
+          resolveInstance(src, stepId, label, damageType, raw, time + delayMs, false, "passive"),
         )
       },
       scheduleDot: (src, label, damageType, perTick, tickIntervalMs, ticks) => {
@@ -240,23 +241,38 @@ export function simulate(params: SimulateParams): SimResult {
             if (token.cancelled) {
               return
             }
-            resolveInstance(src, "dot", label, damageType, perTick(ctx), tickTime, true, "dot")
+            resolveInstance(src, stepId, label, damageType, perTick(ctx), tickTime, true, "dot")
           })
+        }
+      },
+      cancelDot: (src, label) => {
+        const key = `${src}::${label}`
+        const token = activeDots.get(key)
+        if (token !== undefined) {
+          token.cancelled = true
         }
       },
     }
   }
 
-  function fireAction(sourceId: string, stepId: string, action: ComboAction, time: number): void {
+  function fireAction(
+    sourceId: string,
+    stepId: string,
+    action: ComboAction,
+    time: number,
+    stepRankOverride: number | undefined,
+  ): void {
     const kit = kits[sourceId]
     if (kit === undefined) {
       throw new Error(`simulate: unknown sourceId "${sourceId}"`)
     }
-    const ctx: EvalContext = {
+    const baseCtx: EvalContext = {
       ...kit.ctx,
       rank: action.rank,
       buffCounters: Object.fromEntries(counterKey(sourceId)),
     }
+    const ctx: EvalContext =
+      stepRankOverride === undefined ? baseCtx : { ...baseCtx, rankOverride: stepRankOverride }
     const elapsed = time
     for (const component of action.components) {
       const target = hpVariantCtx(targetState)
@@ -277,7 +293,7 @@ export function simulate(params: SimulateParams): SimResult {
               component.compute(ctx, tickTime, hpVariantCtx(targetState)),
               tickTime,
               true,
-              action.id,
+              "dot",
             ),
           )
         }
@@ -290,12 +306,12 @@ export function simulate(params: SimulateParams): SimResult {
           raw,
           time,
           false,
-          action.id,
+          "direct",
         )
       }
     }
     const fireEvent: ActionFireEvent = { sourceId, action, time }
-    const api = makeApi(time, ctx)
+    const api = makeApi(time, baseCtx, stepId)
     for (const rule of kit.passiveTriggers) {
       if (rule.appliesTo(fireEvent)) {
         rule.effect(api, fireEvent)
@@ -318,7 +334,9 @@ export function simulate(params: SimulateParams): SimResult {
     const fireTime = Math.max(cursor, prior) + (step.delayMs ?? 0)
     cursor = fireTime + action.castTimeMs
     lastActionTimeBySource.set(step.sourceId, fireTime)
-    queue.push(fireTime, () => fireAction(step.sourceId, step.id, action, fireTime))
+    queue.push(fireTime, () =>
+      fireAction(step.sourceId, step.id, action, fireTime, step.rankOverride),
+    )
   }
 
   let duration = 0
