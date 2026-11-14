@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent, MutableRefObject, ReactNode } from "react"
 import { Badge } from "@/components/Badge"
+import { Tooltip } from "@/components/Tooltip"
 import { cx } from "@/lib/cx"
 import styles from "./HoverPicker.module.css"
 
@@ -10,6 +11,7 @@ export type HoverPickerGridProps<T> = {
     item: T,
     state: { readonly disabled: boolean; readonly selected: boolean },
   ) => ReactNode
+  readonly itemLabel?: ((item: T) => string) | undefined
   readonly isDisabled?: ((item: T) => boolean) | undefined
   readonly isSelected?: ((item: T) => boolean) | undefined
   readonly disabledBadge?: string | undefined
@@ -28,6 +30,7 @@ export function HoverPickerGrid<T>({
   items,
   getKey,
   renderItem,
+  itemLabel,
   isDisabled,
   isSelected,
   disabledBadge,
@@ -49,13 +52,15 @@ export function HoverPickerGrid<T>({
       {items.map((item, index) => {
         const disabled = isDisabled?.(item) ?? false
         const selected = isSelected?.(item) ?? false
-        return (
+        const label = itemLabel?.(item)
+        const cell = (
           <button
             key={getKey(item)}
             ref={(node) => {
               itemRefs.current[index] = node
             }}
             type="button"
+            aria-label={label}
             className={cx(styles.item, selected && styles.selected)}
             aria-disabled={disabled ? "true" : undefined}
             tabIndex={index === activeIndex ? 0 : -1}
@@ -66,6 +71,13 @@ export function HoverPickerGrid<T>({
               <Badge className={styles.disabledBadge}>{disabledBadge}</Badge>
             ) : null}
           </button>
+        )
+        return label === undefined ? (
+          cell
+        ) : (
+          <Tooltip key={getKey(item)} label={label}>
+            {cell}
+          </Tooltip>
         )
       })}
     </div>

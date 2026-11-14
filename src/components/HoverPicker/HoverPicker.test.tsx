@@ -103,25 +103,31 @@ describe("HoverPicker", () => {
     expect(screen.queryByText("Garen")).toBeNull()
   })
 
-  it("AND-combines multiple active filters instead of OR-ing them", () => {
-    // Given an open picker
+  it("AND-combines multiple active filters and resets them when Clear filters is clicked", () => {
+    // Given an open picker with no active filters (Clear filters starts disabled)
     renderPicker(vi.fn())
     fireEvent.click(screen.getByRole("button", { name: "Choose champion" }))
+    const clearButton = screen.getByRole("button", { name: "Clear filters" }) as HTMLButtonElement
+    expect(clearButton.disabled).toBe(true)
 
-    // When only the "Top" filter is active
+    // When the "Top" and "Modeled" filters are activated
     fireEvent.click(screen.getByRole("button", { name: "Top" }))
-    // Then both top-lane champions show (Yasuo and Garen), regardless of modeled status
     expect(screen.getByText("Yasuo")).toBeTruthy()
     expect(screen.getByText("Garen")).toBeTruthy()
     expect(screen.queryByText("Vayne")).toBeNull()
-
-    // When the "Modeled" filter is ALSO activated
     fireEvent.click(screen.getByRole("button", { name: "Modeled" }))
 
-    // Then only champions matching BOTH filters remain (Garen is top but not modeled)
+    // Then only champions matching BOTH filters remain and Clear filters is enabled
     expect(screen.getByText("Yasuo")).toBeTruthy()
     expect(screen.queryByText("Garen")).toBeNull()
     expect(screen.queryByText("Vayne")).toBeNull()
+    expect(clearButton.disabled).toBe(false)
+
+    // When Clear filters is clicked, all items return and the button disables again
+    fireEvent.click(clearButton)
+    expect(screen.getByText("Vayne")).toBeTruthy()
+    expect(screen.getByText("Garen")).toBeTruthy()
+    expect(clearButton.disabled).toBe(true)
   })
 
   it("shows the empty-results state when nothing matches", () => {
@@ -179,6 +185,36 @@ describe("HoverPicker", () => {
     // Then the popover closes and focus returns to the trigger
     expect(screen.queryByRole("dialog")).toBeNull()
     expect(document.activeElement).toBe(trigger)
+  })
+
+  it("uses itemLabel as each cell's accessible name and shows it as a tooltip on focus", () => {
+    // Given an open picker whose cells are icon-only, labeled via itemLabel
+    render(
+      <HoverPicker
+        trigger={<span>Portrait</span>}
+        items={CHAMPIONS}
+        getKey={(champion) => champion.id}
+        renderItem={() => null}
+        itemLabel={(champion) =>
+          champion.modeled ? champion.name : `${champion.name} (unmodeled)`
+        }
+        searchText={(champion) => champion.name}
+        onSelect={vi.fn()}
+        compact
+        aria-label="Choose champion"
+      />,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Choose champion" }))
+    const garen = screen.getByRole("button", { name: "Garen (unmodeled)" })
+
+    // When a cell is focused for the tooltip delay
+    fireEvent.focus(garen)
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+
+    // Then its label shows as a tooltip
+    expect(screen.getByRole("tooltip").textContent).toBe("Garen (unmodeled)")
   })
 
   it("traps Tab: from the last focusable element it wraps back to the first", () => {

@@ -46,6 +46,12 @@ export type HoverPickerProps<T> = {
   readonly isSelected?: ((item: T) => boolean) | undefined
   readonly onSelect: (item: T) => void
   readonly columns?: number | undefined
+  /** When set, each cell's accessible name + hover/focus tooltip — for
+   * icon-only `renderItem`s that show no visible text. */
+  readonly itemLabel?: ((item: T) => string) | undefined
+  /** Dense icon-grid layout: filters become a vertical rail on the grid's
+   * left, and the grid only ever scrolls vertically. */
+  readonly compact?: boolean | undefined
   readonly placement?: Placement | undefined
   readonly searchPlaceholder?: string | undefined
   readonly "aria-label": string
@@ -75,6 +81,8 @@ export function HoverPicker<T>({
   isSelected,
   onSelect,
   columns = 4,
+  itemLabel,
+  compact = false,
   placement = "bottom",
   searchPlaceholder = "Search…",
   "aria-label": ariaLabel,
@@ -194,6 +202,7 @@ export function HoverPicker<T>({
                 "nowheel",
                 "nopan",
                 styles.popover,
+                compact && styles.compact,
                 position === null && styles.measuring,
               )}
               style={position === null ? undefined : { top: position.top, left: position.left }}
@@ -208,24 +217,28 @@ export function HoverPicker<T>({
                 placeholder={searchPlaceholder}
                 aria-label="Search"
               />
-              <HoverPickerFilterBar
-                filters={filters}
-                activeFilterIds={activeFilterIds}
-                onToggle={toggleFilter}
-              />
-              <HoverPickerGrid
-                items={visibleItems}
-                getKey={getKey}
-                renderItem={renderItem}
-                isDisabled={isDisabled}
-                isSelected={isSelected}
-                disabledBadge={disabledBadge}
-                columns={columns}
-                activeIndex={activeIndex}
-                itemRefs={itemRefs}
-                onSelect={handleSelect}
-                onKeyDown={handleGridKeyDown}
-              />
+              <div className={styles.body}>
+                <HoverPickerFilterBar
+                  filters={filters}
+                  activeFilterIds={activeFilterIds}
+                  onToggle={toggleFilter}
+                  onClear={() => setActiveFilterIds(new Set())}
+                />
+                <HoverPickerGrid
+                  items={visibleItems}
+                  getKey={getKey}
+                  renderItem={renderItem}
+                  itemLabel={itemLabel}
+                  isDisabled={isDisabled}
+                  isSelected={isSelected}
+                  disabledBadge={disabledBadge}
+                  columns={columns}
+                  activeIndex={activeIndex}
+                  itemRefs={itemRefs}
+                  onSelect={handleSelect}
+                  onKeyDown={handleGridKeyDown}
+                />
+              </div>
             </div>,
             document.body,
           )

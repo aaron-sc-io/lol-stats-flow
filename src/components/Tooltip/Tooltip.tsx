@@ -6,20 +6,23 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
 import { createPortal } from "react-dom"
 import { cx } from "@/lib/cx"
 import { computeFloatingPosition, type Placement } from "@/lib/floating-position"
+import { mergeRefs } from "@/lib/merge-refs"
 import styles from "./Tooltip.module.css"
 
 const OPEN_DELAY_MS = 400
 
 export type TooltipProps = {
   readonly label: string
-  /** A single `<button>` element — Tooltip attaches its own ref and hover/
-   * focus handlers directly, so the child must not define its own. */
+  /** A single `<button>` element — Tooltip attaches its own hover/focus
+   * handlers directly, so the child must not define its own. A `ref` on
+   * the child is preserved (merged with Tooltip's own). */
   readonly children: ReactElement<ComponentPropsWithRef<"button">>
   readonly placement?: Placement
 }
@@ -89,8 +92,10 @@ export function Tooltip({ label, children, placement = "bottom" }: TooltipProps)
     }
   }, [isVisible, close])
 
+  const childRef = children.props.ref
+  const mergedRef = useMemo(() => mergeRefs(triggerRef, childRef), [childRef])
   const trigger = cloneElement(children, {
-    ref: triggerRef,
+    ref: mergedRef,
     onPointerEnter: scheduleOpen,
     onPointerLeave: close,
     onFocus: scheduleOpen,
