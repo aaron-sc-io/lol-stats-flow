@@ -69,7 +69,16 @@ export function ItemSetRow({
         type="source"
         position={Position.Right}
         id={itemSetHandleId(itemSet.id)}
-        className={styles.itemSetHandle}
+        // Breaches past this row's own box and NodeFrame's `--space-3` body
+        // padding so the handle's outer edge lands exactly on the node's
+        // true right border — flush with the edge (defect: previously sat
+        // deep inside the row's reserved padding) and fully contained, no
+        // overflow (plan Phase 4 AC #1: "lies fully inside the node box").
+        // Set via inline style (not a CSS class) to unconditionally beat
+        // the library's own `.react-flow__handle-right{right:0;
+        // transform:translate(50%,-50%)}` base rule regardless of CSS
+        // import order.
+        style={{ right: "calc(-1 * var(--space-3))", transform: "translateY(-50%)" }}
       />
     </div>
   )
