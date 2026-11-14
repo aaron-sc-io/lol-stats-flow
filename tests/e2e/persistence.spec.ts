@@ -245,4 +245,66 @@ test.describe("Phase 5 — persistence", () => {
     )
     expect(seriousOrCritical).toEqual([])
   })
+
+  test("the bootstrapped default canvas is saved immediately: drawer lists it, and a reload reopens it instead of creating a new one", async ({
+    page,
+  }) => {
+    await gotoAndSettle(page)
+
+    // Regression: `claimDefaultCanvas()` used to call `setActive()` only,
+    // never `saveCanvas()`/`setLastOpenedId()` — so the top bar claimed
+    // "Saved" while storage stayed empty.
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 3000 })
+
+    await page.getByRole("button", { name: "Open menu" }).click()
+    const dialog = page.getByRole("dialog", { name: "Canvases" })
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText("No saved canvases yet.")).toHaveCount(0)
+    await expect(dialog.getByText("Untitled canvas")).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(dialog).toBeHidden()
+
+    const lastOpenedIdBefore = await page.evaluate(
+      (key) => window.localStorage.getItem(key),
+      LAST_OPENED_KEY,
+    )
+    expect(lastOpenedIdBefore).not.toBeNull()
+
+    await page.reload()
+    await expect(page.locator(".react-flow")).toBeVisible()
+    await expect(page.getByText("Yasuo").first()).toBeVisible()
+
+    const lastOpenedIdAfter = await page.evaluate(
+      (key) => window.localStorage.getItem(key),
+      LAST_OPENED_KEY,
+    )
+    expect(lastOpenedIdAfter).toBe(lastOpenedIdBefore)
+
+    const savedCanvasCount = await page.evaluate(
+      (prefix) =>
+        Array.from({ length: window.localStorage.length }, (_, i) =>
+          window.localStorage.key(i),
+        ).filter((key) => key?.startsWith(prefix) ?? false).length,
+      CANVAS_KEY_PREFIX,
+    )
+    expect(savedCanvasCount).toBe(1)
+  })
+
+  test("opening the drawer focuses the search field, not the close button, and never shows its tooltip", async ({
+    page,
+  }) => {
+    await gotoAndSettle(page)
+
+    await page.getByRole("button", { name: "Open menu" }).click()
+    await expect(page.getByRole("dialog", { name: "Canvases" })).toBeVisible()
+
+    await expect(page.getByRole("textbox", { name: "Search canvases" })).toBeFocused()
+
+    // Tooltips must only ever appear from hover or real keyboard
+    // navigation (`:focus-visible`) — never from this drawer-open
+    // effect's programmatic focus. Wait past Tooltip's 400ms open delay
+    // to prove it never appears, not merely that it hasn't yet.
+    await page.waitForTimeout(500)
+    await expect(page.getByText("Close menu", { exact: true })).toHaveCount(0)
+  })
 })
