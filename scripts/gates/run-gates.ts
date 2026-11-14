@@ -58,7 +58,7 @@ export function runGates(patch: string, baseline: string | null, skipGolden: boo
     runSizeGate(patch),
   ]
   if (!skipGolden) {
-    gates.push(runGoldenGate())
+    gates.push(runGoldenGate(patch))
   }
 
   const failingEntities = dedupeFailingEntities(gates.flatMap((g) => g.failingEntities))
