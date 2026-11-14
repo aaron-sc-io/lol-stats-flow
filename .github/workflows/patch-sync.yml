@@ -140,7 +140,7 @@ jobs:
           fi
 
       - name: Commit snapshot + open auto-merging PR
-        if: (steps.outcome.outputs.outcome == 'clean' || steps.outcome.outputs.outcome == 'demoted') && inputs.dry_run != 'true'
+        if: (steps.outcome.outputs.outcome == 'clean' || steps.outcome.outputs.outcome == 'demoted') && inputs.dry_run != true
         run: |
           TARGET="${{ steps.outcome.outputs.target }}"
           BRANCH="patch/$TARGET"
@@ -161,7 +161,7 @@ jobs:
           gh pr merge "$BRANCH" --squash --auto
 
       - name: Open/update demotion issue
-        if: steps.outcome.outputs.outcome == 'demoted' && inputs.dry_run != 'true'
+        if: steps.outcome.outputs.outcome == 'demoted' && inputs.dry_run != true
         run: |
           TITLE="patch-sync: demoted entities on ${{ steps.outcome.outputs.target }}"
           EXISTING=$(gh issue list --label patch-sync-demotion --state open --search "in:title ${{ steps.outcome.outputs.target }}" --json number --jq '.[0].number')
