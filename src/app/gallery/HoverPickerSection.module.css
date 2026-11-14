@@ -1,0 +1,17 @@
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+}
+
+.itemName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

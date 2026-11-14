@@ -1,0 +1,71 @@
+.page {
+  /* Unlike `.canvas` (App.module.css), this intentionally does NOT set
+     height/overflow — React Flow needs a fixed-size ancestor, but the
+     gallery is a plain scrollable document, so it scrolls at the page
+     level like any other site. That also lets Playwright's
+     `fullPage: true` screenshot actually capture the whole thing instead
+     of just whatever fits in one viewport-height nested scroll region. */
+  min-height: 100%;
+  padding: var(--space-6);
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+}
+
+.pageTitle {
+  margin: 0 0 var(--space-6);
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-2xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.section {
+  margin-bottom: var(--space-7);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.swatchLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.flowContainer {
+  position: relative;
+  height: 320px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-node);
+  overflow: hidden;
+}
+
+.nodeBody {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
