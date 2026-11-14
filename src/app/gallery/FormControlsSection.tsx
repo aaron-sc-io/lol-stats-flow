@@ -192,19 +192,31 @@ function CollapsibleSection() {
 
 export function FormControlsSection() {
   return (
-    <section className={styles.section}>
-      <h2 className={styles.sectionTitle}>SearchField</h2>
-      <SearchFieldSection />
-      <h2 className={styles.sectionTitle}>Slider</h2>
-      <SliderSection />
-      <h2 className={styles.sectionTitle}>NumberField</h2>
-      <NumberFieldSection />
-      <h2 className={styles.sectionTitle}>SegmentedControl</h2>
-      <SegmentedControlSection />
-      <h2 className={styles.sectionTitle}>Listbox</h2>
-      <ListboxSection />
-      <h2 className={styles.sectionTitle}>Collapsible</h2>
-      <CollapsibleSection />
-    </section>
+    <>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>SearchField</h2>
+        <SearchFieldSection />
+      </section>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Slider</h2>
+        <SliderSection />
+      </section>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>NumberField</h2>
+        <NumberFieldSection />
+      </section>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>SegmentedControl</h2>
+        <SegmentedControlSection />
+      </section>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Listbox</h2>
+        <ListboxSection />
+      </section>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Collapsible</h2>
+        <CollapsibleSection />
+      </section>
+    </>
   )
 }
