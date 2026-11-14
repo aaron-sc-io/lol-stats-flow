@@ -12,21 +12,36 @@ export function ItemSetRow({
   championNodeId,
   itemSet,
   snapshot,
+  highlighted,
 }: {
   readonly championNodeId: string
   readonly itemSet: ItemSet
   readonly snapshot: Snapshot
+  readonly highlighted: boolean
 }) {
   const renameItemSet = useGraphStore((s) => s.renameItemSet)
   const duplicateItemSet = useGraphStore((s) => s.duplicateItemSet)
   const removeItemSet = useGraphStore((s) => s.removeItemSet)
   const setItemSlot = useGraphStore((s) => s.setItemSlot)
+  const setHoveredItemSet = useGraphStore((s) => s.setHoveredItemSet)
+  const setHoveredItemSets = useGraphStore((s) => s.setHoveredItemSets)
 
   const resolvedItems = resolveItemSlots(itemSet.items, snapshot.items)
   const byId = new Map(snapshot.items.map((item) => [item.id, item]))
 
   return (
-    <div className={styles.itemSetRow}>
+    <div
+      className={styles.itemSetRow}
+      data-highlighted={highlighted ? "true" : undefined}
+      onPointerEnter={() => {
+        setHoveredItemSet(itemSet.id)
+        setHoveredItemSets([itemSet.id])
+      }}
+      onPointerLeave={() => {
+        setHoveredItemSet(null)
+        setHoveredItemSets([])
+      }}
+    >
       <input
         type="text"
         className={styles.itemSetName}

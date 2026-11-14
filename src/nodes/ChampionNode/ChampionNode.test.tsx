@@ -62,7 +62,16 @@ function currentNode(): ChampionFlowNode {
 
 describe("ChampionNode", () => {
   beforeEach(() => {
-    useGraphStore.setState({ nodes: [], edges: [], hoveredComboId: null })
+    useGraphStore.setState({
+      nodes: [],
+      edges: [],
+      hoveredComboId: null,
+      hoveredGraphSeriesId: null,
+      hoveredStepId: null,
+      hoveredStepIds: [],
+      hoveredItemSetId: null,
+      hoveredItemSetIds: [],
+    })
   })
 
   it("renders the champion's name and its item set row", () => {
@@ -111,5 +120,17 @@ describe("ChampionNode", () => {
     renderChampionNode(fixtureNode())
     fireEvent.click(screen.getByRole("button", { name: "Remove Infinity Edge" }))
     expect(currentNode().data.itemSets[0]?.items[0]).toBeNull()
+  })
+
+  it("marks an item row with data-highlighted while that row is hovered", () => {
+    renderChampionNode(fixtureNode())
+    const nameInput = screen.getByDisplayValue("Build 1")
+    const row = nameInput.closest("div")
+    if (!(row instanceof HTMLElement)) {
+      throw new Error("test fixture error: expected item set row")
+    }
+    fireEvent.pointerEnter(row)
+
+    expect(row.getAttribute("data-highlighted")).toBe("true")
   })
 })

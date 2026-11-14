@@ -23,12 +23,15 @@ const MAX_WIDTH = 900
  * [item-sets column]`. Resizes aspect-locked only (plan D6) — `NodeResizer`
  * with `keepAspectRatio`; every internal size is `calc(<token> *
  * var(--node-scale))`, where `--node-scale = currentWidth / BASE_WIDTH`.
+ * Only the width is ever pinned by a resize (see `onNodesChange` in
+ * `flow-slice.ts`); height always follows the content.
  */
 export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>) {
   const snapshot = useSnapshotContext()
   const nodes = useGraphStore((s) => s.nodes)
   const edges = useGraphStore((s) => s.edges)
   const hoveredComboId = useGraphStore((s) => s.hoveredComboId)
+  const hoveredItemSetIds = useGraphStore((s) => s.hoveredItemSetIds)
   const setChampionId = useGraphStore((s) => s.setChampionId)
   const setChampionLevel = useGraphStore((s) => s.setChampionLevel)
   const addItemSet = useGraphStore((s) => s.addItemSet)
@@ -62,8 +65,8 @@ export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>
   }, [id, itemSetIds, updateNodeInternals])
 
   const highlight = useMemo(
-    () => computeHighlightState(nodes, edges, hoveredComboId),
-    [nodes, edges, hoveredComboId],
+    () => computeHighlightState(nodes, edges, hoveredComboId, hoveredItemSetIds),
+    [nodes, edges, hoveredComboId, hoveredItemSetIds],
   )
   const highlighted = highlight.highlightedNodeIds.has(id)
   const dimmed = highlight.dimmedNodeIds.has(id)
@@ -112,6 +115,7 @@ export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>
                 championNodeId={id}
                 itemSet={itemSet}
                 snapshot={snapshot}
+                highlighted={highlight.highlightedItemSetIds.has(itemSet.id)}
               />
             ))}
             <Button variant="ghost" onClick={() => addItemSet(id)}>

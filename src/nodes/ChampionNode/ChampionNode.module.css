@@ -61,18 +61,32 @@
   display: flex;
   align-items: center;
   gap: calc(var(--space-2) * var(--node-scale, 1));
-  padding: calc(var(--space-1) * var(--node-scale, 1)) 0;
+  padding: calc(var(--space-1) * var(--node-scale, 1));
+  transition: background-color var(--motion-fast) var(--motion-easing);
+}
+
+/* Grey divider between consecutive item sets. */
+.itemSetRow + .itemSetRow {
+  border-top: var(--border-width-hairline) solid var(--border-default);
+}
+
+/* Linked-hover state: this row is hovered, or a combo it feeds is. */
+.itemSetRow[data-highlighted="true"] {
+  background-color: var(--surface-hover);
+  box-shadow: inset 2px 0 0 var(--text-primary);
 }
 
 .itemSetName {
-  width: calc(72px * var(--node-scale, 1));
-  flex-shrink: 0;
+  width: calc(108px * var(--node-scale, 1));
+  min-width: 0;
+  flex: 0 1 auto;
   border: none;
   border-bottom: var(--border-width-hairline) solid transparent;
   background: transparent;
   color: var(--text-primary);
   font-size: calc(var(--font-size-xs) * var(--node-scale, 1));
   line-height: var(--line-height-xs);
+  text-overflow: ellipsis;
 }
 
 .itemSetName:hover,
@@ -82,6 +96,8 @@
 
 .slots {
   display: flex;
+  flex-shrink: 0;
+  margin-left: calc(var(--space-2) * var(--node-scale, 1));
   gap: calc(var(--space-1) * var(--node-scale, 1));
 }
 
@@ -126,38 +142,16 @@
 }
 
 .pickerItemIcon {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-control);
-}
-
-.pickerItemName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pickerItemCost {
-  color: var(--text-tertiary);
-  font-size: var(--font-size-2xs);
-}
-
-.rosterPortraitIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-control);
-}
-
-.rosterPortraitName {
-  overflow: hidden;
+  display: block;
   width: 100%;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: var(--radius-control);
 }
 
-.unmodeledBadge {
-  flex-shrink: 0;
+/* Unselectable (unmodeled) champions in the roster picker. */
+.pickerItemUnavailable {
+  filter: grayscale(1);
 }
 
 /* ── Resize handles (NodeResizer, plan D6) ─────────────────────────────

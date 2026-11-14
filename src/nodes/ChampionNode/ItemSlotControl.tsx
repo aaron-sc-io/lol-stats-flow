@@ -1,11 +1,9 @@
-import { Badge } from "@/components/Badge"
 import type { HoverPickerFilter } from "@/components/HoverPicker"
 import { HoverPicker } from "@/components/HoverPicker"
 import type { IconName } from "@/components/icons"
 import { Tooltip } from "@/components/Tooltip"
 import type { ItemData, Snapshot } from "@/data/schema"
 import { canAddItemToSet } from "@/graph/item-rules"
-import { cx } from "@/lib/cx"
 import styles from "./ChampionNode.module.css"
 
 const SUMMONERS_RIFT_MAP_ID = "11"
@@ -120,28 +118,29 @@ export function ItemSlotControl({
   const shopItems = snapshot.items.filter(
     (item) => item.purchasable && item.maps[SUMMONERS_RIFT_MAP_ID] === true,
   )
+  const isUnavailable = (item: ItemData) => !canAddItemToSet(currentSetItems, item).canAdd
 
   return (
     <HoverPicker
       trigger={<span className={styles.emptySlot}>+</span>}
       items={shopItems}
       getKey={(item) => item.id}
-      renderItem={(item) => (
-        <>
-          <img src={item.iconUrl} alt="" className={styles.pickerItemIcon} />
-          <span className={styles.pickerItemName}>{item.name}</span>
-          <span className={cx("num", styles.pickerItemCost)}>
-            {item.goldTotal.toLocaleString()}g
-          </span>
-          {item.modeled ? null : <Badge className={styles.unmodeledBadge}>Unmodeled</Badge>}
-        </>
-      )}
+      renderItem={(item) => <img src={item.iconUrl} alt="" className={styles.pickerItemIcon} />}
+      itemLabel={(item) =>
+        [
+          item.name,
+          item.modeled ? null : "(unmodeled)",
+          isUnavailable(item) ? "(unavailable)" : null,
+        ]
+          .filter((part) => part !== null)
+          .join(" ")
+      }
       searchText={(item) => item.name}
       filters={STAT_FILTERS}
-      isDisabled={(item) => !canAddItemToSet(currentSetItems, item).canAdd}
-      disabledBadge="Unavailable"
+      isDisabled={isUnavailable}
       onSelect={onEquip}
-      columns={3}
+      columns={7}
+      compact
       aria-label={`${slotLabel}: choose item`}
       searchPlaceholder="Search items…"
     />
