@@ -1,0 +1,34 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  color: var(--text-secondary);
+}
+
+.swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-control);
+  border: var(--border-width-hairline) solid transparent;
+}
+
+.swatch[data-type="physical"] {
+  background-color: var(--dmg-physical);
+}
+
+.swatch[data-type="magic"] {
+  background-color: var(--dmg-magic);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 1px,
+    var(--surface-node) 1px 2px
+  );
+}
+
+.swatch[data-type="true"] {
+  background-color: transparent;
+  border-color: var(--dmg-true);
+}
