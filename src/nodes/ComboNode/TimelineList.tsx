@@ -8,32 +8,57 @@ import {
   useSensors,
 } from "@dnd-kit/core"
 import {
+  horizontalListSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useToast } from "@/components/Toast"
 import { useSnapshotContext } from "@/data/snapshot-context"
-import type { ComboStep, Kit, TargetSpec } from "@/engine"
-import { buildChartPoints } from "@/graph/chart-points"
+import type { ComboStep, TargetSpec } from "@/engine"
+import { buildChartPoints, type ChartPoint } from "@/graph/chart-points"
+import type { ComboVariant } from "@/graph/combo-variants"
 import type { ConnectedItemSetSource } from "@/graph/selectors"
-import { isStepOrphaned } from "@/graph/selectors"
+import { isStepOrphaned, resolveStepChampionNodeId } from "@/graph/selectors"
 import { getOrSimulate } from "@/graph/sim-cache"
 import { useGraphStore } from "@/graph/store"
+import { cx } from "@/lib/cx"
+import { abilityIconUrl, actionKeyLabels } from "./AbilityPaletteSection"
 import styles from "./ComboNode.module.css"
-import { TimelineEntry } from "./TimelineEntry"
+import { type StepDamage, TimelineEntry } from "./TimelineEntry"
 
+type VariantOutcome = {
+  readonly variant: ComboVariant
+  readonly total: number
+  readonly pointByStepId: ReadonlyMap<string, ChartPoint | undefined>
+}
+
+function simulateVariant(variant: ComboVariant, target: TargetSpec | undefined): VariantOutcome {
+  if (target === undefined) {
+    return { variant, total: 0, pointByStepId: new Map() }
+  }
+  const result = getOrSimulate(variant.steps, variant.kits, target)
+  const points = buildChartPoints(result, variant.steps, target, "step")
+  return {
+    variant,
+    total: result.instances.reduce((sum, instance) => sum + instance.mitigated, 0),
+    pointByStepId: new Map(variant.steps.map((step, index) => [step.id, points[index]] as const)),
+  }
+}
+
+/** The combo order, laid out horizontally: one tile per step showing the
+ * same icon as its palette button, with damage under it for every item-set
+ * variant (one row per variant, top row = the primary variant). */
 export function TimelineList({
   comboNodeId,
   steps,
   connectedSources,
-  kits,
+  variants,
   target,
 }: {
   readonly comboNodeId: string
   readonly steps: readonly ComboStep[]
   readonly connectedSources: readonly ConnectedItemSetSource[]
-  readonly kits: Readonly<Record<string, Kit>>
+  readonly variants: readonly ComboVariant[]
   readonly target: TargetSpec | undefined
 }) {
   const snapshot = useSnapshotContext()
@@ -57,16 +82,12 @@ export function TimelineList({
     )
   }
 
-  const connectedSteps = steps.filter((step) => !isStepOrphaned(step, connectedSources, kits))
-  const result = target === undefined ? undefined : getOrSimulate(connectedSteps, kits, target)
-  const chartPoints =
-    result === undefined || target === undefined
-      ? []
-      : buildChartPoints(result, connectedSteps, target, "step")
-  const chartPointByStepId = new Map(
-    connectedSteps.map((step, index) => [step.id, chartPoints[index]]),
+  const primaryKits = variants[0]?.kits ?? {}
+  const keyLabelsByChampion = new Map(
+    Object.entries(primaryKits).map(([id, kit]) => [id, actionKeyLabels(kit.actions)] as const),
   )
-  const total = result?.instances.reduce((sum, instance) => sum + instance.mitigated, 0) ?? 0
+  const outcomes = variants.map((variant) => simulateVariant(variant, target))
+  const showVariantNames = outcomes.length > 1
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -90,19 +111,29 @@ export function TimelineList({
   }
 
   return (
-    <div className="nowheel">
+    <div className={styles.timeline}>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={steps.map((step) => step.id)}
-          strategy={verticalListSortingStrategy}
+          strategy={horizontalListSortingStrategy}
         >
-          <ul className={styles.timelineList}>
+          <ul className={cx(styles.timelineList, "nowheel")}>
             {steps.map((step, index) => {
-              const source = connectedSources.find((s) => s.itemSetId === step.sourceId)
-              const champion = snapshot.champions.find(
-                (c) => c.id === source?.championNode.data.championId,
+              const championNodeId = resolveStepChampionNodeId(step, connectedSources)
+              const championItemSets = connectedSources.filter(
+                (source) => source.championNode.id === championNodeId,
               )
-              const action = kits[step.sourceId]?.actions.find((a) => a.id === step.actionId)
+              const championNode = championItemSets[0]?.championNode
+              const champion = snapshot.champions.find(
+                (c) => c.id === championNode?.data.championId,
+              )
+              const kit = championNodeId === undefined ? undefined : primaryKits[championNodeId]
+              const action = kit?.actions.find((a) => a.id === step.actionId)
+              const damages: StepDamage[] = outcomes.map(({ variant, pointByStepId }) => ({
+                variantId: variant.variantId,
+                variantName: variant.variantName,
+                point: pointByStepId.get(step.id),
+              }))
               return (
                 <TimelineEntry
                   key={step.id}
@@ -110,9 +141,20 @@ export function TimelineList({
                   step={step}
                   index={index}
                   actionLabel={action?.label ?? step.actionId}
-                  championName={champion?.name ?? "?"}
-                  orphaned={isStepOrphaned(step, connectedSources, kits)}
-                  chartPoint={chartPointByStepId.get(step.id)}
+                  iconUrl={
+                    champion === undefined || action === undefined
+                      ? undefined
+                      : abilityIconUrl(champion, action)
+                  }
+                  keyLabel={
+                    (championNodeId === undefined
+                      ? undefined
+                      : keyLabelsByChampion.get(championNodeId)?.get(step.actionId)) ??
+                    step.actionId
+                  }
+                  itemSetIds={championItemSets.map((source) => source.itemSetId)}
+                  orphaned={isStepOrphaned(step, connectedSources, primaryKits)}
+                  damages={damages}
                   onDelete={() => handleDelete(step, index)}
                 />
               )
@@ -120,9 +162,13 @@ export function TimelineList({
           </ul>
         </SortableContext>
       </DndContext>
-      <div className={styles.runningTotal}>
-        <span>Total</span>
-        <span className="num">{Math.round(total).toLocaleString()}</span>
+      <div className={styles.runningTotals}>
+        {outcomes.map(({ variant, total }) => (
+          <div key={variant.variantId} className={styles.runningTotal}>
+            <span>{showVariantNames ? variant.variantName : "Total"}</span>
+            <span className="num">{Math.round(total).toLocaleString()}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

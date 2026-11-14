@@ -40,80 +40,129 @@
   text-align: center;
 }
 
+/* One champion's whole kit (AA, AA✳, Q, Q✳, W, E0-E4, R) on a single line;
+ * scrolls sideways rather than wrapping if a kit ever outgrows the node. */
 .paletteGrid {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: var(--space-2);
+  overflow-x: auto;
 }
 
 .paletteCell {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.stackVariants {
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 2px;
 }
 
 .paletteButton {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  overflow: hidden;
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
-  padding: var(--space-1) var(--space-2);
-  transition: border-color var(--motion-fast) var(--motion-easing);
+  background-color: var(--surface-raised);
+  color: var(--text-secondary);
+  transition:
+    border-color var(--motion-fast) var(--motion-easing),
+    background-color var(--motion-fast) var(--motion-easing),
+    color var(--motion-fast) var(--motion-easing);
 }
 
 .paletteButton:hover {
   border-color: var(--border-strong);
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
 }
 
-.paletteIconWrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+.paletteButton:active {
+  background-color: var(--surface-node);
+}
+
+.paletteButton:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow:
+    0 0 0 1px var(--surface-canvas),
+    0 0 0 2px var(--border-focus);
 }
 
 .paletteIcon {
-  width: 24px;
-  height: 24px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: var(--radius-control);
+}
+
+.palettePlaceholderIcon {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
 }
 
 .paletteKey {
-  color: var(--text-secondary);
-  font-size: var(--font-size-2xs);
-  line-height: var(--line-height-2xs);
-}
-
-.stackControl {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  max-width: calc(100% - 2px);
+  overflow: hidden;
+  padding: 0 2px;
   border: var(--border-width-hairline) solid var(--border-default);
-  border-radius: var(--radius-control);
-  padding: var(--space-1) var(--space-2);
+  border-radius: 2px;
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.timelineList {
+.timeline {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* The combo order, left to right; scrolls sideways once it outgrows the node. */
+.timelineList {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   gap: var(--space-1);
   margin: 0;
-  padding: 0;
+  padding: 0 0 var(--space-1);
   list-style: none;
-  max-height: 320px;
-  overflow-y: auto;
+  overflow-x: auto;
 }
 
 .timelineEntry {
   display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  width: 96px;
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1);
   transition:
     opacity var(--motion-fast) var(--motion-easing),
     border-color var(--motion-fast) var(--motion-easing);
@@ -127,48 +176,76 @@
   opacity: var(--opacity-dimmed);
 }
 
+.entryHandles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .dragHandle {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   color: var(--text-tertiary);
   cursor: grab;
 }
 
-.sourceMonogram {
-  display: flex;
-  flex-shrink: 0;
+.entryIcon {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  overflow: hidden;
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
+  background-color: var(--surface-raised);
   color: var(--text-secondary);
-  font-size: var(--font-size-2xs);
-  line-height: var(--line-height-2xs);
 }
 
-.entryLabel {
-  overflow: hidden;
-  flex: 1 1 auto;
-  color: var(--text-primary);
-  font-size: var(--font-size-xs);
-  line-height: var(--line-height-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.entryDamage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* The one damage chip a hovered Graph line segment maps to. */
+.entryDamageChip {
+  display: inline-flex;
+  border-radius: var(--radius-control);
+  outline: var(--border-width-hairline) solid transparent;
+  outline-offset: 1px;
+  transition: outline-color var(--motion-fast) var(--motion-easing);
+}
+
+.entryDamageChip[data-highlighted="true"] {
+  outline-color: var(--border-focus);
+  font-weight: var(--font-weight-semibold);
 }
 
 .delayField {
-  flex-shrink: 0;
-  width: 92px;
+  width: 100%;
+}
+
+.runningTotals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-top: var(--border-width-hairline) solid var(--border-default);
+  padding-top: var(--space-2);
 }
 
 .runningTotal {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: var(--border-width-hairline) solid var(--border-default);
-  padding-top: var(--space-2);
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-sm);

@@ -1,8 +1,5 @@
-import { useState } from "react"
-import { Button } from "@/components/Button"
 import { Collapsible } from "@/components/Collapsible"
 import { IconButton } from "@/components/IconButton"
-import { NumberField } from "@/components/NumberField"
 import type { ChampionData } from "@/data/schema"
 import type { ComboAction, Kit } from "@/engine"
 import { type ActionGroup, groupComboActions, type StackActionGroup } from "@/graph/action-grouping"
@@ -13,6 +10,7 @@ import { cx } from "@/lib/cx"
 import styles from "./ComboNode.module.css"
 
 const RANKABLE_SLOTS: readonly AbilitySlotWithRank[] = ["Q", "W", "E", "R"]
+const STACK_VARIANT_ID_PATTERN = /-stack(\d+)$/
 
 function isRankableSlot(slot: ComboAction["slot"]): slot is AbilitySlotWithRank {
   return (RANKABLE_SLOTS as readonly string[]).includes(slot)
@@ -20,21 +18,39 @@ function isRankableSlot(slot: ComboAction["slot"]): slot is AbilitySlotWithRank 
 
 type RankControl = {
   readonly championNodeId: string
-  readonly itemSetId: string
+  /** Every connected item set of the champion — a rank change applies to
+   * all of them so the item-set variants differ only by items. */
+  readonly itemSetIds: readonly string[]
   readonly maxRank: number
 }
 
-function abilityIconUrl(champion: ChampionData, action: ComboAction): string | undefined {
+export function abilityIconUrl(champion: ChampionData, action: ComboAction): string | undefined {
   const slot = action.slot
   return slot === "Q" || slot === "W" || slot === "E" || slot === "R"
     ? champion.abilities[slot].iconUrl
     : undefined
 }
 
-/** Compact per-ability rank stepper (plan §6/defect fix: replaces the
- * standalone heavy NumberField row that sat above the whole palette,
- * disconnected from the abilities it modified). Attached directly beneath
- * each rankable ability's icon so rank and ability read as one control. */
+function AttackPlaceholderIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={styles.palettePlaceholderIcon}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M14.5 4.5L19.5 4.5L19.5 9.5L10.5 18.5L5.5 13.5Z" />
+      <path d="M8 16L4.5 19.5" />
+      <path d="M6.5 12.5L11.5 17.5" />
+    </svg>
+  )
+}
+
 function RankStepper({
   slot,
   rank,
@@ -67,28 +83,62 @@ function RankStepper({
   )
 }
 
-function AbilityIconContent({
-  champion,
-  action,
+function stackKeyLabel(baseKeyLabel: string, actionId: string, fallbackIndex: number): string {
+  if (fallbackIndex === 0) return `${baseKeyLabel}0`
+  const stackIndex = Number(STACK_VARIANT_ID_PATTERN.exec(actionId)?.[1] ?? fallbackIndex)
+  return `${baseKeyLabel}${stackIndex}`
+}
+
+/** The ability icon (or the auto-attack placeholder) with its key-label
+ * badge — shared by the palette buttons and the combo timeline. */
+export function AbilityIconContent({
+  iconUrl,
+  keyLabel,
 }: {
-  readonly champion: ChampionData
-  readonly action: ComboAction
+  readonly iconUrl: string | undefined
+  readonly keyLabel: string
 }) {
-  const iconUrl = abilityIconUrl(champion, action)
   return (
     <>
-      {iconUrl === undefined ? null : <img src={iconUrl} alt="" className={styles.paletteIcon} />}
-      <span className={styles.paletteKey}>{action.keyLabel}</span>
+      {iconUrl === undefined ? (
+        <AttackPlaceholderIcon />
+      ) : (
+        <img src={iconUrl} alt="" className={styles.paletteIcon} />
+      )}
+      <span className={styles.paletteKey} aria-hidden="true">
+        {keyLabel}
+      </span>
     </>
   )
 }
 
-/** Renders the rank stepper for `action`'s slot when it's rankable — kept
- * as its own component so callers can place it as a *sibling* of (never
- * nested inside) the ability's own `<button>`: axe's `nested-interactive`
- * rule correctly flags a button-inside-a-button as broken for assistive
- * tech, so the stepper's own `-`/`+` buttons must live outside the "add
- * this ability to the combo" button, not inside it. */
+function AbilityIconButton({
+  champion,
+  action,
+  keyLabel,
+  onAdd,
+}: {
+  readonly champion: ChampionData
+  readonly action: ComboAction
+  readonly keyLabel?: string | undefined
+  readonly onAdd: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.paletteButton}
+      onClick={onAdd}
+      aria-label={action.label}
+      title={action.label}
+    >
+      <AbilityIconContent
+        iconUrl={abilityIconUrl(champion, action)}
+        keyLabel={keyLabel ?? action.keyLabel}
+      />
+    </button>
+  )
+}
+
 function RankStepperFor({
   action,
   rankControl,
@@ -98,134 +148,156 @@ function RankStepperFor({
 }) {
   const setItemSetRankOverride = useGraphStore((s) => s.setItemSetRankOverride)
   const slot = action.slot
-  if (rankControl === undefined || !isRankableSlot(slot)) {
-    return null
-  }
+  if (rankControl === undefined || !isRankableSlot(slot)) return null
   return (
     <RankStepper
       slot={slot}
       rank={action.rank}
       maxRank={rankControl.maxRank}
-      onChange={(rank) =>
-        setItemSetRankOverride(rankControl.championNodeId, rankControl.itemSetId, slot, rank)
-      }
+      onChange={(rank) => {
+        for (const itemSetId of rankControl.itemSetIds) {
+          setItemSetRankOverride(rankControl.championNodeId, itemSetId, slot, rank)
+        }
+      }}
     />
   )
 }
 
-function SingleActionButton({
-  champion,
-  action,
-  rankControl,
-  onAdd,
-}: {
-  readonly champion: ChampionData
-  readonly action: ComboAction
-  readonly rankControl?: RankControl | undefined
-  readonly onAdd: () => void
-}) {
-  return (
-    <div className={styles.paletteCell}>
-      <button type="button" className={styles.paletteButton} onClick={onAdd} title={action.label}>
-        <AbilityIconContent champion={champion} action={action} />
-      </button>
-      <RankStepperFor action={action} rankControl={rankControl} />
-    </div>
-  )
+/** One palette cell: every button for a single ability slot plus (for Q/W/E/R)
+ * one shared rank stepper. Same-slot groups — Yasuo's Q/Q✳, Darius's
+ * Q-blade/Q-handle — share one rank override, so they share one cell. */
+type PaletteCellModel = {
+  readonly lead: ComboAction
+  readonly groups: readonly ActionGroup[]
 }
 
-/** Collapses a base ability + its stored-stack variants into one stepper +
- * add control (plan D9 "E0-E4 style collapsed into one entry") — the
- * currently-selected stack count is local UI state, not graph data, since
- * only the *chosen* variant becomes a real combo step on "Add". */
-function StackActionControl({
+function leadAction(group: ActionGroup): ComboAction {
+  return group.kind === "single" ? group.action : group.base
+}
+
+function buildPaletteCells(groups: readonly ActionGroup[]): PaletteCellModel[] {
+  const cells: { lead: ComboAction; groups: ActionGroup[] }[] = []
+  const cellBySlot = new Map<AbilitySlotWithRank, { lead: ComboAction; groups: ActionGroup[] }>()
+  for (const group of groups) {
+    const lead = leadAction(group)
+    const slot = lead.slot
+    const existing = isRankableSlot(slot) ? cellBySlot.get(slot) : undefined
+    if (existing !== undefined) {
+      existing.groups.push(group)
+      continue
+    }
+    const cell = { lead, groups: [group] }
+    if (isRankableSlot(slot)) cellBySlot.set(slot, cell)
+    cells.push(cell)
+  }
+  return cells
+}
+
+function PaletteCell({
   champion,
-  group,
+  cell,
   rankControl,
   onAdd,
 }: {
   readonly champion: ChampionData
-  readonly group: StackActionGroup
+  readonly cell: PaletteCellModel
   readonly rankControl?: RankControl | undefined
   readonly onAdd: (actionId: string) => void
 }) {
-  const [stacks, setStacks] = useState(group.variants.length)
-  const selected = stacks === 0 ? group.base : (group.variants[stacks - 1] ?? group.base)
+  const buttons = cell.groups.flatMap((group): PaletteButton[] =>
+    group.kind === "single" ? [{ action: group.action, keyLabel: undefined }] : stackButtons(group),
+  )
 
   return (
-    <div className={styles.stackControl}>
-      <div className={styles.paletteCell}>
-        <span className={styles.paletteIconWrap}>
-          <AbilityIconContent champion={champion} action={group.base} />
-        </span>
-        <RankStepperFor action={group.base} rankControl={rankControl} />
+    <div className={styles.paletteCell}>
+      <div className={styles.stackVariants}>
+        {buttons.map(({ action, keyLabel }) => (
+          <AbilityIconButton
+            key={action.id}
+            champion={champion}
+            action={action}
+            keyLabel={keyLabel}
+            onAdd={() => onAdd(action.id)}
+          />
+        ))}
       </div>
-      <NumberField
-        value={stacks}
-        onChange={setStacks}
-        min={0}
-        max={group.variants.length}
-        aria-label={`${group.base.keyLabel} stacks`}
-      />
-      <Button variant="secondary" onClick={() => onAdd(selected.id)}>
-        Add
-      </Button>
+      <RankStepperFor action={cell.lead} rankControl={rankControl} />
     </div>
   )
 }
 
+type PaletteButton = { readonly action: ComboAction; readonly keyLabel: string | undefined }
+
+function stackButtons(group: StackActionGroup): PaletteButton[] {
+  return [group.base, ...group.variants].map((variant, index) => ({
+    action: variant,
+    keyLabel: stackKeyLabel(group.base.keyLabel, variant.id, index),
+  }))
+}
+
+/** actionId → the key label its palette button shows (`E0`..`E4` for stack
+ * variants, the action's own `keyLabel` otherwise), so timeline entries can
+ * badge the same icon identically. */
+export function actionKeyLabels(actions: readonly ComboAction[]): ReadonlyMap<string, string> {
+  const labels = new Map<string, string>()
+  for (const group of groupComboActions(actions)) {
+    if (group.kind === "single") {
+      labels.set(group.action.id, group.action.keyLabel)
+      continue
+    }
+    for (const { action, keyLabel } of stackButtons(group)) {
+      labels.set(action.id, keyLabel ?? action.keyLabel)
+    }
+  }
+  return labels
+}
+
+/** One champion's ability row: every action of its kit on a single line.
+ * The same steps are replayed against each of `sources` (the champion's
+ * connected item sets), so the palette is per champion, not per item set. */
 export function AbilityPaletteSection({
   comboNodeId,
-  source,
+  sources,
   kit,
   champion,
   isOpen,
   onToggle,
 }: {
   readonly comboNodeId: string
-  readonly source: ConnectedItemSetSource
+  readonly sources: readonly ConnectedItemSetSource[]
   readonly kit: Kit
   readonly champion: ChampionData
   readonly isOpen: boolean
   readonly onToggle: (open: boolean) => void
 }) {
   const addComboStep = useGraphStore((s) => s.addComboStep)
-  const groups: ActionGroup[] = groupComboActions(kit.actions)
+  const championNodeId = sources[0]?.championNode.id ?? ""
+  const cells = buildPaletteCells(groupComboActions(kit.actions))
   const rankControlFor = (slot: ComboAction["slot"]): RankControl | undefined =>
     isRankableSlot(slot)
       ? {
-          championNodeId: source.championNode.id,
-          itemSetId: source.itemSetId,
+          championNodeId,
+          itemSetIds: sources.map((source) => source.itemSetId),
           maxRank: champion.abilities[slot].maxRank,
         }
       : undefined
 
   return (
     <Collapsible
-      label={`${champion.name} — ${source.itemSet.name}`}
+      label={`${champion.name} — ${sources.map((source) => source.itemSet.name).join(", ")}`}
       open={isOpen}
       onOpenChange={onToggle}
     >
-      <div className={styles.paletteGrid}>
-        {groups.map((group) =>
-          group.kind === "single" ? (
-            <SingleActionButton
-              key={group.action.id}
-              champion={champion}
-              action={group.action}
-              rankControl={rankControlFor(group.action.slot)}
-              onAdd={() => addComboStep(comboNodeId, source.itemSetId, group.action.id)}
-            />
-          ) : (
-            <StackActionControl
-              key={group.base.id}
-              champion={champion}
-              group={group}
-              rankControl={rankControlFor(group.base.slot)}
-              onAdd={(actionId) => addComboStep(comboNodeId, source.itemSetId, actionId)}
-            />
-          ),
-        )}
+      <div className={cx(styles.paletteGrid, "nowheel")}>
+        {cells.map((cell) => (
+          <PaletteCell
+            key={cell.lead.id}
+            champion={champion}
+            cell={cell}
+            rankControl={rankControlFor(cell.lead.slot)}
+            onAdd={(actionId) => addComboStep(comboNodeId, championNodeId, actionId)}
+          />
+        ))}
       </div>
     </Collapsible>
   )
