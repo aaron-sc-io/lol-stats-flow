@@ -180,4 +180,37 @@ describe("HoverPicker", () => {
     expect(screen.queryByRole("dialog")).toBeNull()
     expect(document.activeElement).toBe(trigger)
   })
+
+  it("traps Tab: from the last focusable element it wraps back to the first", () => {
+    // Given an open picker with focus on its last focusable element. The
+    // grid uses roving tabindex (ARIA grid pattern), so only the active
+    // item — Yasuo, index 0 by default — is a real Tab stop; the others
+    // are reachable by arrow keys, not Tab.
+    renderPicker(vi.fn())
+    fireEvent.click(screen.getByRole("button", { name: "Choose champion" }))
+    const searchInput = screen.getByRole("textbox", { name: "Search" })
+    const lastItem = screen.getByText("Yasuo").closest("button") as HTMLButtonElement
+    lastItem.focus()
+
+    // When Tab is pressed
+    fireEvent.keyDown(document, { key: "Tab" })
+
+    // Then focus wraps back to the first focusable element (search) instead of leaving the popover
+    expect(document.activeElement).toBe(searchInput)
+  })
+
+  it("traps Shift+Tab: from the first focusable element it wraps back to the last", () => {
+    // Given an open picker with focus on its first focusable element (search)
+    renderPicker(vi.fn())
+    fireEvent.click(screen.getByRole("button", { name: "Choose champion" }))
+    const searchInput = screen.getByRole("textbox", { name: "Search" })
+    const lastItem = screen.getByText("Yasuo").closest("button") as HTMLButtonElement
+    searchInput.focus()
+
+    // When Shift+Tab is pressed
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true })
+
+    // Then focus wraps back to the last focusable element instead of leaving the popover
+    expect(document.activeElement).toBe(lastItem)
+  })
 })

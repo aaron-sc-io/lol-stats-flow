@@ -13,7 +13,11 @@ import { SearchField } from "@/components/SearchField"
 import { cx } from "@/lib/cx"
 import { computeFloatingPosition, type Placement } from "@/lib/floating-position"
 import { computeNextGridIndex, matchesActiveFilters } from "./HoverPicker.helpers"
-import { useDismissOnEscapeOrOutside, useHoverPickerOpenState } from "./HoverPicker.hooks"
+import {
+  useDismissOnEscapeOrOutside,
+  useFocusTrap,
+  useHoverPickerOpenState,
+} from "./HoverPicker.hooks"
 import styles from "./HoverPicker.module.css"
 import { HoverPickerFilterBar } from "./HoverPickerFilterBar"
 import { HoverPickerGrid } from "./HoverPickerGrid"
@@ -99,6 +103,7 @@ export function HoverPicker<T>({
     )
 
   useDismissOnEscapeOrOutside({ isOpen, triggerRef, popoverRef, searchInputRef, onClose: close })
+  useFocusTrap(popoverRef, isOpen)
 
   const visibleItems = items.filter(
     (item) =>
