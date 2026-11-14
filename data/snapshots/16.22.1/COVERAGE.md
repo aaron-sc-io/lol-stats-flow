@@ -70,6 +70,13 @@
 
 ## Modeled items
 
+### Black Cleaver
+
+- Calculations: 1
+  - `Black Cleaver.MSBonusSplit`
+- Unknown parts: 0
+- Unresolved hashes: 0
+
 ### Blade of The Ruined King
 
 - Calculations: 14
@@ -351,6 +358,7 @@
 
 | Name | Modeled | Calculations | Unknown parts | Unresolved |
 |---|---|---|---|---|
+| Black Cleaver | yes | 1 | 0 | 0 |
 | Blade of The Ruined King | yes | 14 | 0 | 1 |
 | Hextech Rocketbelt | yes | 1 | 0 | 0 |
 | Immortal Shieldbow | yes | 1 | 0 | 0 |
@@ -432,7 +440,6 @@
 | Berserker's Greaves |  | 0 | 0 | 0 |
 | Berserker's Greaves |  | 0 | 0 | 0 |
 | Bilgewater Cutlass |  | 0 | 0 | 0 |
-| Black Cleaver |  | 1 | 0 | 0 |
 | Black Cleaver |  | 1 | 0 | 0 |
 | Black Hole Gauntlet |  | 2 | 0 | 0 |
 | Black Mist Scythe |  | 0 | 0 | 0 |
