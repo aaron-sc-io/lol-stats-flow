@@ -17,7 +17,7 @@ import {
 import { readJsonFile, writeJsonFile, writeTextFile } from "./fs-cache"
 import { snapshotDir } from "./paths"
 
-type EntityCoverage = {
+export type EntityCoverage = {
   readonly id: string
   readonly name: string
   readonly modeled: boolean

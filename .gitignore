@@ -10,6 +10,9 @@ node_modules/.tmp/
 # Build-time data pipeline download cache (scripts/data/fetch.ts)
 .cache/
 
+# patch-sync.yml scratch output (PR/issue body drafts, copied reports)
+.patch-sync/
+
 # Testing
 coverage/
 playwright-report/

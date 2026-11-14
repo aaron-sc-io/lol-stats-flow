@@ -17,7 +17,12 @@
     "format": "biome format --write .",
     "data:sync": "tsx scripts/data/sync.ts",
     "data:diff": "tsx scripts/data/diff.ts",
-    "data:coverage": "tsx scripts/data/coverage.ts"
+    "data:coverage": "tsx scripts/data/coverage.ts",
+    "data:gates": "tsx scripts/gates/run-gates.ts",
+    "data:demote": "tsx scripts/gates/demote.ts",
+    "data:prune-snapshots": "tsx scripts/gates/prune-snapshots.ts",
+    "data:check-latest": "tsx scripts/data/check-latest.ts",
+    "data:sync-state": "tsx scripts/gates/sync-state.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
