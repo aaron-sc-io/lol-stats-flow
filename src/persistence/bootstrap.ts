@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react"
 import { getCurrentPatchString } from "@/data/loader"
+import { useGraphStore } from "@/graph/store"
 import { generateId } from "@/graph/store-helpers"
+import { buildCanvasDocument } from "./document"
 import { openCanvasDocument, type ToastApi } from "./open-canvas"
 import { usePersistenceStore } from "./persistence-store"
 import { decodeShareHash } from "./share-url"
-import { getLastOpenedId, loadCanvas } from "./storage"
+import { getLastOpenedId, loadCanvas, saveCanvas, setLastOpenedId } from "./storage"
 
 function clearShareHash(): void {
   history.replaceState(null, "", window.location.pathname + window.location.search)
@@ -21,7 +23,11 @@ function clearShareHash(): void {
  * 2. The last-opened saved canvas, if its id is on disk and loads/
  *    migrates cleanly (missing/corrupt → fall through).
  * 3. The default canvas `src/graph/store.ts` already booted with —
- *    nothing to load, just claim it as the active document.
+ *    claimed as the active document and saved immediately (so the drawer
+ *    lists it instead of claiming "no saved canvases yet" while the top
+ *    bar simultaneously claims "Saved", and so a later reload restores
+ *    this same canvas via step 2 instead of claiming a fresh one every
+ *    time).
  *
  * The `hasRun` ref (same one-shot-effect pattern `App.tsx`'s
  * `FlowCanvas` already uses for its initial `fitView`) guards against
@@ -40,14 +46,22 @@ export function useBootstrapPersistence(toast: ToastApi): void {
     async function claimDefaultCanvas(): Promise<void> {
       const currentPatch = await getCurrentPatchString()
       const now = new Date().toISOString()
-      usePersistenceStore.getState().setActive({
-        id: generateId("canvas"),
-        name: "Untitled canvas",
-        patch: currentPatch,
-        createdAt: now,
-        updatedAt: now,
-      })
+      const { nodes, edges } = useGraphStore.getState()
+      const doc = buildCanvasDocument(
+        {
+          id: generateId("canvas"),
+          name: "Untitled canvas",
+          patch: currentPatch,
+          createdAt: now,
+          updatedAt: now,
+        },
+        nodes,
+        edges,
+      )
+      usePersistenceStore.getState().setActive(doc)
       usePersistenceStore.getState().setPatchPin({ kind: "current" })
+      saveCanvas(doc)
+      setLastOpenedId(doc.id)
     }
 
     async function boot(): Promise<void> {
