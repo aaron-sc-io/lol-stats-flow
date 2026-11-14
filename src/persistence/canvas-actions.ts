@@ -77,18 +77,40 @@ export async function duplicateCanvas(id: string, toast: ToastApi): Promise<void
  * the currently-open one. Keeps the top bar's name field in sync when it
  * does happen to be the active canvas, so an inline rename and the
  * editable-name field never show two different names for the same
- * canvas. */
+ * canvas.
+ *
+ * The active canvas is not always on disk yet — `claimDefaultCanvas()`
+ * (`bootstrap.ts`) sets it as active without saving it, so a rename
+ * before the first autosave tick would otherwise find nothing to load
+ * and silently drop the name. For that one case, build the document
+ * fresh from the live graph store instead of bailing out. */
 export async function renameCanvas(id: string, name: string): Promise<void> {
   const currentPatch = await getCurrentPatchString()
   const result = loadCanvas(id, currentPatch)
-  if (!result.ok) {
+  const isActive = usePersistenceStore.getState().active.id === id
+
+  if (result.ok) {
+    const renamed = { ...result.value, name, updatedAt: new Date().toISOString() }
+    saveCanvas(renamed)
+    if (isActive) {
+      usePersistenceStore.getState().setActive(renamed)
+    }
     return
   }
-  const renamed = { ...result.value, name, updatedAt: new Date().toISOString() }
-  saveCanvas(renamed)
-  if (usePersistenceStore.getState().active.id === id) {
-    usePersistenceStore.getState().setActive(renamed)
+
+  if (!isActive) {
+    return
   }
+  const active = usePersistenceStore.getState().active
+  const { nodes, edges } = useGraphStore.getState()
+  const doc = buildCanvasDocument(
+    { ...active, name, updatedAt: new Date().toISOString() },
+    nodes,
+    edges,
+  )
+  saveCanvas(doc)
+  usePersistenceStore.getState().setActive(doc)
+  setLastOpenedId(doc.id)
 }
 
 /** Deletes a saved canvas with an Undo toast (DESIGN.md §1.6: destructive
