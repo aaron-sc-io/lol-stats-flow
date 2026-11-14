@@ -9,6 +9,9 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: "html",
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
+  },
   use: {
     baseURL: BASE_URL,
     trace: "on-first-retry",
