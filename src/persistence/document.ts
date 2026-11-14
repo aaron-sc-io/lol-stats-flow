@@ -1,6 +1,11 @@
 import { toCanonicalGraph } from "@/graph/store-helpers"
 import type { FlowEdge, FlowNode } from "@/graph/types"
-import { CANVAS_SCHEMA_VERSION, type CanvasDocument, CanvasDocumentSchema } from "./schema"
+import {
+  CANVAS_SCHEMA_VERSION,
+  type CanvasDocument,
+  CanvasDocumentSchema,
+  type PersistedGraph,
+} from "./schema"
 
 /** The per-canvas identity/timestamp fields that live alongside the graph
  * itself — everything in `CanvasDocument` except `graph`. */
@@ -38,4 +43,22 @@ export function buildCanvasDocument(
     updatedAt: meta.updatedAt,
     graph: toCanonicalGraph(nodes, edges),
   })
+}
+
+/**
+ * The reverse direction: a validated `CanvasDocument`'s `graph` (from
+ * disk, a share URL, or a JSON import) is exactly a `FlowNode[]`/
+ * `FlowEdge[]` in substance — every read path validates it via this same
+ * schema before it ever reaches here — but Zod's inferred tuple/record
+ * types are structurally wider/narrower than `@/graph/types`' hand-written
+ * ones in ways plain assignment won't satisfy (e.g. a mutable 6-tuple vs
+ * `ItemSet`'s `readonly` one). One cast, at this one named boundary,
+ * instead of scattered `as unknown as` casts at every call site that
+ * hands a loaded document to the graph store.
+ */
+export function toFlowGraph(graph: PersistedGraph): { nodes: FlowNode[]; edges: FlowEdge[] } {
+  return {
+    nodes: graph.nodes as unknown as FlowNode[],
+    edges: graph.edges as unknown as FlowEdge[],
+  }
 }

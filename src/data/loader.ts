@@ -45,13 +45,18 @@ async function loadCurrentPatch(): Promise<string> {
 
 let snapshotPromise: Promise<Snapshot> | null = null
 
-async function loadSnapshotOnce(): Promise<Snapshot> {
-  const patch = await loadCurrentPatch()
+/** One memoized promise per patch, shared by `getSnapshot()` (the
+ * "current patch" case) and `getSnapshotForPatch()` (the patch-pin case,
+ * `src/persistence/`) — resolving "current" to a concrete patch and
+ * delegating here means the two never double-fetch the same snapshot. */
+const snapshotByPatch = new Map<string, Promise<Snapshot>>()
+
+async function loadSnapshotForPatch(patch: string): Promise<Snapshot> {
   const metaLoader = moduleForPatch(metaModules, patch)
   const championsLoader = moduleForPatch(championsModules, patch)
   const itemsLoader = moduleForPatch(itemsModules, patch)
   if (metaLoader === undefined || championsLoader === undefined || itemsLoader === undefined) {
-    throw new Error(`No committed snapshot found for current patch "${patch}"`)
+    throw new Error(`No committed snapshot found for patch "${patch}"`)
   }
   const [meta, champions, items] = await Promise.all([
     metaLoader().then((m) => m.default),
@@ -60,6 +65,49 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   ])
   const snapshot = { meta, champions, items } as Snapshot
   return validateSnapshotInDev(snapshot, import.meta.env.DEV)
+}
+
+/** Loads (and memoizes) the snapshot for one specific patch, regardless of
+ * which patch the app currently considers "current" — the loader-level
+ * half of per-canvas patch pin (plan D14 deliverable 2: "loader must
+ * support loading a specific patch"). Rejects if that patch was never
+ * committed or has since been pruned; callers (`src/persistence/patch-
+ * pin.ts` via `decidePatchPin`) check `listAvailablePatches()` first and
+ * only call this for a patch already known to be shipped. */
+export function getSnapshotForPatch(patch: string): Promise<Snapshot> {
+  let promise = snapshotByPatch.get(patch)
+  if (promise === undefined) {
+    promise = loadSnapshotForPatch(patch)
+    snapshotByPatch.set(patch, promise)
+  }
+  return promise
+}
+
+/** Every patch with a committed snapshot under `data/snapshots/<patch>/`
+ * — derived from `import.meta.glob`'s matched *paths* (no network/import
+ * cost; the glob already enumerated them eagerly at build time). How many
+ * patches are actually present (plan §3.3.6's "keep last N=3") is a
+ * build-time/CI retention policy (Phase 6), not something this function
+ * enforces — it simply reports whatever is on disk. */
+export function listAvailablePatches(): readonly string[] {
+  const patches = new Set<string>()
+  for (const path of Object.keys(championsModules)) {
+    const match = /\/snapshots\/([^/]+)\/champions\.json$/.exec(path)
+    const patch = match?.[1]
+    if (patch !== undefined) {
+      patches.add(patch)
+    }
+  }
+  return [...patches].sort()
+}
+
+export function getCurrentPatchString(): Promise<string> {
+  return loadCurrentPatch()
+}
+
+async function loadSnapshotOnce(): Promise<Snapshot> {
+  const patch = await loadCurrentPatch()
+  return getSnapshotForPatch(patch)
 }
 
 /** Exported for the graph derivation layer (`src/graph/`), which needs the
