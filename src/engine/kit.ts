@@ -2,6 +2,7 @@ import type { ChampionData, ItemData, Snapshot } from "../data/snapshot-schema"
 import { buildBrandKit } from "./bindings/brand"
 import { buildDariusKit } from "./bindings/darius"
 import { buildGarenKit } from "./bindings/garen"
+import { defaultRankAtLevel } from "./bindings/helpers"
 import { buildItemActions, buildItemPassiveTriggers } from "./bindings/items"
 import { buildVayneKit } from "./bindings/vayne"
 import { buildYasuoKit } from "./bindings/yasuo"
@@ -36,12 +37,20 @@ const CHAMPION_BUILDERS: Record<
   Garen: buildGarenKit,
 }
 
+const RANKED_SLOTS = ["Q", "W", "E", "R"] as const
+
 /** Resolves a champion + level + item set into a `Kit`: fully-resolved
  * stats plus the list of simulate-able `ComboAction`s (ability damage
  * components, crit/stack variants, AAs, item actives) and passive triggers
  * (on-hit procs, stacking debuffs, spellblade). Throws if `championId` is
  * not one of the 5 modeled champions — callers should check
- * `ChampionData.modeled` before calling. */
+ * `ChampionData.modeled` before calling.
+ *
+ * Any ability rank not given an explicit `rankOverrides[slot]` defaults to
+ * the plan §1 level-appropriate standard order (R at 6/11/16, basic
+ * abilities ramping roughly every other level — `defaultRankAtLevel`), NOT
+ * to the ability's max rank — so the champion `level` parameter actually
+ * changes simulated damage even with no per-ability override set. */
 export function buildKit(snapshot: Snapshot, params: BuildKitParams): Kit {
   const champion = snapshot.champions.find((c) => c.id === params.championId)
   if (champion === undefined) {
@@ -55,8 +64,17 @@ export function buildKit(snapshot: Snapshot, params: BuildKitParams): Kit {
     .map((name) => snapshot.items.find((i) => i.name === name))
     .filter((i): i is ItemData => i !== undefined)
 
+  const rankOverrides: Partial<Record<"Q" | "W" | "E" | "R", number>> = {}
+  for (const slot of RANKED_SLOTS) {
+    const maxRank = champion.abilities[slot].maxRank
+    if (maxRank > 0) {
+      rankOverrides[slot] =
+        params.rankOverrides?.[slot] ?? defaultRankAtLevel(slot, params.level, maxRank)
+    }
+  }
+
   const stats = statsAt(champion, params.level, equippedItems)
-  const kit = builder(champion, params.level, stats, params.rankOverrides ?? {})
+  const kit = builder(champion, params.level, stats, rankOverrides)
 
   const isMelee = MELEE_CHAMPION_IDS.has(champion.name)
   const itemTriggers = buildItemPassiveTriggers(equippedItems, isMelee)
