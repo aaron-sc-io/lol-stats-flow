@@ -1,0 +1,5 @@
+.box {
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  border-color: var(--border-default);
+}
