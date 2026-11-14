@@ -1,0 +1,21 @@
+{
+  "mDisplayName": "Item_3071_Name",
+  "itemID": 3071,
+  "maxStack": 1,
+  "mItemGroups": ["Items/ItemGroups/Default", "{24adb712}", "Items/ItemGroups/LastWhisper"],
+  "mDataValues": [
+    { "mName": "MoveSpeedBonus", "mValue": 20, "__type": "ItemDataValue" },
+    { "mName": "RangedMod", "mValue": 0.5, "__type": "ItemDataValue" }
+  ],
+  "mItemCalculations": {
+    "MSBonusSplit": {
+      "mFormulaParts": [
+        { "mDataValue": "MoveSpeedBonus", "__type": "NamedDataValueCalculationPart" }
+      ],
+      "__type": "{e9a3c91d}"
+    }
+  },
+  "mAbilityHasteMod": 20,
+  "mFlatHPPoolMod": 400,
+  "mFlatPhysicalDamageMod": 45
+}

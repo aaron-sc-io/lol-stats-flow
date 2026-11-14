@@ -1,0 +1,49 @@
+{
+  "mSpell": {
+    "DataValues": [
+      {
+        "name": "BaseDamage",
+        "values": [-5, 20, 45, 70, 95, 120, 145],
+        "__type": "SpellDataValue"
+      },
+      { "name": "Cooldown", "values": [4, 4, 4, 4, 4, 4, 4], "__type": "SpellDataValue" },
+      { "name": "ADRatio", "values": [1, 1, 1, 1, 1, 1, 1], "__type": "SpellDataValue" }
+    ],
+    "mSpellCalculations": {
+      "TotalDamage": {
+        "mFormulaParts": [
+          { "mDataValue": "BaseDamage", "__type": "NamedDataValueCalculationPart" },
+          { "mStat": 2, "mDataValue": "ADRatio", "__type": "StatByNamedDataValueCalculationPart" }
+        ],
+        "__type": "GameCalculation"
+      },
+      "TotalDamageCrit": {
+        "mFormulaParts": [
+          { "mDataValue": "BaseDamage", "__type": "NamedDataValueCalculationPart" },
+          {
+            "mStat": 2,
+            "mSubpart": {
+              "mStat": 9,
+              "mDataValue": "ADRatio",
+              "__type": "StatByNamedDataValueCalculationPart"
+            },
+            "__type": "StatBySubPartCalculationPart"
+          }
+        ],
+        "mPrecision": 1,
+        "__type": "GameCalculation"
+      }
+    },
+    "spellCastTime": 0.125,
+    "cooldownTime": [4, 4, 4, 4, 4, 4, 4],
+    "mClientData": {
+      "mTooltipData": {
+        "mLocKeys": {
+          "keyName": "Spell_YasuoQ1Wrapper_Name",
+          "keyTooltip": "Spell_YasuoQ1Wrapper_Tooltip",
+          "keySummary": "Spell_YasuoQ1Wrapper_Summary"
+        }
+      }
+    }
+  }
+}
