@@ -150,15 +150,18 @@ jobs:
             -m "Automated by patch-sync.yml ($RUN_URL)." \
             -m "Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>"
           git push -f origin "$BRANCH"
-          if gh pr view "$BRANCH" >/dev/null 2>&1; then
-            gh pr edit "$BRANCH" --body-file .patch-sync/pr-body.md
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            PR_NUMBER="$EXISTING_PR"
+            gh pr edit "$PR_NUMBER" --body-file .patch-sync/pr-body.md
           else
             gh pr create --base main --head "$BRANCH" \
               --title "chore(data): sync patch $TARGET" \
               --body-file .patch-sync/pr-body.md \
               --label patch-sync,automerge
+            PR_NUMBER=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           fi
-          gh pr merge "$BRANCH" --squash --auto
+          gh pr merge "$PR_NUMBER" --squash --auto
 
       - name: Open/update demotion issue
         if: steps.outcome.outputs.outcome == 'demoted' && inputs.dry_run != true
