@@ -7,6 +7,7 @@ import styles from "./GraphNode.module.css"
 
 type SortKey =
   | "comboName"
+  | "variantName"
   | "targetName"
   | "total"
   | "percentHp"
@@ -19,6 +20,7 @@ type SortState = { readonly key: SortKey; readonly direction: SortDirection } | 
 
 const COLUMNS: ReadonlyArray<{ readonly key: SortKey; readonly label: string }> = [
   { key: "comboName", label: "Combo" },
+  { key: "variantName", label: "Items" },
   { key: "targetName", label: "Target" },
   { key: "total", label: "Total" },
   { key: "percentHp", label: "% HP" },
@@ -102,7 +104,8 @@ function SortableHeader({
 }
 
 /**
- * Comparison table (plan D12, deliverable 5): one row per combo × target,
+ * Comparison table (plan D12, deliverable 5): one row per combo × item-set
+ * variant × target,
  * sortable by clicking any column header. The phys/magic/true split is one
  * "Damage" column of compact chips (plan Phase 4b defect fix — 3 separate
  * columns overflowed the node) instead of 3; `Total` stays the first
@@ -134,8 +137,9 @@ export function ComparisonTable({ rows }: { readonly rows: readonly ComparisonRo
       </thead>
       <tbody>
         {displayRows.map((row) => (
-          <tr key={`${row.comboId}-${row.targetId}`}>
+          <tr key={`${row.comboId}-${row.variantId}-${row.targetId}`}>
             <td>{row.comboName}</td>
+            <td>{row.variantName}</td>
             <td>{row.targetName}</td>
             <td className="num">{Math.round(row.total).toLocaleString()}</td>
             <td className="num">{row.percentHp.toFixed(1)}%</td>

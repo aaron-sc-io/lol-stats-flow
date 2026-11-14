@@ -6,6 +6,8 @@ function row(overrides: Partial<ComparisonRow> = {}): ComparisonRow {
   return {
     comboId: "combo-1",
     comboName: "Combo 1",
+    variantId: "is-1",
+    variantName: "Infinity Edge",
     targetId: "t1",
     targetName: "Target 1",
     total: 100,

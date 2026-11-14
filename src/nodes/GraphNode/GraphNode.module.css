@@ -2,6 +2,63 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  /* Fills a height-resized node; resolves to auto for a content-sized one. */
+  height: 100%;
+}
+
+/* The comparison table's own scroll box: wide tables scroll sideways
+   instead of spilling out of the node, and a height-resized node scrolls
+   the rows rather than clipping them. */
+.tableRegion {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.chartRegion {
+  position: relative;
+}
+
+.chartResizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--border-strong);
+  border-bottom: 2px solid var(--border-strong);
+  border-bottom-right-radius: 2px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.chartResizeHandle:hover,
+.chartResizeHandle:focus-visible {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+/* ── Resize handles (NodeResizer) — mirrors ChampionNode's: the compound
+   selector outranks the library's same-element base rule by specificity. */
+:global(.react-flow__resize-control.handle).resizeHandle {
+  width: 8px;
+  height: 8px;
+  border: var(--border-width-hairline) solid var(--border-strong);
+  border-radius: 2px;
+  background-color: var(--surface-canvas);
+}
+
+:global(.react-flow__resize-control.handle).resizeHandle:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--text-primary);
+}
+
+:global(.react-flow__resize-control.line).resizeLine {
+  border-color: var(--border-strong);
+}
+
+:global(.react-flow__resize-control.line).resizeLine:hover {
+  border-color: var(--text-primary);
 }
 
 .controlsRow {
@@ -27,6 +84,10 @@
   padding: var(--space-3);
 }
 
+.addTarget {
+  align-self: flex-start;
+}
+
 .targetBlock {
   display: flex;
   flex-direction: column;
@@ -45,6 +106,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+.targetSelectLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
 }
 
 .targetName {
@@ -69,6 +139,13 @@
   flex: 1 1 auto;
   justify-content: flex-end;
   gap: var(--space-1);
+}
+
+.targetsToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .targetFields {
@@ -112,18 +189,18 @@
   fill: var(--text-tertiary);
 }
 
-.hatchBg {
-  fill: var(--dmg-magic-fill);
-}
-
-.hatchLine {
-  stroke: var(--dmg-magic);
-  stroke-width: 2;
-}
-
 .lineSegment {
   fill: none;
   stroke-width: 1.5;
+}
+
+/* Invisible, wider-than-the-line hover target for one line segment. */
+.segmentHitArea {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
 .markerFill {
@@ -134,21 +211,6 @@
 .endLabel {
   fill: var(--text-secondary);
   font-size: var(--font-size-2xs);
-}
-
-.barPhysical {
-  fill: var(--dmg-physical-fill);
-  stroke: var(--dmg-physical);
-}
-
-.barMagic {
-  fill: url(#magic-hatch);
-  stroke: var(--dmg-magic);
-}
-
-.barTrue {
-  fill: transparent;
-  stroke: var(--dmg-true);
 }
 
 /* ── Legend ─────────────────────────────────────────────────────────── */
@@ -173,6 +235,12 @@
 
 .legendItem[data-dimmed="true"] {
   opacity: var(--opacity-dimmed);
+}
+
+.legendMeta {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
 }
 
 .legendSwatch {
@@ -258,7 +326,11 @@
 }
 
 .table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   border-bottom: var(--border-width-hairline) solid var(--border-default);
+  background-color: var(--surface-node);
   padding: var(--space-1) var(--space-2);
   color: var(--text-tertiary);
   text-align: left;

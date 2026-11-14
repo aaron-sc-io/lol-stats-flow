@@ -25,9 +25,13 @@ const STAT_FIELDS: ReadonlyArray<{
 function TargetRow({
   graphNodeId,
   target,
+  selected,
+  onToggle,
 }: {
   readonly graphNodeId: string
   readonly target: TargetSpec
+  readonly selected: boolean
+  readonly onToggle: () => void
 }) {
   const renameTarget = useGraphStore((s) => s.renameTarget)
   const updateTargetStat = useGraphStore((s) => s.updateTargetStat)
@@ -37,6 +41,15 @@ function TargetRow({
   return (
     <div className={styles.targetBlock}>
       <div className={styles.targetHeader}>
+        <label className={styles.targetSelectLabel}>
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggle}
+            aria-label={`Include ${target.name} in chart`}
+          />
+          <span>On</span>
+        </label>
         <input
           type="text"
           className={styles.targetName}
@@ -83,20 +96,39 @@ function TargetRow({
 export function TargetsPanel({
   graphNodeId,
   targets,
+  activeTargetIds,
+  onToggleTarget,
+  onSelectAll,
 }: {
   readonly graphNodeId: string
   readonly targets: readonly TargetSpec[]
+  readonly activeTargetIds: readonly string[]
+  readonly onToggleTarget: (targetId: string) => void
+  readonly onSelectAll: () => void
 }) {
   const addTarget = useGraphStore((s) => s.addTarget)
+  const selectedTargetIds = new Set(activeTargetIds)
+  const allSelected = targets.length > 0 && activeTargetIds.length >= targets.length
 
   return (
     <div className={styles.targetsPanel}>
+      <div className={styles.targetsToolbar}>
+        <Button variant="ghost" className={styles.addTarget} onClick={() => addTarget(graphNodeId)}>
+          + Add target
+        </Button>
+        <Button variant="ghost" onClick={onSelectAll} disabled={allSelected}>
+          All
+        </Button>
+      </div>
       {targets.map((target) => (
-        <TargetRow key={target.id} graphNodeId={graphNodeId} target={target} />
+        <TargetRow
+          key={target.id}
+          graphNodeId={graphNodeId}
+          target={target}
+          selected={selectedTargetIds.has(target.id)}
+          onToggle={() => onToggleTarget(target.id)}
+        />
       ))}
-      <Button variant="ghost" onClick={() => addTarget(graphNodeId)}>
-        + Add target
-      </Button>
     </div>
   )
 }

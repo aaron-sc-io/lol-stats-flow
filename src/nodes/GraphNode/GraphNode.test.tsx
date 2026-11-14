@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react"
 import { beforeEach, describe, expect, it } from "vitest"
 import { SnapshotProvider } from "@/data/snapshot-context"
@@ -57,8 +57,8 @@ function graphNode(): GraphFlowNode {
       targets: [
         { id: "t1", name: "Target 1", maxHp: 2000, bonusHp: 0, armor: 80, magicResist: 50 },
       ],
-      activeTargetId: "t1",
-      chartType: "bars",
+      activeTargetIds: ["t1"],
+      chartType: "cumulative",
       xMode: "step",
     },
   }
@@ -114,7 +114,16 @@ function currentGraph(): GraphFlowNode {
 
 describe("GraphNode", () => {
   beforeEach(() => {
-    useGraphStore.setState({ nodes: [], edges: [], hoveredComboId: null, hoveredStepId: null })
+    useGraphStore.setState({
+      nodes: [],
+      edges: [],
+      hoveredComboId: null,
+      hoveredGraphSeriesId: null,
+      hoveredStepId: null,
+      hoveredStepIds: [],
+      hoveredItemSetId: null,
+      hoveredItemSetIds: [],
+    })
   })
 
   it("renders the comparison table with a row for the connected combo", () => {
@@ -125,8 +134,18 @@ describe("GraphNode", () => {
 
   it("switching chart type updates the store", () => {
     renderGraphNode()
-    fireEvent.click(screen.getByRole("radio", { name: "Cumulative" }))
-    expect(currentGraph().data.chartType).toBe("cumulative")
+    fireEvent.click(screen.getByRole("radio", { name: "Target HP" }))
+    expect(currentGraph().data.chartType).toBe("hp")
+  })
+
+  it("offers only the cumulative and target-HP chart types", () => {
+    renderGraphNode()
+    const chartType = screen.getByRole("radiogroup", { name: "Chart type" })
+    expect(
+      within(chartType)
+        .getAllByRole("radio")
+        .map((radio) => radio.textContent),
+    ).toEqual(["Cumulative", "Target HP"])
   })
 
   it("switching x-axis mode updates the store", () => {
@@ -156,5 +175,16 @@ describe("GraphNode", () => {
     renderGraphNode()
     fireEvent.click(screen.getByRole("button", { name: "+ Add target" }))
     expect(currentGraph().data.targets).toHaveLength(2)
+  })
+
+  it("hovering a legend entry marks the matching graph series in transient store state", () => {
+    renderGraphNode()
+
+    const legendItem = screen.getByRole("button", { name: /Combo 1.*vs Target 1/i })
+    fireEvent.mouseEnter(legendItem)
+
+    expect(useGraphStore.getState().hoveredGraphSeriesId).toBe("combo-1__is-1__t1")
+    fireEvent.mouseLeave(legendItem)
+    expect(useGraphStore.getState().hoveredGraphSeriesId).toBeNull()
   })
 })

@@ -1,6 +1,7 @@
 import { DamageTypeChip } from "@/components/DamageTypeChip"
 import type { DamageInstance } from "@/engine"
-import type { ComboSeries } from "@/graph/graph-node-derivation"
+import { type ComboSeries, seriesLabel } from "@/graph/graph-node-derivation"
+import type { MergedRow } from "./ColoredLineSeries"
 import styles from "./GraphNode.module.css"
 
 type TooltipPayloadEntry = { readonly payload?: Record<string, unknown> }
@@ -21,29 +22,40 @@ export function ChartTooltip(props: {
   readonly label?: string
   readonly payload?: readonly TooltipPayloadEntry[]
   readonly series: readonly ComboSeries[]
+  /** The row of the hovered line segment, if any — it wins over Recharts'
+   * nearest-x row, which mid-segment can be the segment's *start* point
+   * rather than the damage the segment represents. */
+  readonly hoveredRow?: MergedRow | undefined
 }) {
-  const { active, label, payload, series } = props
+  const { active, payload, series, hoveredRow } = props
   if (active !== true || payload === undefined || payload.length === 0) {
     return null
   }
-  const row = payload[0]?.payload
+  const row: Record<string, unknown> | undefined = hoveredRow ?? payload[0]?.payload
   if (row === undefined) {
     return null
   }
+  // The zero-damage origin has nothing to break down.
+  if (series.every((combo) => readInstances(row, `${combo.seriesId}.instances`).length === 0)) {
+    return null
+  }
+  const label = hoveredRow?.xLabel ?? props.label
 
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipLabel}>{label}</div>
       {series.map((combo) => {
-        const instances = readInstances(row, `${combo.comboId}.instances`)
+        const instances = readInstances(row, `${combo.seriesId}.instances`)
         if (instances.length === 0) {
           return null
         }
         const total = instances.reduce((sum, instance) => sum + instance.mitigated, 0)
         return (
-          <div key={combo.comboId} className={styles.tooltipCombo}>
+          <div key={combo.seriesId} className={styles.tooltipCombo}>
             <div className={styles.tooltipRow}>
-              <span>{combo.comboName}</span>
+              <span>
+                {seriesLabel(combo)} · {combo.targetName}
+              </span>
               <span className="num">{Math.round(total).toLocaleString()}</span>
             </div>
             <ul className={styles.tooltipInstances}>

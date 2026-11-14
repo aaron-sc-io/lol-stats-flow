@@ -1,8 +1,8 @@
-import type { ReactElement } from "react"
-import { Line, useXAxisScale, useYAxisScale } from "recharts"
-import type { DamageInstance, DamageType } from "@/engine"
-import { type ChartPoint, dominantDamageType } from "@/graph/chart-points"
-import type { ComboSeries } from "@/graph/graph-node-derivation"
+import { Line, LineDrawShape, type LineDrawShapeProps } from "recharts"
+import type { DamageInstance } from "@/engine"
+import { ORIGIN_X } from "@/graph/chart-points"
+import { type ComboSeries, seriesLabel } from "@/graph/graph-node-derivation"
+import type { HoveredDamage } from "@/graph/store-types"
 import { cx } from "@/lib/cx"
 import styles from "./GraphNode.module.css"
 import type { MarkerShape } from "./SeriesDot"
@@ -13,163 +13,182 @@ export type MergedRow = { readonly x: number; readonly xLabel: string } & Record
   number | string | readonly DamageInstance[]
 >
 
-const DAMAGE_STROKE: Record<DamageType, string> = {
-  physical: "var(--dmg-physical)",
-  magic: "var(--dmg-magic)",
-  true: "var(--dmg-true)",
-}
+const BASE_STROKE_WIDTH = 1.5
+const EMPHASIZED_STROKE_WIDTH = 2.5
+const HOVERED_SEGMENT_STROKE_WIDTH = 4
 
-function readPointValue(point: ChartPoint, dataKeySuffix: "cumulative" | "targetHpAfter"): number {
-  return dataKeySuffix === "cumulative" ? point.cumulative : point.targetHpAfter
-}
+type PlottedPoint = { readonly x: number; readonly y: number; readonly row: MergedRow }
 
-/** The colored multi-segment stroke itself (DESIGN.md §6: "each segment
- * takes the color of the damage type dealt in that step/tick"). Recharts
- * has no native per-segment line coloring, and giving each segment its own
- * partial `<Line data={...}>` override (the usual workaround) corrupts the
- * shared category axis domain for a multi-combo chart — every segment's
- * own 2-point slice gets unioned into the tick set, duplicating labels and
- * desyncing the scale from the real (full-dataset) one every other series
- * element uses. Drawing plain `<line>`s with the chart's OWN axis scale
- * (`useXAxisScale`/`useYAxisScale`, rendered as a plain child inside the
- * chart context) avoids all of that — the axis is computed exactly once,
- * from the real shared dataset, same as for every other element. */
-function ColoredSegments({
-  combo,
-  dataKeySuffix,
-  dasharray,
-  opacity,
-}: {
-  readonly combo: ComboSeries
-  readonly dataKeySuffix: "cumulative" | "targetHpAfter"
-  readonly dasharray: string | undefined
-  readonly opacity: number
-}) {
-  const xScale = useXAxisScale()
-  const yScale = useYAxisScale()
-  if (xScale === undefined || yScale === undefined) {
-    return null
+/** The step that dealt a row's damage on this series: the row's own step id
+ * in step mode, or (tick mode, where rows aren't 1:1 with steps) the step
+ * that caused the row's single damage instance. */
+function rowStepId(row: MergedRow, seriesId: string): string | null {
+  const stepId = row[`${seriesId}.stepId`]
+  if (typeof stepId === "string" && stepId !== "") {
+    return stepId
   }
-
-  const segments: ReactElement[] = []
-  for (let index = 0; index < combo.points.length - 1; index += 1) {
-    const from = combo.points[index]
-    const to = combo.points[index + 1]
-    if (from === undefined || to === undefined) {
-      continue
-    }
-    const x1 = xScale(from.xLabel, { position: "middle" })
-    const y1 = yScale(readPointValue(from, dataKeySuffix))
-    const x2 = xScale(to.xLabel, { position: "middle" })
-    const y2 = yScale(readPointValue(to, dataKeySuffix))
-    if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined) {
-      continue
-    }
-    segments.push(
-      <line
-        key={`${combo.comboId}-segment-${index}`}
-        x1={x1}
-        y1={y1}
-        x2={x2}
-        y2={y2}
-        stroke={DAMAGE_STROKE[dominantDamageType(to)]}
-        strokeWidth={1.5}
-        strokeOpacity={opacity}
-        {...(dasharray === undefined ? {} : { strokeDasharray: dasharray })}
-      />,
-    )
-  }
-  return <g className={cx("nodrag", "nowheel")}>{segments}</g>
+  const instances = row[`${seriesId}.instances`]
+  return Array.isArray(instances)
+    ? ((instances[0] as DamageInstance | undefined)?.stepId ?? null)
+    : null
 }
 
-/**
- * One combo's full line presentation: the colored segments above, plus one
- * invisible-stroke "marker" `<Line>` (driven off the shared chart dataset,
- * same as every other series — this one is safe to keep as a real Line)
- * carrying the real dot/highlight renderer and a direct end-of-line name
- * label (DESIGN.md §6: combo series get "a direct label at the end of the
- * line").
- */
+/** One combo line: visible stroke + markers + end-of-line label, plus one
+ * invisible hover target per line segment. A segment (previous point → this
+ * point) *is* this point's damage, so hovering it bolds just that segment
+ * and reports it as the hovered damage — which the combo timeline maps back
+ * to the matching step's damage chip. */
 export function ColoredLineSeries({
   combo,
-  data,
+  rows,
   dataKeySuffix,
+  stroke,
   dasharray,
   shape,
   opacity,
+  emphasized,
   hoveredStepId,
+  hoveredStepIds,
+  hoveredDamage,
   onHoverStep,
-  onHoverCombo,
+  onHoverDamage,
 }: {
   readonly combo: ComboSeries
-  readonly data: readonly MergedRow[]
+  /** The `<LineChart data>` rows — Recharts hands the line's `shape` one
+   * point per row, in this same order. */
+  readonly rows: readonly MergedRow[]
   readonly dataKeySuffix: "cumulative" | "targetHpAfter"
+  readonly stroke: string
   readonly dasharray: string | undefined
   readonly shape: MarkerShape
   readonly opacity: number
+  readonly emphasized: boolean
   readonly hoveredStepId: string | null
+  readonly hoveredStepIds: readonly string[]
+  readonly hoveredDamage: HoveredDamage | null
   readonly onHoverStep: (stepId: string | null) => void
-  readonly onHoverCombo: (comboId: string | null) => void
+  readonly onHoverDamage: (damage: HoveredDamage | null) => void
 }) {
-  const valueKey = `${combo.comboId}.${dataKeySuffix}`
-  const stepKey = `${combo.comboId}.stepId`
-  const lastIndex = data.length - 1
+  const valueKey = `${combo.seriesId}.${dataKeySuffix}`
+  const stepKey = `${combo.seriesId}.stepId`
+  const lastStepId = combo.stepIds[combo.stepIds.length - 1] ?? null
+  const lastX = combo.points[combo.points.length - 1]?.x ?? null
+  const hoveredStepIdSet = new Set(hoveredStepIds)
+  const hoveredX = hoveredDamage?.seriesId === combo.seriesId ? hoveredDamage.x : null
 
-  const handlers = {
-    onMouseEnter: () => onHoverCombo(combo.comboId),
-    onMouseLeave: () => onHoverCombo(null),
+  const renderShape = (props: LineDrawShapeProps) => {
+    // `connectNulls`: a row this series has no value for (another combo's
+    // extra step/tick) is skipped, so segments join the plotted points only.
+    const plotted: PlottedPoint[] = []
+    for (const [index, point] of (props.points ?? []).entries()) {
+      const row = rows[index]
+      if (row !== undefined && typeof point.x === "number" && typeof point.y === "number") {
+        plotted.push({ x: point.x, y: point.y, row })
+      }
+    }
+    const segments = plotted.slice(1).map((end, index) => ({
+      start: plotted[index] as PlottedPoint,
+      end,
+    }))
+    const dashProps = dasharray === undefined ? {} : { strokeDasharray: dasharray }
+
+    return (
+      <g>
+        <LineDrawShape {...props} />
+        {segments.map(({ start, end }) =>
+          end.row.x !== hoveredX ? null : (
+            <path
+              key="hovered"
+              d={`M${start.x},${start.y}L${end.x},${end.y}`}
+              stroke={stroke}
+              strokeWidth={HOVERED_SEGMENT_STROKE_WIDTH}
+              strokeOpacity={opacity}
+              strokeLinecap="round"
+              fill="none"
+              pointerEvents="none"
+              {...dashProps}
+            />
+          ),
+        )}
+        {segments.map(({ start, end }) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: hover-only cross-highlight affordance — the tooltip, timeline chips, and comparison table carry the same numbers for non-pointer users.
+          <path
+            key={end.row.x}
+            d={`M${start.x},${start.y}L${end.x},${end.y}`}
+            className={cx(styles.segmentHitArea)}
+            onMouseEnter={() =>
+              onHoverDamage({
+                seriesId: combo.seriesId,
+                comboId: combo.comboId,
+                variantId: combo.variantId,
+                stepId: rowStepId(end.row, combo.seriesId),
+                x: end.row.x,
+              })
+            }
+            onMouseLeave={() => onHoverDamage(null)}
+          />
+        ))}
+      </g>
+    )
   }
 
   return (
-    <>
-      <ColoredSegments
-        combo={combo}
-        dataKeySuffix={dataKeySuffix}
-        dasharray={dasharray}
-        opacity={opacity}
-      />
-      <Line
-        type="monotone"
-        data={data}
-        dataKey={valueKey}
-        stroke="transparent"
-        strokeOpacity={0}
-        isAnimationActive={false}
-        legendType="none"
-        connectNulls
-        dot={(dotProps) => {
-          const rowIndex = dotProps.index ?? -1
-          const stepId = data[rowIndex]?.[stepKey]
-          const isLast = rowIndex === lastIndex
-          return (
-            <g key={`${combo.comboId}-${String(dotProps.index ?? dotProps.key)}`}>
-              <SeriesDot
-                cx={dotProps.cx}
-                cy={dotProps.cy}
-                shape={shape}
+    <Line
+      type="linear"
+      // Critical: keep series on the parent <LineChart data={...}> domain.
+      // Passing a per-line `data` prop makes Recharts merge category entries
+      // from each child series, duplicating/out-of-order x-axis labels.
+      dataKey={valueKey}
+      stroke={stroke}
+      strokeWidth={emphasized ? EMPHASIZED_STROKE_WIDTH : BASE_STROKE_WIDTH}
+      strokeOpacity={opacity}
+      {...(dasharray === undefined ? {} : { strokeDasharray: dasharray })}
+      isAnimationActive={false}
+      legendType="none"
+      connectNulls
+      shape={renderShape}
+      dot={(dotProps) => {
+        const key = `${combo.seriesId}-${String(dotProps.index ?? dotProps.key)}`
+        const rowX = dotProps.payload?.x
+        // The zero-damage origin is where every line starts, not a step.
+        if (rowX === ORIGIN_X) {
+          return <g key={key} />
+        }
+        const stepId = dotProps.payload?.[stepKey]
+        const isLast =
+          (typeof stepId === "string" && stepId === lastStepId) ||
+          (typeof rowX === "number" && lastX !== null && rowX === lastX)
+        return (
+          <g key={key}>
+            <SeriesDot
+              cx={dotProps.cx}
+              cy={dotProps.cy}
+              shape={shape}
+              opacity={opacity}
+              highlighted={
+                (hoveredStepId !== null && stepId === hoveredStepId) ||
+                (typeof stepId === "string" && hoveredStepIdSet.has(stepId))
+              }
+              stepId={typeof stepId === "string" && stepId !== "" ? stepId : undefined}
+              onHover={onHoverStep}
+              className={cx(styles.markerFill)}
+            />
+            {!isLast || dotProps.cx === undefined || dotProps.cy === undefined ? null : (
+              <text
+                x={dotProps.cx + 6}
+                y={dotProps.cy}
+                dy={4}
                 opacity={opacity}
-                highlighted={hoveredStepId !== null && stepId === hoveredStepId}
-                stepId={typeof stepId === "string" && stepId !== "" ? stepId : undefined}
-                onHover={onHoverStep}
-                className={cx(styles.markerFill)}
-              />
-              {!isLast || dotProps.cx === undefined || dotProps.cy === undefined ? null : (
-                <text
-                  x={dotProps.cx + 6}
-                  y={dotProps.cy}
-                  dy={4}
-                  opacity={opacity}
-                  className={cx(styles.endLabel)}
-                >
-                  {combo.comboName}
-                </text>
-              )}
-            </g>
-          )
-        }}
-        activeDot={{ r: 5 }}
-        {...handlers}
-      />
-    </>
+                className={cx(styles.endLabel)}
+              >
+                {seriesLabel(combo)}
+              </text>
+            )}
+          </g>
+        )
+      }}
+      // Hover feedback is the bolded segment alone — no enlarged point.
+      activeDot={false}
+    />
   )
 }

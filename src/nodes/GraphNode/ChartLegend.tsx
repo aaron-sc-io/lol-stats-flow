@@ -1,10 +1,16 @@
 import type { ComboSeries } from "@/graph/graph-node-derivation"
 import styles from "./GraphNode.module.css"
-import { MARKER_SHAPES, STROKE_DASHARRAYS } from "./SeriesDot"
+import { MARKER_SHAPES } from "./SeriesDot"
 
-function LegendSwatch({ index }: { readonly index: number }) {
-  const dasharray = STROKE_DASHARRAYS[index % STROKE_DASHARRAYS.length]
-  const shape = MARKER_SHAPES[index % MARKER_SHAPES.length] ?? "circle"
+function LegendSwatch({
+  dasharray,
+  shape,
+  stroke,
+}: {
+  readonly dasharray: string | undefined
+  readonly shape: (typeof MARKER_SHAPES)[number]
+  readonly stroke: string
+}) {
   return (
     <svg
       width="24"
@@ -18,6 +24,7 @@ function LegendSwatch({ index }: { readonly index: number }) {
         y1="6"
         x2="24"
         y2="6"
+        stroke={stroke}
         strokeDasharray={dasharray}
         className={styles.legendLine}
       />
@@ -33,33 +40,44 @@ function LegendSwatch({ index }: { readonly index: number }) {
 }
 
 /** Custom legend (DESIGN.md §7: "No default React Flow or Recharts
- * styling") — one entry per combo, showing the same stroke-pattern ×
- * marker-shape encoding as the plot, doubling as the hover trigger for the
- * upstream-highlight feature (plan D11). */
+ * styling") — one entry per combo × item-set variant × target, showing the
+ * same stroke-pattern × marker-shape encoding as the plot, doubling as the
+ * hover trigger for the upstream-highlight feature (plan D11). */
 export function ChartLegend({
   series,
-  hoveredComboId,
-  onHover,
+  colorBySeriesId,
+  targetDashById,
+  hoveredSeriesId,
+  onHoverSeries,
 }: {
   readonly series: readonly ComboSeries[]
-  readonly hoveredComboId: string | null
-  readonly onHover: (comboId: string | null) => void
+  readonly colorBySeriesId: ReadonlyMap<string, string>
+  readonly targetDashById: ReadonlyMap<string, string | undefined>
+  readonly hoveredSeriesId: string | null
+  readonly onHoverSeries: (series: ComboSeries | null) => void
 }) {
   return (
     <ul className={styles.legend}>
       {series.map((combo, index) => (
-        <li key={combo.comboId}>
+        <li key={combo.seriesId}>
           <button
             type="button"
             className={styles.legendItem}
             data-dimmed={
-              hoveredComboId !== null && hoveredComboId !== combo.comboId ? "true" : undefined
+              hoveredSeriesId !== null && hoveredSeriesId !== combo.seriesId ? "true" : undefined
             }
-            onMouseEnter={() => onHover(combo.comboId)}
-            onMouseLeave={() => onHover(null)}
+            onMouseEnter={() => onHoverSeries(combo)}
+            onMouseLeave={() => onHoverSeries(null)}
           >
-            <LegendSwatch index={index} />
+            <LegendSwatch
+              dasharray={targetDashById.get(combo.targetId)}
+              shape={MARKER_SHAPES[index % MARKER_SHAPES.length] ?? "circle"}
+              stroke={colorBySeriesId.get(combo.seriesId) ?? "var(--text-primary)"}
+            />
             <span>{combo.comboName}</span>
+            <span className={styles.legendMeta}>
+              {combo.variantName === "" ? "" : `${combo.variantName} · `}vs {combo.targetName}
+            </span>
           </button>
         </li>
       ))}
