@@ -12,6 +12,7 @@
  * `demoted` (gates passed after auto-demotion) · `gate-failure`
  * (unrecoverable — `main` must stay on the last good snapshot).
  */
+import { cpSync, existsSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { checkLatest } from "../data/check-latest"
@@ -80,10 +81,22 @@ export async function runPatchSync(args: Args): Promise<RunResult> {
     return { outcome: "no-op", current, target, demotions: [], gateReport: null }
   }
 
+  // A force re-sync of the *same* patch overwrites `snapshotDir(current)` in
+  // place — comparing gates against it afterward would just compare the new
+  // data to itself (no diff from "the regression I injected" either, which
+  // is exactly how the gate-failure fixtures in __fixtures__/ get
+  // demonstrated). Snapshot the pre-sync directory to a throwaway baseline
+  // label first, and clean it up before returning either way.
+  const baselineForGates = target === current ? scratchBaselineLabel(current) : current
+  if (baselineForGates !== current && existsSync(snapshotDir(current))) {
+    cpSync(snapshotDir(current), snapshotDir(baselineForGates), { recursive: true })
+  }
+
   try {
     await sync(target, true, false)
   } catch (error) {
     writeJsonFile(currentPointerPath(), { patch: current }) // restore — don't let a half-written sync look "current"
+    cleanupScratchBaseline(baselineForGates, current)
     return {
       outcome: "fetch-failure",
       current,
@@ -98,17 +111,18 @@ export async function runPatchSync(args: Args): Promise<RunResult> {
     applyFixture(args.fixture, target)
   }
 
-  let report = runGates(target, current, false)
+  let report = runGates(target, baselineForGates, false)
   let demotions: DemotionRecord[] = []
 
   if (!report.passed) {
     if (report.failingEntities.length > 0) {
       demoteEntities(target, report.failingEntities)
       demotions = [...readDemotionsFile().demotions].filter((d) => d.patch === target)
-      report = runGates(target, current, false)
+      report = runGates(target, baselineForGates, false)
     }
     if (!report.passed) {
       writeJsonFile(currentPointerPath(), { patch: current })
+      cleanupScratchBaseline(baselineForGates, current)
       return { outcome: "gate-failure", current, target, demotions, gateReport: report }
     }
   }
@@ -117,6 +131,7 @@ export async function runPatchSync(args: Args): Promise<RunResult> {
     join(snapshotDir(target), "diff.md"),
     renderDiffReport(loadSnapshotSafe(current), loadSnapshotSafe(target)),
   )
+  cleanupScratchBaseline(baselineForGates, current)
   prunedSnapshots()
 
   return {
@@ -125,6 +140,16 @@ export async function runPatchSync(args: Args): Promise<RunResult> {
     target,
     demotions,
     gateReport: report,
+  }
+}
+
+function scratchBaselineLabel(patch: string): string {
+  return `${patch}~pre-resync`
+}
+
+function cleanupScratchBaseline(baselineForGates: string, current: string): void {
+  if (baselineForGates !== current) {
+    rmSync(snapshotDir(baselineForGates), { recursive: true, force: true })
   }
 }
 
