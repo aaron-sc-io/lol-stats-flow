@@ -112,7 +112,11 @@
 }
 
 .meta {
-  color: var(--text-tertiary);
+  /* text-tertiary (gray-7) only clears WCAG AA contrast against the
+   * panel's own background (surface-raised) — against this row's hover/
+   * active fill (surface-hover, one step lighter) it drops to 4.39:1,
+   * just under the 4.5:1 minimum. text-secondary clears both. */
+  color: var(--text-secondary);
   font-size: var(--font-size-2xs);
   line-height: var(--line-height-2xs);
 }
