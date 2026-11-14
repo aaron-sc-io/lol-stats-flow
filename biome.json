@@ -14,7 +14,8 @@
       "!**/playwright-report",
       "!**/test-results",
       "!**/.qa",
-      "!DESIGN.md"
+      "!DESIGN.md",
+      "!data"
     ]
   },
   "formatter": {
