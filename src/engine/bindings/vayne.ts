@@ -2,7 +2,12 @@ import type { ChampionData } from "../../data/snapshot-schema"
 import { advanceStackCounter } from "../effects/primitives"
 import type { ComboAction, Kit, PassiveRule } from "../sim/types"
 import type { ResolvedStats } from "../stats/types"
-import { abilityEvalContext, compileAbilityCalc, withAbilityData } from "./helpers"
+import {
+  abilityEvalContext,
+  basicAttackCastTimeMs,
+  compileAbilityCalc,
+  withAbilityData,
+} from "./helpers"
 
 const STACK_STATE_KEY = "VayneW"
 
@@ -171,7 +176,7 @@ export function buildVayneKit(
       slot: "AA",
       damageType: "physical",
       modeled: true,
-      castTimeMs: 1000 / Math.max(0.01, stats.total.attackSpeed),
+      castTimeMs: basicAttackCastTimeMs(stats),
       rank: 1,
       forceCrit: false,
       components: [
@@ -191,7 +196,7 @@ export function buildVayneKit(
       slot: "AA",
       damageType: "physical",
       modeled: true,
-      castTimeMs: 1000 / Math.max(0.01, stats.total.attackSpeed),
+      castTimeMs: basicAttackCastTimeMs(stats),
       rank: 1,
       forceCrit: true,
       components: [
