@@ -1,0 +1,172 @@
+name: Patch Sync
+
+# Daily patch-cycle automation (plan §3.3, §7 Phase 6): detect a new DDragon
+# patch, fetch + normalize it, run every gate, and either open an
+# auto-merging PR (optionally with auto-demoted entities) or a failure
+# issue — never touching `main` on a red run. See README.md#maintenance.
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # daily, odd offset to avoid the GH cron stampede at :00/:05
+  workflow_dispatch:
+    inputs:
+      patch:
+        description: "Override target patch (blank = auto-detect DDragon latest)"
+        required: false
+        default: ""
+      force:
+        description: "Re-sync even if target == data/current.json (regenerates meta.generatedAt)"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Run fetch + gates, upload reports as artifacts; never commit/push/open a PR or issue"
+        type: boolean
+        default: false
+      fixture:
+        description: "Test-only: inject a gate-failure fixture before gating"
+        type: choice
+        options: ["none", "demote", "fail-all"]
+        default: "none"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: patch-sync
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  patch-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git identity
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Ensure labels exist
+        run: |
+          for l in patch-sync automerge patch-sync-failure patch-sync-demotion patch-sync-flaky; do
+            gh label create "$l" --color ededed --force >/dev/null
+          done
+
+      - name: Checkout flaky-source state branch
+        run: bash scripts/gates/ci/checkout-state-branch.sh
+
+      - name: Run patch-sync orchestrator
+        id: run
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          ARGS=()
+          if [ -n "${{ inputs.patch }}" ]; then ARGS+=(--patch "${{ inputs.patch }}"); fi
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS+=(--force); fi
+          ARGS+=(--fixture "${{ inputs.fixture || 'none' }}")
+          ARGS+=(--run-url "$RUN_URL")
+          npm run -s patch-sync:run -- "${ARGS[@]}"
+
+      - name: Read orchestrator outputs
+        id: outcome
+        if: always()
+        run: node scripts/gates/ci/read-summary.mjs
+
+      - name: Record flaky-source state (fetch failure)
+        id: state
+        if: steps.outcome.outputs.outcome == 'fetch-failure'
+        run: |
+          npm run -s data:sync-state -- --file .patch-sync-state/state.json --event failure >> "$GITHUB_OUTPUT"
+          bash scripts/gates/ci/commit-state-branch.sh
+
+      - name: Reset flaky-source state (success)
+        if: steps.outcome.outputs.outcome == 'clean' || steps.outcome.outputs.outcome == 'demoted'
+        run: |
+          npm run -s data:sync-state -- --file .patch-sync-state/state.json --event success >/dev/null
+          bash scripts/gates/ci/commit-state-branch.sh
+
+      - name: Open/update flaky-source issue (3+ consecutive failed days)
+        if: steps.outcome.outputs.outcome == 'fetch-failure' && steps.state.outputs.should_alert == 'true'
+        run: |
+          BODY="patch-sync has failed to fetch DDragon/CDragon source data for ${{ steps.state.outputs.consecutive_failures }} consecutive scheduled run(s). Target patch: \`${{ steps.outcome.outputs.target }}\`. Latest run: $RUN_URL"
+          EXISTING=$(gh issue list --label patch-sync-flaky --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "patch-sync: source fetch failing" --body "$BODY" --label patch-sync-flaky,patch-sync
+          fi
+
+      - name: Upload reports
+        if: steps.outcome.outputs.outcome != 'no-op' && steps.outcome.outputs.outcome != 'fetch-failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: patch-sync-reports-${{ steps.outcome.outputs.target }}-${{ github.run_id }}
+          path: |
+            .patch-sync/
+            data/snapshots/${{ steps.outcome.outputs.target }}/gate-report.md
+            data/snapshots/${{ steps.outcome.outputs.target }}/COVERAGE.md
+            data/snapshots/${{ steps.outcome.outputs.target }}/diff.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Open/update patch-sync-failure issue
+        if: steps.outcome.outputs.outcome == 'gate-failure'
+        run: |
+          TITLE="patch-sync: gate failure advancing to ${{ steps.outcome.outputs.target }}"
+          EXISTING=$(gh issue list --label patch-sync-failure --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file .patch-sync/failure-issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file .patch-sync/failure-issue-body.md --label patch-sync-failure,patch-sync
+          fi
+
+      - name: Commit snapshot + open auto-merging PR
+        if: (steps.outcome.outputs.outcome == 'clean' || steps.outcome.outputs.outcome == 'demoted') && inputs.dry_run != 'true'
+        run: |
+          TARGET="${{ steps.outcome.outputs.target }}"
+          BRANCH="patch/$TARGET"
+          git checkout -B "$BRANCH"
+          git add -A -- data/
+          git commit -m "chore(data): sync patch $TARGET" \
+            -m "Automated by patch-sync.yml ($RUN_URL)." \
+            -m "Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>"
+          git push -f origin "$BRANCH"
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --body-file .patch-sync/pr-body.md
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(data): sync patch $TARGET" \
+              --body-file .patch-sync/pr-body.md \
+              --label patch-sync,automerge
+          fi
+          gh pr merge "$BRANCH" --squash --auto
+
+      - name: Open/update demotion issue
+        if: steps.outcome.outputs.outcome == 'demoted' && inputs.dry_run != 'true'
+        run: |
+          TITLE="patch-sync: demoted entities on ${{ steps.outcome.outputs.target }}"
+          EXISTING=$(gh issue list --label patch-sync-demotion --state open --search "in:title ${{ steps.outcome.outputs.target }}" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file .patch-sync/demotion-issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file .patch-sync/demotion-issue-body.md --label patch-sync-demotion,patch-sync
+          fi

@@ -14,6 +14,7 @@
     "lint:tokens": "tsx scripts/lint-tokens.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:health": "playwright test --config=playwright.health.config.ts",
     "format": "biome format --write .",
     "data:sync": "tsx scripts/data/sync.ts",
     "data:diff": "tsx scripts/data/diff.ts",
@@ -22,7 +23,8 @@
     "data:demote": "tsx scripts/gates/demote.ts",
     "data:prune-snapshots": "tsx scripts/gates/prune-snapshots.ts",
     "data:check-latest": "tsx scripts/data/check-latest.ts",
-    "data:sync-state": "tsx scripts/gates/sync-state.ts"
+    "data:sync-state": "tsx scripts/gates/sync-state.ts",
+    "patch-sync:run": "tsx scripts/gates/patch-sync-run.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

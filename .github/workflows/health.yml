@@ -1,0 +1,65 @@
+name: Health Check
+
+# Weekly deployed-site smoke test (plan §3.3.7, §7 Phase 6 AC): hits the
+# real GitHub Pages URL (not a local build) and opens/updates an issue on
+# failure. See README.md#maintenance.
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # Monday noon UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: health-check
+  cancel-in-progress: false
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run health smoke test
+        id: health
+        run: npm run test:health
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: health-check-report-${{ github.run_id }}
+          path: playwright-report-health/
+          retention-days: 14
+
+      - name: Open/update failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create health-check-failure --color b60205 --force >/dev/null
+          BODY="The weekly deployed-site health check failed. Run: $RUN_URL"
+          EXISTING=$(gh issue list --label health-check-failure --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "health-check-failure: deployed site smoke test failed" --body "$BODY" --label health-check-failure
+          fi

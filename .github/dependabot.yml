@@ -4,3 +4,23 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # Active dependency-hygiene mechanism (plan §3.3.5, §7 Phase 6 deliverable
+  # 7): the Renovate GitHub App is NOT installed on this repo (verified via
+  # `gh api repos/.../hooks` returning `[]` and no `gh api user/installations`
+  # access — installing it requires a one-time interactive GitHub Marketplace
+  # consent flow with no non-interactive/CLI path, so it can't be done as
+  # part of unattended automation). `renovate.json` is kept as inert config
+  # in case a human installs the app later, but Dependabot + automerge
+  # (`.github/workflows/dependabot-automerge.yml`) is what actually runs
+  # minor/patch updates to green and merges them unattended today.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]

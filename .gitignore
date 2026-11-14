@@ -12,10 +12,12 @@ node_modules/.tmp/
 
 # patch-sync.yml scratch output (PR/issue body drafts, copied reports)
 .patch-sync/
+.patch-sync-state/
 
 # Testing
 coverage/
 playwright-report/
+playwright-report-health/
 test-results/
 blob-report/
 .qa/
