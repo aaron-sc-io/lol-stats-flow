@@ -42,6 +42,7 @@
     "src/data/snapshot-schema.ts",
     "src/data/stat-ids.ts",
     "src/data/snapshot-selectors.ts",
-    "src/engine/**/*.ts"
+    "src/engine/**/*.ts",
+    "src/persistence/__fixtures__/canvas-v0.ts"
   ]
 }
