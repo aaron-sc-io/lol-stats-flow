@@ -1,0 +1,92 @@
+/**
+ * React Flow theme overrides — DESIGN.md §7.
+ *
+ * `@xyflow/react/dist/style.css` must be imported BEFORE this file. Every
+ * rule here redefines the library's public (non "-default") CSS custom
+ * properties or selectors with our own tokens, so the override wins
+ * regardless of `colorMode`. Nothing here may introduce new hex/rgb/hsl
+ * literals — only token references and color-mix() of tokens.
+ */
+
+.react-flow {
+  /* Canvas */
+  --xy-background-color: var(--surface-canvas);
+  --xy-background-pattern-color: var(--gray-3);
+
+  /* Edges */
+  --xy-edge-stroke: var(--border-strong);
+  --xy-edge-stroke-width: 1.5;
+  --xy-edge-stroke-selected: var(--text-primary);
+  --xy-connectionline-stroke: var(--border-strong);
+  --xy-connectionline-stroke-width: 1.5;
+  --xy-edge-label-background-color: var(--surface-raised);
+  --xy-edge-label-color: var(--text-secondary);
+
+  /* Selection box */
+  --xy-selection-background-color: color-mix(in srgb, var(--gray-10) 8%, transparent);
+  --xy-selection-border: var(--border-width-hairline) dotted var(--gray-9);
+
+  /* Nodes (defensive defaults — custom node types restyle themselves) */
+  --xy-node-background-color: var(--surface-node);
+  --xy-node-border: var(--border-width-hairline) solid var(--border-default);
+  --xy-node-border-radius: var(--radius-node);
+  --xy-node-color: var(--text-primary);
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: 0 0 0 var(--border-width-hairline) var(--border-focus);
+
+  /* Controls */
+  --xy-controls-box-shadow: none;
+  --xy-controls-button-background-color: var(--surface-raised);
+  --xy-controls-button-background-color-hover: var(--surface-hover);
+  --xy-controls-button-color: var(--text-secondary);
+  --xy-controls-button-color-hover: var(--text-primary);
+  --xy-controls-button-border-color: var(--border-default);
+
+  /* Attribution (kept visible per license, restyled to match chrome) */
+  --xy-attribution-background-color: transparent;
+}
+
+/* Handles: 8px rings that fill solid on hover or while connecting. */
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background-color: var(--surface-canvas);
+  border: var(--border-width-hairline) solid var(--border-strong);
+  transition:
+    background-color var(--motion-fast) var(--motion-easing),
+    border-color var(--motion-fast) var(--motion-easing);
+}
+
+.react-flow__handle:hover,
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectionindicator {
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+/* Controls: one hairline-bordered group instead of a floating button stack. */
+.react-flow__panel {
+  margin: var(--space-4);
+}
+
+.react-flow__controls {
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  width: 28px;
+  height: 28px;
+  transition:
+    background-color var(--motion-fast) var(--motion-easing),
+    color var(--motion-fast) var(--motion-easing);
+}
+
+.react-flow__attribution {
+  color: var(--text-tertiary);
+}
+
+.react-flow__attribution a {
+  color: inherit;
+}
