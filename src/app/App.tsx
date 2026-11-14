@@ -163,6 +163,9 @@ function FlowCanvas() {
       onConnect={onConnect}
       isValidConnection={isValidConnection}
       defaultEdgeOptions={{ type: "flow" }}
+      // React Flow's default 0.5 floor stops "Fit View" from fitting a canvas
+      // a few nodes wide (champion → combo → graph → …) on a laptop screen.
+      minZoom={0.25}
       colorMode="dark"
     >
       <Background variant={BackgroundVariant.Dots} gap={24} size={2} />
