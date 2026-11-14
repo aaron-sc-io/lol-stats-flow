@@ -59,6 +59,7 @@ function fixtureSnapshot(): Snapshot {
           attackDamagePerLevel: 0,
           attackSpeed: 0.697,
           attackSpeedPerLevel: 3.5,
+          attackSpeedRatio: 0.67,
           attackRange: 175,
           moveSpeed: 345,
           hpRegen: 6.5,

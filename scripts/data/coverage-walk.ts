@@ -29,14 +29,6 @@ function visitNode(node: FormulaNode, stats: CalculationStats): void {
       visitNode(subpart, stats)
     }
   }
-  if (node.kind === "clampSubParts") {
-    if (node.min !== undefined) visitNode(node.min, stats)
-    if (node.max !== undefined) visitNode(node.max, stats)
-  }
-  if (node.kind === "byCharLevelInterpolation") {
-    visitNode(node.startValue, stats)
-    visitNode(node.endValue, stats)
-  }
 }
 
 export function visitCalculation(calc: GameCalculation, stats: CalculationStats): void {

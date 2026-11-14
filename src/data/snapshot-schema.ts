@@ -46,6 +46,10 @@ export const ChampionStatsSchema = z.object({
   attackDamagePerLevel: z.number(),
   attackSpeed: z.number(),
   attackSpeedPerLevel: z.number(),
+  /** Riot's `attackSpeedRatioModifiable` — the AS-growth-per-point divisor
+   * used in `finalAS = baseAS + bonusASPercent * attackSpeedRatio`. Sourced
+   * from CDragon only (DDragon does not expose it). */
+  attackSpeedRatio: z.number(),
   attackRange: z.number(),
   moveSpeed: z.number(),
   hpRegen: z.number(),

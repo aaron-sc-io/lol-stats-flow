@@ -24,7 +24,13 @@ function typeOf(raw: RawPart, hashes: HashTable): string {
 }
 
 function statFieldsOf(raw: RawPart) {
-  const stat = typeof raw.mStat === "number" ? raw.mStat : -1
+  // CDragon's bin dumper omits fields that equal their default/zero value;
+  // `mStat`'s zero value is enum index 0 = AbilityPower (verified: Vayne Q's
+  // "APRatio" sub-part and Yasuo E's "APRatio" sub-part both omit `mStat`
+  // entirely in the raw bin, and both are plainly AP-ratio template terms —
+  // if the default were anything else, those would resolve to the wrong
+  // stat). So an absent `mStat` means "AbilityPower", not "unresolved".
+  const stat = typeof raw.mStat === "number" ? raw.mStat : 0
   const statFormulaId = typeof raw.mStatFormula === "number" ? raw.mStatFormula : 0
   return { stat, statKey: resolveStatId(stat), statFormula: statFormulaKindFromId(statFormulaId) }
 }
@@ -76,12 +82,94 @@ export function buildFormulaNode(raw: RawPart, hashes: HashTable): FormulaNode {
       return { kind: "maxOfSubParts", subparts: buildSubparts(raw, hashes) }
     case "MinOfSubPartsCalculationPart":
       return { kind: "minOfSubParts", subparts: buildSubparts(raw, hashes) }
+    case "ClampSubPartsCalculationPart":
+      return {
+        kind: "clampSubParts",
+        subparts: buildSubparts(raw, hashes),
+        ...(typeof raw.mFloor === "number" ? { floor: raw.mFloor } : {}),
+        ...(typeof raw.mCeiling === "number" ? { ceiling: raw.mCeiling } : {}),
+      }
+    case "ByCharLevelInterpolationCalculationPart":
+      return {
+        kind: "byCharLevelInterpolation",
+        startValue: typeof raw.mStartValue === "number" ? raw.mStartValue : 0,
+        endValue: typeof raw.mEndValue === "number" ? raw.mEndValue : 0,
+        startLevel: typeof raw.mStartLevel === "number" ? raw.mStartLevel : 1,
+        endLevel: typeof raw.mEndLevel === "number" ? raw.mEndLevel : 18,
+        scaleByStatProgression: raw.mScaleByStatProgressionMultiplier === true,
+      }
+    case "ByCharLevelBreakpointsCalculationPart":
+      return {
+        kind: "byCharLevelBreakpoints",
+        level1Value: typeof raw.mLevel1Value === "number" ? raw.mLevel1Value : 0,
+        initialBonusPerLevel:
+          typeof raw.mInitialBonusPerLevel === "number" ? raw.mInitialBonusPerLevel : 0,
+        breakpoints: buildBreakpoints(raw.mBreakpoints),
+      }
+    case "ByCharLevelFormulaCalculationPart":
+      return {
+        kind: "byCharLevelFormula",
+        values: asNumberArray(raw.values ?? raw.mValues),
+      }
+    case "BuffCounterByNamedDataValueCalculationPart":
+      return {
+        kind: "buffCounterByNamedDataValue",
+        buffName: typeof raw.mBuffName === "string" ? resolveHashToken(raw.mBuffName, hashes) : "",
+        dataValue: typeof raw.mDataValue === "string" ? raw.mDataValue : "",
+      }
+    case "BuffCounterByCoefficientCalculationPart":
+      return {
+        kind: "buffCounterByCoefficient",
+        buffName: typeof raw.mBuffName === "string" ? resolveHashToken(raw.mBuffName, hashes) : "",
+        coefficient: typeof raw.mCoefficient === "number" ? raw.mCoefficient : 0,
+      }
+    case "AbilityResourceByCoefficientCalculationPart":
+      return {
+        kind: "abilityResourceByCoefficient",
+        coefficient: typeof raw.mCoefficient === "number" ? raw.mCoefficient : 0,
+      }
+    case "ByItemEpicnessCountCalculationPart":
+      return {
+        kind: "byItemEpicnessCount",
+        coefficient: typeof raw.Coefficient === "number" ? raw.Coefficient : 0,
+        epicness: typeof raw.epicness === "number" ? raw.epicness : 0,
+      }
+    case "CooldownMultiplierCalculationPart":
+      return { kind: "cooldownMultiplier" }
     default:
       if (typeof raw.mSpellCalculationKey === "string") {
         return { kind: "spellCalculationRef", calculationKey: raw.mSpellCalculationKey }
       }
       return unknownNode(type, raw)
   }
+}
+
+function asNumberArray(value: unknown): number[] {
+  return Array.isArray(value) ? value.filter((v): v is number => typeof v === "number") : []
+}
+
+/** Builds the `Breakpoint` list for `ByCharLevelBreakpointsCalculationPart`.
+ * Per the verified reverse-engineered algorithm (see module doc comment on
+ * `FormulaNode`), a breakpoint's level defaults to 1 when absent and
+ * breakpoints are evaluated in ascending `level` order. */
+function buildBreakpoints(
+  value: unknown,
+): Array<{ level: number; additionalBonusAtThisLevel?: number; bonusPerLevelAtAndAfter?: number }> {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .filter((entry): entry is RawPart => asRecord(entry) !== null)
+    .map((entry) => ({
+      level: typeof entry.mLevel === "number" ? entry.mLevel : 1,
+      ...(typeof entry.mAdditionalBonusAtThisLevel === "number"
+        ? { additionalBonusAtThisLevel: entry.mAdditionalBonusAtThisLevel }
+        : {}),
+      ...(typeof entry.mBonusPerLevelAtAndAfter === "number"
+        ? { bonusPerLevelAtAndAfter: entry.mBonusPerLevelAtAndAfter }
+        : {}),
+    }))
+    .sort((a, b) => a.level - b.level)
 }
 
 function buildSubparts(raw: RawPart, hashes: HashTable): FormulaNode[] {

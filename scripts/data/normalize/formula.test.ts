@@ -57,9 +57,52 @@ describe("buildCalculationMap — Yasuo Q (real trimmed CDragon fixture)", () =>
 
 describe("buildFormulaNode — unknown part preservation", () => {
   it("Given a part type this normalizer does not recognize, when built, then it becomes an unknown node with raw preserved rather than throwing", () => {
-    const raw = { __type: "ByCharLevelBreakpointsCalculationPart", mSomeField: 42 }
+    const raw = { __type: "SomeFuturePartType", mSomeField: 42 }
     const node = buildFormulaNode(raw, emptyHashes)
-    expect(node).toEqual({ kind: "unknown", type: "ByCharLevelBreakpointsCalculationPart", raw })
+    expect(node).toEqual({ kind: "unknown", type: "SomeFuturePartType", raw })
+  })
+})
+
+describe("buildFormulaNode — ByCharLevelBreakpointsCalculationPart (real Yasuo shape)", () => {
+  it("Given mLevel1Value + mBreakpoints with mAdditionalBonusAtThisLevel, when built, then fields map 1:1 and breakpoints stay sorted ascending", () => {
+    const raw = {
+      __type: "ByCharLevelBreakpointsCalculationPart",
+      mLevel1Value: 55,
+      mBreakpoints: [
+        { mLevel: 13, mAdditionalBonusAtThisLevel: -5, __type: "Breakpoint" },
+        { mLevel: 7, mAdditionalBonusAtThisLevel: -5, __type: "Breakpoint" },
+      ],
+    }
+    const node = buildFormulaNode(raw, emptyHashes)
+    expect(node).toEqual({
+      kind: "byCharLevelBreakpoints",
+      level1Value: 55,
+      initialBonusPerLevel: 0,
+      breakpoints: [
+        { level: 7, additionalBonusAtThisLevel: -5 },
+        { level: 13, additionalBonusAtThisLevel: -5 },
+      ],
+    })
+  })
+})
+
+describe("buildFormulaNode — ByCharLevelInterpolationCalculationPart (real Yasuo shape)", () => {
+  it("Given mStartValue/mEndValue/mScaleByStatProgressionMultiplier, when built, then defaults startLevel=1/endLevel=18", () => {
+    const raw = {
+      __type: "ByCharLevelInterpolationCalculationPart",
+      mStartValue: 125,
+      mEndValue: 600,
+      mScaleByStatProgressionMultiplier: true,
+    }
+    const node = buildFormulaNode(raw, emptyHashes)
+    expect(node).toEqual({
+      kind: "byCharLevelInterpolation",
+      startValue: 125,
+      endValue: 600,
+      startLevel: 1,
+      endLevel: 18,
+      scaleByStatProgression: true,
+    })
   })
 })
 
