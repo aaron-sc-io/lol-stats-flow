@@ -10,16 +10,18 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import "@/styles/reactflow-theme.css"
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { FlowEdge } from "@/components/FlowEdge"
-import { ToastProvider } from "@/components/Toast"
+import { ToastProvider, useToast } from "@/components/Toast"
 import { SnapshotProvider } from "@/data/snapshot-context"
 import { isValidGraphConnection } from "@/graph/connection-rules"
+import { computeHighlightState } from "@/graph/selectors"
 import { useGraphStore } from "@/graph/store"
 import type { FlowEdge as GraphEdge } from "@/graph/types"
 import { ChampionNode } from "@/nodes/ChampionNode"
 import { ComboNode } from "@/nodes/ComboNode"
 import { GraphNode } from "@/nodes/GraphNode"
+import { TutorialNode } from "@/nodes/TutorialNode"
 import {
   type EffectiveSnapshotStatus,
   startAutosave,
@@ -33,7 +35,12 @@ import { PatchPinBanner } from "./PatchPinBanner"
 import { TopBar } from "./TopBar"
 import { useStableToast } from "./use-stable-toast"
 
-const NODE_TYPES = { champion: ChampionNode, combo: ComboNode, graph: GraphNode }
+const NODE_TYPES = {
+  champion: ChampionNode,
+  combo: ComboNode,
+  graph: GraphNode,
+  tutorial: TutorialNode,
+}
 const EDGE_TYPES = { flow: FlowEdge }
 
 // `?view=gallery` lazy-loads the component gallery instead of the canvas —
@@ -69,6 +76,15 @@ function AppShell() {
   const snapshotStatus = useEffectiveSnapshot(pinnedPatch)
   const patchLabel = snapshotStatus.status === "ready" ? snapshotStatus.snapshot.meta.patch : "—"
 
+  useEffect(() => {
+    if (snapshotStatus.status === "error") {
+      toast.show({
+        message: `Failed to load champion data: ${snapshotStatus.error.message}`,
+        tone: "error",
+      })
+    }
+  }, [snapshotStatus, toast])
+
   return (
     <div className={styles.shell}>
       <TopBar
@@ -97,26 +113,21 @@ function AppShell() {
 }
 
 function Canvas({ snapshotStatus }: { readonly snapshotStatus: EffectiveSnapshotStatus }) {
+  const { setContainer } = useToast()
   if (snapshotStatus.status === "loading") {
     return (
-      <div className={styles.canvas}>
+      <div className={styles.canvas} ref={setContainer}>
         <div className={styles.loading}>Loading snapshot…</div>
       </div>
     )
   }
   if (snapshotStatus.status === "error") {
-    return (
-      <div className={styles.canvas}>
-        <div className={styles.error} role="alert">
-          Failed to load champion data: {snapshotStatus.error.message}
-        </div>
-      </div>
-    )
+    return <div className={styles.canvas} ref={setContainer} />
   }
 
   return (
     <SnapshotProvider snapshot={snapshotStatus.snapshot}>
-      <div className={styles.canvas}>
+      <div className={styles.canvas} ref={setContainer}>
         <FlowCanvas />
       </div>
     </SnapshotProvider>
@@ -129,6 +140,29 @@ function FlowCanvas() {
   const onNodesChange = useGraphStore((s) => s.onNodesChange)
   const onEdgesChange = useGraphStore((s) => s.onEdgesChange)
   const onConnect = useGraphStore((s) => s.onConnect)
+  const hoveredComboId = useGraphStore((s) => s.hoveredComboId)
+  const hoveredItemSetIds = useGraphStore((s) => s.hoveredItemSetIds)
+  // Overlapping edges (shared source/target handle) draw their common
+  // segments on top of each other; lift highlighted edges above the rest so
+  // the shared stretch shows the highlight instead of a sibling's plain line.
+  // Done by draw order (highlighted last) rather than `zIndex`: a raised
+  // edge zIndex lifts the edge above the nodes layer, so nodes would stop
+  // covering edges while a path is highlighted.
+  const displayEdges = useMemo(() => {
+    const { highlightedEdgeIds } = computeHighlightState(
+      nodes,
+      edges,
+      hoveredComboId,
+      hoveredItemSetIds,
+    )
+    if (highlightedEdgeIds.size === 0) {
+      return edges
+    }
+    return [
+      ...edges.filter((edge) => !highlightedEdgeIds.has(edge.id)),
+      ...edges.filter((edge) => highlightedEdgeIds.has(edge.id)),
+    ]
+  }, [nodes, edges, hoveredComboId, hoveredItemSetIds])
   const { fitView } = useReactFlow()
   const nodesInitialized = useNodesInitialized()
   const hasFitInitialView = useRef(false)
@@ -155,7 +189,7 @@ function FlowCanvas() {
   return (
     <ReactFlow
       nodes={nodes}
-      edges={edges}
+      edges={displayEdges}
       nodeTypes={NODE_TYPES}
       edgeTypes={EDGE_TYPES}
       onNodesChange={onNodesChange}

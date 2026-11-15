@@ -58,7 +58,7 @@ function SliderSection() {
           <Slider
             value={level}
             min={1}
-            max={18}
+            max={20}
             onChange={setLevel}
             aria-label="Champion level"
             unit="lvl"
@@ -70,7 +70,7 @@ function SliderSection() {
           <Slider
             value={9}
             min={1}
-            max={18}
+            max={20}
             onChange={() => {}}
             aria-label="Champion level"
             disabled

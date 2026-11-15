@@ -128,7 +128,7 @@
   padding: 0 var(--space-2);
   border: var(--border-width-hairline) solid var(--border-focus);
   border-radius: var(--radius-control);
-  background-color: var(--surface-node);
+  background-color: var(--surface-input);
   color: var(--text-primary);
   font-size: var(--font-size-sm);
 }

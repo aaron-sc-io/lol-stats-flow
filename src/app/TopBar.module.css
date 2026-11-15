@@ -42,20 +42,7 @@
   max-width: 320px;
   height: 28px;
   padding: 0 var(--space-2);
-  border: var(--border-width-hairline) solid transparent;
-  border-radius: var(--radius-control);
-  background-color: transparent;
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-sm);
-  transition: border-color var(--motion-fast) var(--motion-easing);
-}
-
-.nameField:hover {
-  border-color: var(--border-default);
-}
-
-.nameField:focus-visible {
-  outline: none;
-  border-color: var(--border-focus);
 }

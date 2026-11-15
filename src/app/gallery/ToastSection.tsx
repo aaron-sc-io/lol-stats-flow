@@ -29,6 +29,19 @@ export function ToastSection() {
             Save canvas
           </Button>
         </GallerySwatch>
+        <GallerySwatch label="Error tone">
+          <Button
+            variant="danger"
+            onClick={() =>
+              show({
+                message: "Failed to save canvas — storage quota exceeded.",
+                tone: "error",
+              })
+            }
+          >
+            Trigger error
+          </Button>
+        </GallerySwatch>
       </div>
     </section>
   )

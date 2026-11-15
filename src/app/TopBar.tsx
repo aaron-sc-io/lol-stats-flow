@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useStore } from "zustand"
+import { EditableText } from "@/components/EditableText"
 import { IconButton } from "@/components/IconButton"
 import { useGraphStore } from "@/graph/store"
 import {
@@ -84,9 +85,9 @@ function CanvasNameField({ active }: { readonly active: ActiveCanvasMeta }) {
   }
 
   return (
-    <input
+    <EditableText
       ref={inputRef}
-      className={styles.nameField}
+      wrapperClassName={styles.nameField}
       value={draft}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}

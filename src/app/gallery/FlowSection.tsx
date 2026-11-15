@@ -10,6 +10,9 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
 } from "@xyflow/react"
 import { FlowEdge, type FlowEdgeData } from "@/components/FlowEdge"
 import { NodeFrame } from "@/components/NodeFrame"
@@ -21,19 +24,37 @@ type DemoEdge = Edge<FlowEdgeData, "flow">
 
 const HANDLE_IDS = ["h0", "h1", "h2"] as const
 
-function DemoFlowNode({ data }: NodeProps<DemoNode>) {
+function DemoFlowNode({ id, data, selected }: NodeProps<DemoNode>) {
+  const { deleteElements, addNodes, getNode } = useReactFlow<DemoNode, DemoEdge>()
   const handleType = data.side === "source" ? "source" : "target"
   const position = data.side === "source" ? Position.Right : Position.Left
 
   return (
-    <NodeFrame label="Demo node" title={data.title} width={180}>
+    <NodeFrame
+      label="Demo node"
+      title={data.title}
+      width={180}
+      selected={selected}
+      onDelete={() => void deleteElements({ nodes: [{ id }] })}
+      onDuplicate={() => {
+        const node = getNode(id)
+        if (node !== undefined) {
+          addNodes({
+            ...node,
+            id: `-copy-${crypto.randomUUID()}`,
+            position: { x: node.position.x + 40, y: node.position.y + 40 },
+            selected: false,
+          })
+        }
+      }}
+    >
       <div className={styles.nodeBody}>Sample content</div>
-      {HANDLE_IDS.map((id, index) => (
+      {HANDLE_IDS.map((handleId, index) => (
         <Handle
-          key={id}
+          key={handleId}
           type={handleType}
           position={position}
-          id={id}
+          id={handleId}
           style={{ top: `${30 + index * 20}%` }}
         />
       ))}
@@ -82,6 +103,28 @@ const EDGES: DemoEdge[] = [
   },
 ]
 
+function DemoFlowCanvas() {
+  const [nodes, , onNodesChange] = useNodesState(NODES)
+  const [edges, , onEdgesChange] = useEdgesState(EDGES)
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodeTypes={NODE_TYPES}
+      edgeTypes={EDGE_TYPES}
+      colorMode="dark"
+      fitView
+      fitViewOptions={{ padding: 0.3 }}
+    >
+      <Background variant={BackgroundVariant.Dots} gap={24} size={2} />
+      <Controls showInteractive={false} />
+    </ReactFlow>
+  )
+}
+
 /** Mini canvas proving the React Flow theme (dot grid, handles, Controls)
  * and `FlowEdge`'s normal/highlighted/dimmed states render correctly
  * together, without building any real domain node. */
@@ -91,18 +134,7 @@ export function FlowSection() {
       <h2 className={styles.sectionTitle}>React Flow theme</h2>
       <div className={styles.flowContainer}>
         <ReactFlowProvider>
-          <ReactFlow
-            nodes={NODES}
-            edges={EDGES}
-            nodeTypes={NODE_TYPES}
-            edgeTypes={EDGE_TYPES}
-            colorMode="dark"
-            fitView
-            fitViewOptions={{ padding: 0.3 }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={24} size={2} />
-            <Controls showInteractive={false} />
-          </ReactFlow>
+          <DemoFlowCanvas />
         </ReactFlowProvider>
       </div>
     </section>

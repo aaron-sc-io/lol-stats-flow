@@ -8,6 +8,7 @@ import { useToast } from "@/components/Toast"
 import {
   copyShareLink,
   createNewCanvas,
+  createTutorialCanvasDocument,
   deleteCanvasWithUndo,
   duplicateCanvas,
   exportActiveCanvasAsJson,
@@ -95,6 +96,12 @@ export function Drawer({ isOpen, onClose, effectivePatch }: DrawerProps) {
     onClose()
   }
 
+  async function handleOpenTutorial(): Promise<void> {
+    await createTutorialCanvasDocument()
+    refresh()
+    onClose()
+  }
+
   function handleExport(): void {
     exportActiveCanvasAsJson()
   }
@@ -160,6 +167,9 @@ export function Drawer({ isOpen, onClose, effectivePatch }: DrawerProps) {
 
         <Button variant="secondary" className={styles.newCanvas} onClick={handleNewCanvas}>
           <Icon name="plus" size={16} /> New canvas
+        </Button>
+        <Button variant="ghost" className={styles.newCanvas} onClick={handleOpenTutorial}>
+          Open tutorial
         </Button>
 
         {filtered.length === 0 ? (

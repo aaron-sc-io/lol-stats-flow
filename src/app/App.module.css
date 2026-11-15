@@ -21,13 +21,3 @@
   font-size: var(--font-size-sm);
   line-height: var(--line-height-sm);
 }
-
-.error {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: center;
-  color: var(--danger);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-sm);
-}
