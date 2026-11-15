@@ -29,8 +29,16 @@ Design system and UI spec: [DESIGN.md](./DESIGN.md)
 
 ## Status
 
-Phase 6 — automation hardening. Data pipeline, engine, graph UI, persistence,
-and `patch-sync`/`health` automation are all live.
+Phases 0-6 complete; maintained by agents. Start at [AGENTS.md](AGENTS.md), then
+[docs/architecture.md](docs/architecture.md), [docs/roadmap.md](docs/roadmap.md) and
+[docs/decisions/](docs/decisions/README.md).
+
+## Releases
+
+Versioning is the only human-gated step. The **Release** workflow (`release.yml`)
+generates a safety report in [docs/releases/](docs/releases/README.md) and opens a
+`release` PR. `release-guard.yml` blocks any version change without that label, the
+report and a human approval. The tag and GitHub Release are created after merge.
 
 ## Maintenance
 
@@ -50,9 +58,10 @@ case called out at the bottom.
 ### When a human is actually needed
 
 - **A new mechanic type appears that the fixed effect-primitive set
-  (`src/engine/effects/`) can't express** (plan §4.3) — gates will keep
+  (`src/engine/effects/`) can't express** ([ADR 0002](docs/decisions/0002-formula-compiler-and-fixed-primitives.md)) — gates will keep
   passing (structurally nothing broke), but the new mechanic won't be
   modeled until a human adds a primitive + binding. Nothing pages for this;
   it's a product decision, not a failure. Everything else — patch bumps,
   dependency updates, transient fetch failures, demotions, deploys — runs
   unattended.
+- **Approving a `release` PR** (version bump) after reading its safety report.

@@ -36,7 +36,7 @@ All raw values live in `src/styles/tokens.css`. Components use the semantic alia
 
 | Alias | Maps to |
 |---|---|
-| `--surface-canvas` / `--surface-node` / `--surface-raised` / `--surface-hover` | gray-0 / 1 / 2 / 3 |
+| `--surface-canvas` / `--surface-node` / `--surface-raised` / `--surface-input` / `--surface-hover` | gray-0 / 1 / 2 / mix(2,3) / 3 |
 | `--border-default` / `--border-strong` / `--border-focus` | gray-4 / 5 / 10 |
 | `--text-primary` / `--text-secondary` / `--text-tertiary` / `--text-disabled` | gray-10 / 8 / 7 / 6 |
 | `--accent` | gray-10 |
