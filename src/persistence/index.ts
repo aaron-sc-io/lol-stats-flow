@@ -9,6 +9,7 @@ export { useBootstrapPersistence } from "./bootstrap"
 export {
   copyShareLink,
   createNewCanvas,
+  createTutorialCanvasDocument,
   deleteCanvasWithUndo,
   duplicateCanvas,
   exportActiveCanvasAsJson,

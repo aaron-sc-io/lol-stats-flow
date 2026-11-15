@@ -148,4 +148,38 @@ describe("CanvasDocumentSchema", () => {
       }),
     ).not.toThrow()
   })
+
+  it("round-trips level 20 champion nodes and graph seriesOverrides", () => {
+    const { nodes, edges } = createDefaultCanvas()
+    const customized = nodes.map((node) => {
+      if (node.type === "champion") {
+        return { ...node, data: { ...node.data, level: 20 } }
+      }
+      if (node.type === "graph") {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            seriesOverrides: {
+              "combo-1__itemset-infinity-edge__target-1": {
+                color: "var(--dmg-magic)",
+                strokeWidth: 2.5,
+                dashStyle: "dashed" as const,
+                hidden: true,
+              },
+            },
+          },
+        }
+      }
+      return node
+    })
+    const doc = {
+      schemaVersion: CANVAS_SCHEMA_VERSION,
+      ...BASE_FIELDS,
+      graph: toCanonicalGraph(customized, edges),
+    }
+
+    const parsed = CanvasDocumentSchema.parse(doc)
+    expect(parsed).toEqual(doc)
+  })
 })

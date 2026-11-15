@@ -5,10 +5,14 @@ import type {
   ChampionNodeData,
   ChartType,
   ComboNodeData,
+  EffectiveSettings,
   FlowEdge,
   FlowNode,
+  GraphKind,
   GraphNodeData,
   ItemSlotValue,
+  SeriesOverride,
+  TutorialNodeData,
   XMode,
 } from "./types"
 
@@ -45,6 +49,12 @@ export type CanonicalNode =
       readonly type: "graph"
       readonly position: XYPosition
       readonly data: GraphNodeData
+    }
+  | {
+      readonly id: string
+      readonly type: "tutorial"
+      readonly position: XYPosition
+      readonly data: TutorialNodeData
     }
 
 export type CanonicalEdge = {
@@ -94,6 +104,7 @@ export type FlowSlice = {
   readonly hoveredItemSetId: string | null
   readonly hoveredItemSetIds: readonly string[]
   readonly hoveredDamage: HoveredDamage | null
+  readonly pinnedGraphSeriesId: string | null
   readonly onNodesChange: OnNodesChange<FlowNode>
   readonly onEdgesChange: OnEdgesChange<FlowEdge>
   readonly onConnect: (connection: Connection) => void
@@ -104,9 +115,15 @@ export type FlowSlice = {
   readonly setHoveredItemSet: (itemSetId: string | null) => void
   readonly setHoveredItemSets: (itemSetIds: readonly string[]) => void
   readonly setHoveredDamage: (damage: HoveredDamage | null) => void
+  readonly setPinnedGraphSeries: (seriesId: string | null) => void
   readonly addChampionNode: (position?: XYPosition) => string
   readonly addComboNode: (position?: XYPosition) => string
-  readonly addGraphNode: (position?: XYPosition) => string
+  readonly addGraphNode: (position?: XYPosition, graphKind?: GraphKind) => string
+  readonly setTutorialStep: (nodeId: string, step: number) => void
+  readonly removeNode: (nodeId: string) => void
+  /** Clones a node (offset, selected, with its incoming edges); returns the
+   * new id, or `undefined` if `nodeId` doesn't exist. */
+  readonly duplicateNode: (nodeId: string) => string | undefined
 }
 
 export type ChampionSlice = {
@@ -115,6 +132,7 @@ export type ChampionSlice = {
   readonly addItemSet: (nodeId: string) => void
   readonly removeItemSet: (nodeId: string, itemSetId: string) => void
   readonly duplicateItemSet: (nodeId: string, itemSetId: string) => void
+  readonly reorderItemSets: (nodeId: string, fromIndex: number, toIndex: number) => void
   readonly renameItemSet: (nodeId: string, itemSetId: string, name: string) => void
   readonly setItemSlot: (
     nodeId: string,
@@ -140,12 +158,20 @@ export type ComboSlice = {
   readonly toggleComboSectionCollapsed: (nodeId: string, sectionId: string) => void
 }
 
-export type TargetStatField = "maxHp" | "bonusHp" | "armor" | "magicResist"
+export type TargetStatField =
+  | "maxHp"
+  | "bonusHp"
+  | "armor"
+  | "bonusArmor"
+  | "magicResist"
+  | "bonusMagicResist"
 
 export type TargetPreset = {
   readonly maxHp: number
   readonly armor: number
   readonly magicResist: number
+  readonly bonusArmor?: number
+  readonly bonusMagicResist?: number
 }
 
 export type GraphSlice = {
@@ -163,6 +189,12 @@ export type GraphSlice = {
   readonly setAllTargetsActive: (nodeId: string) => void
   readonly setChartType: (nodeId: string, chartType: ChartType) => void
   readonly setXMode: (nodeId: string, xMode: XMode) => void
+  readonly setEffectiveSettings: (nodeId: string, settings: Partial<EffectiveSettings>) => void
+  readonly updateSeriesOverride: (
+    nodeId: string,
+    seriesId: string,
+    override: Partial<SeriesOverride>,
+  ) => void
 }
 
 export type GraphState = FlowSlice &

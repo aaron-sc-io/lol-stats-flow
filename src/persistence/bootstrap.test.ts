@@ -38,7 +38,8 @@ describe("useBootstrapPersistence", () => {
     await waitFor(() => expect(usePersistenceStore.getState().bootstrapped).toBe(true))
 
     const active = usePersistenceStore.getState().active
-    expect(active.name).toBe("Untitled canvas")
+    expect(active.name).toBe("Tutorial")
+    expect(useGraphStore.getState().nodes.some((node) => node.type === "tutorial")).toBe(true)
     // The regression: claimDefaultCanvas used to only call setActive(),
     // never saveCanvas()/setLastOpenedId() — so storage stayed empty.
     expect(listCanvasSummaries()).toHaveLength(1)

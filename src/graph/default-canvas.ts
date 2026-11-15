@@ -4,7 +4,14 @@ import {
   GRAPH_COMBOS_HANDLE,
   itemSetHandleId,
 } from "./handle-ids"
-import type { ChampionFlowNode, ComboFlowNode, FlowEdge, FlowNode, GraphFlowNode } from "./types"
+import type {
+  ChampionFlowNode,
+  ComboFlowNode,
+  FlowEdge,
+  FlowNode,
+  GraphFlowNode,
+  TutorialFlowNode,
+} from "./types"
 
 /**
  * The canvas shown on first load (plan §6 "App shell" / deliverable 6):
@@ -122,4 +129,26 @@ export function createDefaultCanvas(): { readonly nodes: FlowNode[]; readonly ed
   ]
 
   return { nodes: [championNode, comboNode, graphNode], edges }
+}
+
+export const TUTORIAL_NODE_ID = "tutorial"
+/** Mirrors `TutorialNode.tsx`'s `DEFAULT_WIDTH`. */
+const TUTORIAL_NODE_WIDTH = 380
+
+/** The "Tutorial" canvas (the first canvas a new user sees): the default
+ * Champion → Combo → Graph chain plus a Tutorial node to its left that
+ * walks through the app step by step. The Tutorial node is never offered
+ * by the Add Node menu — this factory is the only place one is created. */
+export function createTutorialCanvas(): {
+  readonly nodes: FlowNode[]
+  readonly edges: FlowEdge[]
+} {
+  const { nodes, edges } = createDefaultCanvas()
+  const tutorialNode: TutorialFlowNode = {
+    id: TUTORIAL_NODE_ID,
+    type: "tutorial",
+    position: { x: -(TUTORIAL_NODE_WIDTH + NODE_GAP), y: ROW_Y },
+    data: { step: 0 },
+  }
+  return { nodes: [tutorialNode, ...nodes], edges }
 }

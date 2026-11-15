@@ -44,7 +44,7 @@ const ItemSetSchema = z.object({
 
 const ChampionNodeDataSchema = z.object({
   championId: z.string(),
-  level: z.number(),
+  level: z.number().int().min(1).max(20),
   itemSets: z.array(ItemSetSchema),
 })
 
@@ -70,6 +70,8 @@ const TargetSpecSchema = z.object({
   bonusHp: z.number(),
   armor: z.number(),
   magicResist: z.number(),
+  bonusArmor: z.number().optional(),
+  bonusMagicResist: z.number().optional(),
 })
 
 // "bars" (per-step bars) was removed as a chart option; canvases saved or
@@ -78,15 +80,34 @@ const ChartTypeSchema = z
   .enum(["bars", "cumulative", "hp"])
   .transform((value) => (value === "bars" ? "cumulative" : value))
 const XModeSchema = z.enum(["step", "tick"])
+const SeriesDashStyleSchema = z.enum(["solid", "dashed", "dotted"])
+
+const SeriesOverrideSchema = z.object({
+  color: z.string().optional(),
+  strokeWidth: z.number().optional(),
+  dashStyle: SeriesDashStyleSchema.optional(),
+  shape: z.enum(["circle", "square", "diamond"]).optional(),
+  hidden: z.boolean().optional(),
+})
 
 const GraphNodeDataSchema = z
   .object({
+    graphKind: z.enum(["targets", "resists"]).optional(),
+    effective: z
+      .object({
+        resistAxis: z.enum(["armor", "magicResist"]).optional(),
+        view: z.enum(["curves", "killMap"]).optional(),
+        killMapA: z.string().optional(),
+        killMapB: z.string().optional(),
+      })
+      .optional(),
     targets: z.array(TargetSpecSchema),
     activeTargetIds: z.array(z.string()).optional(),
     // Backward-compat: legacy canvases stored a single active target.
     activeTargetId: z.string().optional(),
     chartType: ChartTypeSchema,
     xMode: XModeSchema,
+    seriesOverrides: z.record(z.string(), SeriesOverrideSchema).optional(),
   })
   .transform((value) => {
     const validTargetIds = new Set(value.targets.map((target) => target.id))
@@ -105,10 +126,15 @@ const GraphNodeDataSchema = z
           ? []
           : [value.targets[0].id]
     return {
+      ...(value.graphKind === undefined ? {} : { graphKind: value.graphKind }),
+      ...(value.effective === undefined ? {} : { effective: value.effective }),
       targets: value.targets,
       activeTargetIds: normalizedActiveTargetIds,
       chartType: value.chartType,
       xMode: value.xMode,
+      ...(value.seriesOverrides === undefined || Object.keys(value.seriesOverrides).length === 0
+        ? {}
+        : { seriesOverrides: value.seriesOverrides }),
     }
   })
 
@@ -130,6 +156,14 @@ export const PersistedNodeSchema = z.discriminatedUnion("type", [
     type: z.literal("graph"),
     position: PositionSchema,
     data: GraphNodeDataSchema,
+  }),
+  // Added after v1 shipped; a new union member only widens what parses, so
+  // every existing saved canvas / share link still parses unchanged.
+  z.object({
+    id: z.string(),
+    type: z.literal("tutorial"),
+    position: PositionSchema,
+    data: z.object({ step: z.number().int().min(0) }),
   }),
 ])
 

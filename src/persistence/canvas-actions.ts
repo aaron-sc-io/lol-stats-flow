@@ -1,7 +1,8 @@
 import { getCurrentPatchString } from "@/data/loader"
-import { createDefaultCanvas } from "@/graph/default-canvas"
+import { createDefaultCanvas, createTutorialCanvas } from "@/graph/default-canvas"
 import { useGraphStore } from "@/graph/store"
 import { generateId } from "@/graph/store-helpers"
+import type { FlowEdge, FlowNode } from "@/graph/types"
 import { buildCanvasDocument, toFlowGraph } from "./document"
 import { replaceActiveCanvas } from "./graph-bridge"
 import { migrateToLatest } from "./migrations"
@@ -19,13 +20,25 @@ import { deleteCanvas, loadCanvas, saveCanvas, setLastOpenedId } from "./storage
  */
 
 export async function createNewCanvas(): Promise<void> {
+  await createCanvasFrom("Untitled canvas", createDefaultCanvas())
+}
+
+/** Opens a fresh "Tutorial" canvas — the step-by-step walkthrough. Also
+ * what a brand-new user lands on (`bootstrap.ts`). */
+export async function createTutorialCanvasDocument(): Promise<void> {
+  await createCanvasFrom("Tutorial", createTutorialCanvas())
+}
+
+async function createCanvasFrom(
+  name: string,
+  { nodes, edges }: { readonly nodes: FlowNode[]; readonly edges: FlowEdge[] },
+): Promise<void> {
   const currentPatch = await getCurrentPatchString()
   const now = new Date().toISOString()
-  const { nodes, edges } = createDefaultCanvas()
   const doc = buildCanvasDocument(
     {
       id: generateId("canvas"),
-      name: "Untitled canvas",
+      name,
       patch: currentPatch,
       createdAt: now,
       updatedAt: now,
@@ -44,7 +57,10 @@ export async function openSavedCanvas(id: string, toast: ToastApi): Promise<void
   const currentPatch = await getCurrentPatchString()
   const result = loadCanvas(id, currentPatch)
   if (!result.ok) {
-    toast.show({ message: "That canvas could not be opened — it may have been deleted." })
+    toast.show({
+      message: "That canvas could not be opened — it may have been deleted.",
+      tone: "error",
+    })
     return
   }
   await openCanvasDocument(result.value, { toast, persistLastOpened: true })
@@ -54,7 +70,10 @@ export async function duplicateCanvas(id: string, toast: ToastApi): Promise<void
   const currentPatch = await getCurrentPatchString()
   const result = loadCanvas(id, currentPatch)
   if (!result.ok) {
-    toast.show({ message: "That canvas could not be duplicated — it may have been deleted." })
+    toast.show({
+      message: "That canvas could not be duplicated — it may have been deleted.",
+      tone: "error",
+    })
     return
   }
   const now = new Date().toISOString()
@@ -162,7 +181,10 @@ export async function importCanvasFromJson(fileText: string, toast: ToastApi): P
   try {
     parsed = JSON.parse(fileText)
   } catch {
-    toast.show({ message: "That file isn't valid JSON and could not be imported." })
+    toast.show({
+      message: "That file isn't valid JSON and could not be imported.",
+      tone: "error",
+    })
     return
   }
 
@@ -171,6 +193,7 @@ export async function importCanvasFromJson(fileText: string, toast: ToastApi): P
   if (!migrated.ok) {
     toast.show({
       message: "That file isn't a valid lol-stats-flow canvas and could not be imported.",
+      tone: "error",
     })
     return
   }

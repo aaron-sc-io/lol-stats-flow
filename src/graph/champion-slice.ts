@@ -1,3 +1,4 @@
+import { clampLevel } from "@/engine/stats/stats-at"
 import { itemSetHandleId } from "./handle-ids"
 import { generateId, isChampionFlowNode, mapNode } from "./store-helpers"
 import type { ChampionSlice, GraphSet } from "./store-types"
@@ -55,10 +56,11 @@ export function createChampionSlice(set: GraphSet): ChampionSlice {
     },
 
     setChampionLevel: (nodeId, level) => {
+      const clamped = clampLevel(level)
       set((state) => ({
         nodes: mapNode(state.nodes, nodeId, isChampionFlowNode, (node) => ({
           ...node,
-          data: { ...node.data, level },
+          data: { ...node.data, level: clamped },
         })),
       }))
     },
@@ -109,6 +111,20 @@ export function createChampionSlice(set: GraphSet): ChampionSlice {
           }
           const itemSets = [...node.data.itemSets]
           itemSets.splice(index + 1, 0, copy)
+          return { ...node, data: { ...node.data, itemSets } }
+        }),
+      }))
+    },
+
+    reorderItemSets: (nodeId, fromIndex, toIndex) => {
+      set((state) => ({
+        nodes: mapNode(state.nodes, nodeId, isChampionFlowNode, (node) => {
+          const itemSets = [...node.data.itemSets]
+          const [moved] = itemSets.splice(fromIndex, 1)
+          if (moved === undefined) {
+            return node
+          }
+          itemSets.splice(toIndex, 0, moved)
           return { ...node, data: { ...node.data, itemSets } }
         }),
       }))

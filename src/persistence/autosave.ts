@@ -52,7 +52,7 @@ export function startAutosave(toast: ToastApi): () => void {
       usePersistenceStore.getState().setSaveStatus("saved")
     } else {
       usePersistenceStore.getState().setSaveStatus("error")
-      toast.show({ message: result.error.message })
+      toast.show({ message: result.error.message, tone: "error" })
     }
   }
 

@@ -197,4 +197,82 @@ describe("deriveGraphNodeData", () => {
     // combo × item set × every target
     expect(rows).toHaveLength(4)
   })
+
+  it("resists graph: sweeps only the chosen axis and does not cap damage at the target's HP", () => {
+    const nodes: FlowNode[] = [
+      champion(),
+      combo([{ id: "s1", sourceId: "is-1", actionId: "Q" }]),
+      graph(),
+    ]
+    const armorData = { ...graph().data, graphKind: "resists" as const }
+    const mrData = { ...armorData, effective: { resistAxis: "magicResist" as const } }
+    const armor = deriveGraphNodeData("graph-1", armorData, nodes, edges(), snapshot).series[0]
+    const mr = deriveGraphNodeData("graph-1", mrData, nodes, edges(), snapshot).series[0]
+
+    const armorTotals = armor?.points.map((point) => point.total) ?? []
+    expect(armorTotals[0]).toBeGreaterThan(armorTotals[armorTotals.length - 1] ?? 0)
+    // A physical-only combo is unaffected by sweeping MR.
+    const mrTotals = new Set(mr?.points.map((point) => Math.round(point.total)))
+    expect(mrTotals.size).toBe(1)
+    expect(armor?.targetHp).toBe(1000)
+
+    const lowHp = {
+      ...armorData,
+      targets: [{ id: "t1", name: "Tiny", maxHp: 1, bonusHp: 0, armor: 0, magicResist: 0 }],
+    }
+    const uncapped = deriveGraphNodeData("graph-1", lowHp, nodes, edges(), snapshot).series[0]
+    expect(uncapped?.points[0]?.total ?? 0).toBeGreaterThan(1)
+  })
+
+  it("kill map: compares two variants over HP x resist, and the stronger build never loses a kill", () => {
+    const base = champion()
+    const twoSets: ChampionFlowNode = {
+      ...base,
+      data: {
+        ...base.data,
+        itemSets: [
+          ...base.data.itemSets,
+          {
+            id: "is-2",
+            name: "No items",
+            items: [null, null, null, null, null, null],
+            rankOverrides: {},
+          },
+        ],
+      },
+    }
+    const nodes: FlowNode[] = [
+      twoSets,
+      combo([{ id: "s1", sourceId: "champ-1", actionId: "Q" }]),
+      graph(),
+    ]
+    const secondSetEdge: FlowEdge = {
+      ...(edges()[0] as FlowEdge),
+      id: "e3",
+      sourceHandle: itemSetHandleId("is-2"),
+    }
+    const data = {
+      ...graph().data,
+      graphKind: "resists" as const,
+      effective: { view: "killMap" as const },
+    }
+    const derived = deriveGraphNodeData(
+      "graph-1",
+      data,
+      nodes,
+      [...edges(), secondSetEdge],
+      snapshot,
+    )
+
+    expect(derived.variantOptions.map((option) => option.label)).toEqual([
+      "Combo 1 · IE",
+      "Combo 1 · No items",
+    ])
+    expect(derived.killMapA?.label).toBe("Combo 1 · IE")
+    expect(derived.killMapB?.label).toBe("Combo 1 · No items")
+    const map = derived.killMap
+    expect(map?.cells).toHaveLength((map?.resists.length ?? 0) * (map?.hps.length ?? 0))
+    expect(map?.cells.some((cell) => cell.outcome === "onlyB")).toBe(false)
+    expect(map?.markers[0]).toMatchObject({ resist: 0, hp: 1000, name: "Squishy" })
+  })
 })

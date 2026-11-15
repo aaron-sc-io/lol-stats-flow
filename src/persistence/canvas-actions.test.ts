@@ -148,7 +148,7 @@ describe("importCanvasFromJson", () => {
 
     await importCanvasFromJson("{not json", toast)
 
-    expect(toast.show).toHaveBeenCalled()
+    expect(toast.show).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }))
   })
 
   it("rejects well-formed JSON that isn't a canvas document", async () => {
@@ -156,7 +156,7 @@ describe("importCanvasFromJson", () => {
 
     await importCanvasFromJson(JSON.stringify({ hello: "world" }), toast)
 
-    expect(toast.show).toHaveBeenCalled()
+    expect(toast.show).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }))
   })
 })
 

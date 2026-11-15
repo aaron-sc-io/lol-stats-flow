@@ -76,6 +76,42 @@ describe("graph store — add-node factories", () => {
     const node = store.getState().nodes.find((n) => n.id === id)
     expect(node !== undefined && isGraphNode(node) && node.data.targets).toHaveLength(1)
   })
+
+  it("removeNode removes the node and any edges connected to it", () => {
+    const store = freshStore()
+    store.getState().removeNode(DEFAULT_COMBO_NODE_ID)
+    const { nodes, edges } = store.getState()
+    expect(nodes.some((n) => n.id === DEFAULT_COMBO_NODE_ID)).toBe(false)
+    expect(
+      edges.some((e) => e.source === DEFAULT_COMBO_NODE_ID || e.target === DEFAULT_COMBO_NODE_ID),
+    ).toBe(false)
+  })
+
+  it("duplicateNode clones a combo with fresh step ids and its incoming edges only", () => {
+    const store = freshStore()
+    const original = store.getState().nodes.find((n) => n.id === DEFAULT_COMBO_NODE_ID)
+    const copyId = store.getState().duplicateNode(DEFAULT_COMBO_NODE_ID)
+    const { nodes, edges } = store.getState()
+    const copy = nodes.find((n) => n.id === copyId)
+    if (
+      copy === undefined ||
+      !isComboNode(copy) ||
+      original === undefined ||
+      !isComboNode(original)
+    ) {
+      throw new Error("expected combo copy")
+    }
+    expect(copy.selected).toBe(true)
+    expect(copy.position).toEqual({ x: original.position.x + 40, y: original.position.y + 40 })
+    expect(copy.data.steps.map((s) => s.actionId)).toEqual(
+      original.data.steps.map((s) => s.actionId),
+    )
+    expect(copy.data.steps.some((s) => original.data.steps.some((o) => o.id === s.id))).toBe(false)
+    expect(edges.filter((e) => e.target === copyId)).toHaveLength(
+      edges.filter((e) => e.target === DEFAULT_COMBO_NODE_ID).length,
+    )
+    expect(edges.some((e) => e.source === copyId)).toBe(false)
+  })
 })
 
 describe("graph store — item sets and orphaning", () => {

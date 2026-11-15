@@ -36,7 +36,7 @@ function kitsKey(kits: Readonly<Record<string, Kit>>): string {
 }
 
 function targetKey(target: TargetSpec): string {
-  return `${target.id}:${target.maxHp}:${target.currentHp ?? ""}:${target.bonusHp}:${target.armor}:${target.magicResist}`
+  return `${target.id}:${target.maxHp}:${target.currentHp ?? ""}:${target.bonusHp}:${target.armor}:${target.magicResist}:${target.bonusArmor ?? 0}:${target.bonusMagicResist ?? 0}`
 }
 
 /** Memoized `simulate()`, keyed by the step list, the (identity-tokenized)

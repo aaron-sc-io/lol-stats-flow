@@ -42,6 +42,9 @@ export function toCanonicalNode(node: FlowNode): CanonicalNode {
   if (isComboFlowNode(node)) {
     return { id: node.id, type: "combo", position: node.position, data: node.data }
   }
+  if (node.type === "tutorial") {
+    return { id: node.id, type: "tutorial", position: node.position, data: node.data }
+  }
   return { id: node.id, type: "graph", position: node.position, data: node.data }
 }
 

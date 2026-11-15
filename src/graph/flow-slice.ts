@@ -1,14 +1,20 @@
 import type { Connection, XYPosition } from "@xyflow/react"
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react"
 import { isValidGraphConnection } from "./connection-rules"
-import { generateId } from "./store-helpers"
+import { generateId, mapNode } from "./store-helpers"
 import type { FlowSlice, GraphGet, GraphSet } from "./store-types"
 import {
   type ChampionFlowNode,
   type ComboFlowNode,
+  type FlowNode,
   type GraphFlowNode,
+  type GraphKind,
   isChampionNode,
+  isComboNode,
+  isTutorialNode,
 } from "./types"
+
+const DUPLICATE_OFFSET = 40
 
 /** Node/edge CRUD, React Flow's controlled-store wiring (`onNodesChange`/
  * `onEdgesChange`/`onConnect`), and the "Add node" menu's three factories.
@@ -28,21 +34,26 @@ export function createFlowSlice(set: GraphSet, get: GraphGet): FlowSlice {
     hoveredItemSetId: null,
     hoveredItemSetIds: [],
     hoveredDamage: null,
+    pinnedGraphSeriesId: null,
 
     onNodesChange: (changes) => {
       const removedIds = new Set(
         changes.filter((change) => change.type === "remove").map((change) => change.id),
       )
       set((state) => {
-        // Champion nodes resize by width only: their height is whatever
-        // their (width-scaled) content needs, so it must stay unset —
-        // otherwise a resize pins `node.height` and the node box (and its
-        // NodeResizer outline) stops tracking rows added afterwards.
-        const championIds = new Set(state.nodes.filter(isChampionNode).map((node) => node.id))
+        // Champion and Combo nodes resize by width only: their height is
+        // whatever their content needs, so it must stay unset — otherwise a
+        // resize pins `node.height` and the node box stops tracking rows/steps
+        // or overflows when dragged shorter than the content.
+        const widthOnlyIds = new Set(
+          state.nodes
+            .filter((n) => isChampionNode(n) || isComboNode(n) || isTutorialNode(n))
+            .map((node) => node.id),
+        )
         const adjusted = changes.map((change) =>
           change.type === "dimensions" &&
           change.setAttributes !== undefined &&
-          championIds.has(change.id)
+          widthOnlyIds.has(change.id)
             ? { ...change, setAttributes: "width" as const }
             : change,
         )
@@ -91,6 +102,8 @@ export function createFlowSlice(set: GraphSet, get: GraphGet): FlowSlice {
 
     setHoveredDamage: (damage) => set({ hoveredDamage: damage }),
 
+    setPinnedGraphSeries: (seriesId) => set({ pinnedGraphSeriesId: seriesId }),
+
     addChampionNode: (position: XYPosition = { x: 0, y: 0 }) => {
       const id = generateId("champion")
       const node: ChampionFlowNode = {
@@ -115,7 +128,7 @@ export function createFlowSlice(set: GraphSet, get: GraphGet): FlowSlice {
       return id
     },
 
-    addGraphNode: (position: XYPosition = { x: 0, y: 0 }) => {
+    addGraphNode: (position: XYPosition = { x: 0, y: 0 }, graphKind: GraphKind = "targets") => {
       const id = generateId("graph")
       const targetId = generateId("target")
       const node: GraphFlowNode = {
@@ -123,6 +136,7 @@ export function createFlowSlice(set: GraphSet, get: GraphGet): FlowSlice {
         type: "graph",
         position,
         data: {
+          ...(graphKind === "targets" ? {} : { graphKind }),
           targets: [
             { id: targetId, name: "Target 1", maxHp: 2000, bonusHp: 0, armor: 80, magicResist: 50 },
           ],
@@ -132,6 +146,78 @@ export function createFlowSlice(set: GraphSet, get: GraphGet): FlowSlice {
         },
       }
       set((state) => ({ nodes: [...state.nodes, node] }))
+      return id
+    },
+
+    setTutorialStep: (nodeId, step) => {
+      set((state) => ({
+        nodes: mapNode(state.nodes, nodeId, isTutorialNode, (node) => ({
+          ...node,
+          data: { ...node.data, step: Math.max(0, Math.round(step)) },
+        })),
+      }))
+    },
+
+    removeNode: (nodeId) => {
+      set((state) => ({
+        nodes: state.nodes.filter((node) => node.id !== nodeId),
+        edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+      }))
+    },
+
+    duplicateNode: (nodeId) => {
+      const original = get().nodes.find((node) => node.id === nodeId)
+      if (original === undefined) {
+        return undefined
+      }
+      const id = generateId(original.type)
+      const position = {
+        x: original.position.x + DUPLICATE_OFFSET,
+        y: original.position.y + DUPLICATE_OFFSET,
+      }
+      // Fresh ids for nested records too: item-set / step ids drive the
+      // canvas-wide hover linking, so sharing them would cross-highlight.
+      const copy: FlowNode = isChampionNode(original)
+        ? {
+            ...original,
+            id,
+            position,
+            selected: true,
+            data: {
+              ...original.data,
+              itemSets: original.data.itemSets.map((itemSet) => ({
+                ...itemSet,
+                id: generateId("itemset"),
+              })),
+            },
+          }
+        : isComboNode(original)
+          ? {
+              ...original,
+              id,
+              position,
+              selected: true,
+              data: {
+                ...original.data,
+                name: `${original.data.name} (copy)`,
+                steps: original.data.steps.map((step) => ({ ...step, id: generateId("step") })),
+              },
+            }
+          : { ...original, id, position, selected: true }
+      // The copy keeps its inputs (item sets feeding a combo, combos feeding
+      // a graph) so it computes the same thing; outputs aren't cloned.
+      const incoming = get()
+        .edges.filter((edge) => edge.target === nodeId)
+        .map((edge) => ({ ...edge, id: generateId("edge"), target: id, selected: false }))
+      set((state) => ({
+        nodes: [
+          ...state.nodes.map((node) =>
+            node.selected === true ? { ...node, selected: false } : node,
+          ),
+          copy,
+        ],
+        edges: [...state.edges, ...incoming],
+      }))
       return id
     },
   }

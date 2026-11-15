@@ -101,7 +101,7 @@ describe("startAutosave", () => {
     vi.advanceTimersByTime(600)
 
     expect(usePersistenceStore.getState().saveStatus).toBe("error")
-    expect(toast.show).toHaveBeenCalled()
+    expect(toast.show).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }))
 
     stop()
     spy.mockRestore()

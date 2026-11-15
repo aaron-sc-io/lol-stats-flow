@@ -108,6 +108,8 @@ export function createGraphSlice(set: GraphSet): GraphSlice {
                     maxHp: preset.maxHp,
                     armor: preset.armor,
                     magicResist: preset.magicResist,
+                    bonusArmor: preset.bonusArmor ?? 0,
+                    bonusMagicResist: preset.bonusMagicResist ?? 0,
                     bonusHp: 0,
                   }
                 : target,
@@ -167,6 +169,39 @@ export function createGraphSlice(set: GraphSet): GraphSlice {
           ...node,
           data: { ...node.data, xMode },
         })),
+      }))
+    },
+
+    setEffectiveSettings: (nodeId, settings) => {
+      set((state) => ({
+        nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => ({
+          ...node,
+          data: { ...node.data, effective: { ...node.data.effective, ...settings } },
+        })),
+      }))
+    },
+
+    updateSeriesOverride: (nodeId, seriesId, override) => {
+      set((state) => ({
+        nodes: mapNode(state.nodes, nodeId, isGraphFlowNode, (node) => {
+          const existing = node.data.seriesOverrides ?? {}
+          const merged = { ...(existing[seriesId] ?? {}), ...override }
+          const cleaned = Object.fromEntries(
+            Object.entries(merged).filter(([, v]) => v !== undefined),
+          )
+          const nextOverrides: Record<string, typeof cleaned> = { ...existing }
+          if (Object.keys(cleaned).length === 0) {
+            delete nextOverrides[seriesId]
+          } else {
+            nextOverrides[seriesId] = cleaned
+          }
+          const hasAny = Object.keys(nextOverrides).length > 0
+          const { seriesOverrides: _prev, ...restData } = node.data
+          return {
+            ...node,
+            data: hasAny ? { ...restData, seriesOverrides: nextOverrides } : restData,
+          }
+        }),
       }))
     },
   }
