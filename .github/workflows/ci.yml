@@ -41,6 +41,9 @@ jobs:
       - name: Lint tokens
         run: npm run lint:tokens
 
+      - name: Lint docs
+        run: npm run lint:docs
+
       - name: Typecheck
         run: npm run typecheck
 

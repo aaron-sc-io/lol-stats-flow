@@ -9,6 +9,25 @@ log_file := ".just-server.log"
 default:
     @just --list
 
+# Agent "done" gate: lint, token + doc lint, typecheck, unit tests, build (no e2e)
+verify:
+    npm run lint
+    npm run lint:tokens
+    npm run lint:docs
+    npm run typecheck
+    npm test
+    npm run build
+
+# verify + Playwright e2e
+verify-full: verify
+    npm run test:e2e
+
+# Trigger release.yml (prepare job) to open a human-gated release PR. bump: auto|patch|minor|major
+release bump="auto":
+    @if ('{{ bump }}' -notin 'auto','patch','minor','major') { Write-Error 'bump must be auto, patch, minor, or major'; exit 1 }
+    gh workflow run release.yml --ref main -f bump={{ bump }}
+    @Start-Sleep -Seconds 3; gh run list --workflow release.yml --limit 1
+
 # Build, serve in the background, and open the browser
 start: _ensure-stopped build _serve _open
 

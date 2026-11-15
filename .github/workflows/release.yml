@@ -1,0 +1,118 @@
+name: Release
+
+# Versioning is the ONLY human-gated action (docs/decisions/0005). This
+# workflow never merges anything itself:
+#   prepare  (manual) - generate docs/releases/v<x>.md + CHANGELOG + version bump on
+#                       release/v<x>, open a PR labelled `release` (never `automerge`).
+#   publish  (on merge of that PR) - tag v<x> and create the GitHub Release from the report.
+# release-guard.yml blocks the PR until a human approves it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Semver bump (auto = from conventional commits)"
+        type: choice
+        options: ["auto", "patch", "minor", "major"]
+        default: "auto"
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate safety report + changelog
+        id: report
+        run: npm run release:report -- --write --bump "${{ inputs.bump }}"
+
+      - name: Bump version, commit, push, open PR
+        env:
+          VERSION: ${{ steps.report.outputs.version }}
+          VERDICT: ${{ steps.report.outputs.verdict }}
+        run: |
+          BRANCH="release/v$VERSION"
+          if gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' | grep -q .; then
+            echo "::error::A release PR for v$VERSION is already open"; exit 1
+          fi
+          npm version "$VERSION" --no-git-tag-version
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git checkout -b "$BRANCH"
+          git add package.json package-lock.json CHANGELOG.md "docs/releases/v$VERSION.md"
+          git commit -m "chore(release): v$VERSION"
+          git push -f origin "$BRANCH"
+          gh label create release --color ededed --force >/dev/null
+          gh label create needs-human --color ededed --force >/dev/null
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(release): v$VERSION ($VERDICT)" \
+            --body-file "docs/releases/v$VERSION.md" \
+            --label release,needs-human
+
+      - name: Approve PR-triggered CI runs (GITHUB_TOKEN recursion guard; see patch-sync.yml)
+        env:
+          VERSION: ${{ steps.report.outputs.version }}
+        run: |
+          for _ in $(seq 1 10); do
+            RUN_IDS=$(gh run list --branch "release/v$VERSION" --json databaseId,conclusion \
+              --jq '.[] | select(.conclusion == "action_required") | .databaseId')
+            if [ -n "$RUN_IDS" ]; then
+              for id in $RUN_IDS; do
+                gh api -X POST "repos/${{ github.repository }}/actions/runs/$id/approve" || true
+              done
+              break
+            fi
+            sleep 3
+          done
+
+  publish:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merge commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Tag and create GitHub Release
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          REPORT="docs/releases/v$VERSION.md"
+          test -f "$REPORT" || { echo "::error::$REPORT missing"; exit 1; }
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file "$REPORT"

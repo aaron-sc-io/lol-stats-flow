@@ -1,0 +1,52 @@
+name: Release guard
+
+# Enforces "versioning requires human approval" (docs/decisions/0005).
+# Any PR that changes package.json `version` must:
+#   1. carry the `release` label and NOT the `automerge` label,
+#   2. include docs/releases/v<new-version>.md,
+#   3. have an APPROVED review from a human (non-bot) account.
+# PRs that don't touch the version pass immediately. Make this a required
+# status check in branch protection alongside CI.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check version change policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          OLD=$(git show "$BASE_SHA:package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          NEW=$(node -p "require('./package.json').version")
+          if [ "$OLD" = "$NEW" ]; then
+            echo "Version unchanged ($NEW) - nothing to guard."; exit 0
+          fi
+          echo "Version change detected: $OLD -> $NEW"
+          FAIL=0
+          echo "$LABELS" | grep -q '"release"' || { echo "::error::Version changes need the 'release' label (use the Release workflow / cut-release skill)."; FAIL=1; }
+          if echo "$LABELS" | grep -q '"automerge"'; then echo "::error::Release PRs must never carry 'automerge'."; FAIL=1; fi
+          test -f "docs/releases/v$NEW.md" || { echo "::error::Missing safety report docs/releases/v$NEW.md (npm run release:report -- --write)."; FAIL=1; }
+          APPROVERS=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/reviews" \
+            --jq '[.[] | select(.state == "APPROVED" and .user.type != "Bot")] | length')
+          if [ "$APPROVERS" -lt 1 ]; then
+            echo "::error::A human must approve this release PR."; FAIL=1
+          fi
+          exit $FAIL

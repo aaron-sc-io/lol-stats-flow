@@ -12,6 +12,8 @@
     "typecheck": "tsc -b",
     "lint": "biome check .",
     "lint:tokens": "tsx scripts/lint-tokens.ts",
+    "lint:docs": "tsx scripts/lint-docs.ts",
+    "release:report": "tsx scripts/release/report.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:health": "playwright test --config=playwright.health.config.ts",
