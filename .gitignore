@@ -21,6 +21,7 @@ playwright-report-health/
 test-results/
 blob-report/
 .qa/
+artifacts
 
 # Env
 *.local
@@ -41,3 +42,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .omo
+# Local (non-CI) Playwright snapshot baselines
+tests/e2e/**/*-win32.png
+tests/e2e/**/*-darwin.png
