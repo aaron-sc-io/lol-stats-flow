@@ -62,7 +62,11 @@ function canonicalEquals(past: CanonicalGraph, current: CanonicalGraph): boolean
  */
 export function createGraphStore() {
   let pendingBurst:
-    | { readonly timeoutId: ReturnType<typeof setTimeout>; readonly burstStart: CanonicalGraph }
+    | {
+        readonly timeoutId: ReturnType<typeof setTimeout>
+        readonly burstStart: CanonicalGraph
+        readonly commit: () => void
+      }
     | undefined
 
   function cancelPendingBurst(): void {
@@ -72,7 +76,16 @@ export function createGraphStore() {
     }
   }
 
-  return create<GraphState>()(
+  /** Commits a still-pending burst checkpoint right now. Undo/redo inside
+   * the burst window would otherwise act on the *previous* checkpoint, and
+   * the late commit would then clear `futureStates`, losing the redo. */
+  function flushPendingBurst(): void {
+    const commit = pendingBurst?.commit
+    cancelPendingBurst()
+    commit?.()
+  }
+
+  const store = create<GraphState>()(
     temporal(
       (set, get) => {
         const { nodes, edges } = createDefaultCanvas()
@@ -121,15 +134,30 @@ export function createGraphStore() {
           const tickStart = pastState as unknown as CanonicalGraph
           const burstStart = pendingBurst?.burstStart ?? tickStart
           cancelPendingBurst()
+          const commit = () =>
+            handleSet(burstStart as unknown as Parameters<typeof handleSet>[0], replace)
           const timeoutId = setTimeout(() => {
             pendingBurst = undefined
-            handleSet(burstStart as unknown as Parameters<typeof handleSet>[0], replace)
+            commit()
           }, HISTORY_BURST_MS)
-          pendingBurst = { timeoutId, burstStart }
+          pendingBurst = { timeoutId, burstStart, commit }
         },
       },
     ),
   )
+
+  const { undo, redo } = store.temporal.getState()
+  store.temporal.setState({
+    undo: (steps) => {
+      flushPendingBurst()
+      undo(steps)
+    },
+    redo: (steps) => {
+      flushPendingBurst()
+      redo(steps)
+    },
+  })
+  return store
 }
 
 export const useGraphStore = createGraphStore()

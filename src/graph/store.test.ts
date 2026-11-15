@@ -237,6 +237,28 @@ describe("graph store — undo/redo (zundo temporal)", () => {
     expect(levelOf()).toBe(1)
   })
 
+  it("undo inside the burst window undoes that pending change and keeps it redoable", () => {
+    vi.useFakeTimers()
+    const store = freshStore()
+    const levelOf = () => {
+      const champ = store.getState().nodes.find((n) => n.id === DEFAULT_CHAMPION_NODE_ID)
+      return champ !== undefined && isChampionNode(champ) ? champ.data.level : undefined
+    }
+    store.getState().setChampionLevel(DEFAULT_CHAMPION_NODE_ID, 1)
+    vi.advanceTimersByTime(1000)
+
+    // Undo before the second change's checkpoint has committed.
+    store.getState().setChampionLevel(DEFAULT_CHAMPION_NODE_ID, 5)
+    store.temporal.getState().undo()
+    expect(levelOf()).toBe(1)
+
+    // The (already flushed) checkpoint must not land late and wipe the redo.
+    vi.advanceTimersByTime(1000)
+    store.temporal.getState().redo()
+    expect(levelOf()).toBe(5)
+    vi.useRealTimers()
+  })
+
   it("does not record hoveredComboId changes in history (transient, not user input)", () => {
     const store = freshStore()
     const pastBefore = store.temporal.getState().pastStates.length
