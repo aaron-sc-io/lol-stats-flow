@@ -45,3 +45,6 @@ Thumbs.db
 # Local (non-CI) Playwright snapshot baselines
 tests/e2e/**/*-win32.png
 tests/e2e/**/*-darwin.png
+
+# Playwright snapshot baselines (all platforms)
+tests/e2e/**/*-snapshots/
