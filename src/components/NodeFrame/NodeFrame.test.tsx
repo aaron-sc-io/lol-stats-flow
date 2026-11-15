@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { describe, expect, it, vi } from "vitest"
 import { NodeFrame } from "./NodeFrame"
 
 describe("NodeFrame", () => {
@@ -29,6 +29,32 @@ describe("NodeFrame", () => {
     // When queried
     // Then the action is present
     expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy()
+  })
+
+  it("hides the delete button when unselected and renders a nodrag close button when selected", () => {
+    // Given a node frame with an onDelete callback that is not selected
+    const onDelete = vi.fn()
+    const { rerender } = render(
+      <NodeFrame label="Champion" title="Yasuo" onDelete={onDelete}>
+        content
+      </NodeFrame>,
+    )
+
+    // Then the delete button is not rendered while unselected
+    expect(screen.queryByRole("button", { name: "Delete Yasuo" })).toBeNull()
+
+    // When the node becomes selected
+    rerender(
+      <NodeFrame label="Champion" title="Yasuo" onDelete={onDelete} selected>
+        content
+      </NodeFrame>,
+    )
+
+    // Then the close delete button is visible with nodrag and invokes onDelete on click
+    const deleteBtn = screen.getByRole("button", { name: "Delete Yasuo" })
+    expect(deleteBtn.classList.contains("nodrag")).toBe(true)
+    fireEvent.click(deleteBtn)
+    expect(onDelete).toHaveBeenCalledOnce()
   })
 
   it.each([

@@ -1,0 +1,28 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--dmg-magic);
+  padding: 0;
+  cursor: pointer;
+  transition: filter var(--motion-fast) var(--motion-easing);
+}
+
+.badge:hover {
+  filter: brightness(1.15);
+}
+
+.badge:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.glyph {
+  width: 12px;
+  height: 12px;
+  color: var(--gray-0);
+}

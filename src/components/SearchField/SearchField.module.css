@@ -6,8 +6,14 @@
   padding: 0 var(--space-2);
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
-  background-color: transparent;
-  transition: border-color var(--motion-fast) var(--motion-easing);
+  background-color: var(--surface-input);
+  transition:
+    background-color var(--motion-fast) var(--motion-easing),
+    border-color var(--motion-fast) var(--motion-easing);
+}
+
+.root:hover:not([data-disabled="true"]) {
+  border-color: var(--border-strong);
 }
 
 .root[data-disabled="true"] {

@@ -27,6 +27,7 @@
   --surface-canvas: var(--gray-0);
   --surface-node: var(--gray-1);
   --surface-raised: var(--gray-2);
+  --surface-input: color-mix(in srgb, var(--gray-2) 60%, var(--gray-3));
   --surface-hover: var(--gray-3);
 
   --border-default: var(--gray-4);
@@ -50,6 +51,14 @@
   --dmg-physical-fill: color-mix(in srgb, var(--dmg-physical) 72%, transparent);
   --dmg-magic-fill: color-mix(in srgb, var(--dmg-magic) 72%, transparent);
   --dmg-true-fill: color-mix(in srgb, var(--dmg-true) 72%, transparent);
+
+  /* Kill-map categorical cell fills ("Graph: Effective Damage" → Kill map).
+     onlyA / onlyB are the two most salient, distinct, colorblind-safe hues;
+     both is a muted neutral-positive; neither sits near the node background. */
+  --killmap-only-a: color-mix(in srgb, var(--dmg-physical) 78%, var(--gray-2));
+  --killmap-only-b: color-mix(in srgb, var(--dmg-magic) 78%, var(--gray-2));
+  --killmap-both: color-mix(in srgb, var(--gray-9) 28%, var(--gray-2));
+  --killmap-neither: color-mix(in srgb, var(--gray-2) 55%, var(--gray-1));
 
   /* Dimmed state for a non-hovered data series. */
   --opacity-dimmed: 0.25;

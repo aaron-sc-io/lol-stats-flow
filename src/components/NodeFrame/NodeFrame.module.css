@@ -1,4 +1,5 @@
 .frame {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 160px;
@@ -65,10 +66,73 @@
   gap: var(--space-1);
 }
 
+/* Red delete badge centred on the node's top-right corner. */
+.deleteButton {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  z-index: 3;
+}
+
+/* Sits just left of the delete badge on the top border. */
+.duplicateButton {
+  position: absolute;
+  top: -9px;
+  right: 15px;
+  z-index: 3;
+}
+
+/* Rounded-corner resize brackets hugging the node's TL, BL, and BR corners
+   (the TR corner houses the delete button). Compound selector outranks
+   React Flow's `.react-flow__resize-control.handle` base rule. */
+:global(.react-flow__resize-control.handle).cornerBracket {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  translate: none;
+  z-index: 2;
+  transition: border-color var(--motion-fast) var(--motion-easing);
+}
+
+:global(.react-flow__resize-control.handle.top.left).corner_top_left {
+  top: -4px;
+  left: -4px;
+  border-top: 2px solid var(--border-strong);
+  border-left: 2px solid var(--border-strong);
+  border-top-left-radius: calc(var(--radius-node) + 3px);
+}
+
+:global(.react-flow__resize-control.handle.bottom.left).corner_bottom_left {
+  top: auto;
+  bottom: -4px;
+  left: -4px;
+  border-bottom: 2px solid var(--border-strong);
+  border-left: 2px solid var(--border-strong);
+  border-bottom-left-radius: calc(var(--radius-node) + 3px);
+}
+
+:global(.react-flow__resize-control.handle.bottom.right).corner_bottom_right {
+  top: auto;
+  left: auto;
+  right: -4px;
+  bottom: -4px;
+  border-bottom: 2px solid var(--border-strong);
+  border-right: 2px solid var(--border-strong);
+  border-bottom-right-radius: calc(var(--radius-node) + 3px);
+}
+
+.frame[data-selected="true"] :global(.react-flow__resize-control.handle).cornerBracket,
+:global(.react-flow__resize-control.handle).cornerBracket:hover {
+  border-color: var(--text-primary);
+}
+
 /* Fills whatever height the frame has beyond its header — a no-op for
    content-sized frames, the elastic region for a height-resized one. */
 .body {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   padding: var(--space-3);
 }

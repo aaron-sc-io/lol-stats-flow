@@ -6,10 +6,11 @@ import type { DemoState } from "@/lib/demo-state"
 import { demoStateAttr } from "@/lib/demo-state"
 import styles from "./IconButton.module.css"
 
-export type IconButtonSize = 24 | 28 | 32
+export type IconButtonSize = 20 | 24 | 28 | 32
 export type IconButtonVariant = "ghost" | "subtle"
 
 const ICON_SIZE_FOR_BUTTON: Record<IconButtonSize, 16 | 20 | 24> = {
+  20: 16,
   24: 16,
   28: 20,
   32: 20,

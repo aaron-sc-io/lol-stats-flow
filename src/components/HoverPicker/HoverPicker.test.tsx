@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import * as preloadModule from "@/lib/preloadImages"
 import { HoverPicker } from "./HoverPicker"
 
 type Champion = {
@@ -248,5 +249,35 @@ describe("HoverPicker", () => {
 
     // Then focus wraps back to the last focusable element instead of leaving the popover
     expect(document.activeElement).toBe(lastItem)
+  })
+
+  it("preloads item icon URLs immediately on trigger pointer enter before the popover opens", () => {
+    // Given a closed picker with an imageUrl extractor
+    const preloadSpy = vi.spyOn(preloadModule, "preloadImages")
+    render(
+      <HoverPicker
+        trigger={<span>Portrait</span>}
+        items={CHAMPIONS}
+        getKey={(champion) => champion.id}
+        renderItem={(champion) => champion.name}
+        imageUrl={(champion) => `https://cdn.example/${champion.id}.png`}
+        searchText={(champion) => champion.name}
+        onSelect={vi.fn()}
+        aria-label="Choose champion"
+      />,
+    )
+    preloadSpy.mockClear()
+
+    // When the pointer enters the trigger (before the 150ms open delay completes)
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "Choose champion" }))
+
+    // Then preloadImages is invoked immediately with every item's imageUrl while still closed
+    expect(screen.queryByRole("dialog")).toBeNull()
+    expect(preloadSpy).toHaveBeenCalledWith([
+      "https://cdn.example/yasuo.png",
+      "https://cdn.example/vayne.png",
+      "https://cdn.example/garen.png",
+    ])
+    preloadSpy.mockRestore()
   })
 })

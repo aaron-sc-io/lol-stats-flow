@@ -110,11 +110,14 @@
   font-size: var(--font-size-xs);
   line-height: var(--line-height-xs);
   text-align: center;
+  content-visibility: auto;
+  contain-intrinsic-size: var(--space-7) var(--space-7);
   transition: background-color var(--motion-fast) var(--motion-easing);
 }
 
 .compact .item {
   padding: 2px;
+  contain-intrinsic-size: 44px 44px;
 }
 
 .item:hover:not([aria-disabled="true"]) {

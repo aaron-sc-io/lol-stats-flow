@@ -1,9 +1,11 @@
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -12,10 +14,15 @@ import type { IconName } from "@/components/icons"
 import { SearchField } from "@/components/SearchField"
 import { cx } from "@/lib/cx"
 import { computeFloatingPosition, type Placement } from "@/lib/floating-position"
-import { computeNextGridIndex, matchesActiveFilters } from "./HoverPicker.helpers"
+import {
+  computeNextGridIndex,
+  filterIndexedItems,
+  indexItemsForSearch,
+} from "./HoverPicker.helpers"
 import {
   useDismissOnEscapeOrOutside,
   useFocusTrap,
+  useHoverPickerImagePreload,
   useHoverPickerOpenState,
 } from "./HoverPicker.hooks"
 import styles from "./HoverPicker.module.css"
@@ -40,6 +47,9 @@ export type HoverPickerProps<T> = {
   readonly getKey: (item: T) => string | number
   readonly renderItem: (item: T, state: HoverPickerItemState) => ReactNode
   readonly searchText: (item: T) => string
+  /** Optional icon URL extractor so item images can be preloaded and decoded
+   * during idle time and on trigger pointerEnter/focus before the popover mounts. */
+  readonly imageUrl?: ((item: T) => string) | undefined
   readonly filters?: ReadonlyArray<HoverPickerFilter<T>> | undefined
   readonly isDisabled?: ((item: T) => boolean) | undefined
   readonly disabledBadge?: string | undefined
@@ -75,6 +85,7 @@ export function HoverPicker<T>({
   getKey,
   renderItem,
   searchText,
+  imageUrl,
   filters = [],
   isDisabled,
   disabledBadge,
@@ -113,18 +124,29 @@ export function HoverPicker<T>({
   useDismissOnEscapeOrOutside({ isOpen, triggerRef, popoverRef, searchInputRef, onClose: close })
   useFocusTrap(popoverRef, isOpen)
 
-  const visibleItems = items.filter(
-    (item) =>
-      searchText(item).toLowerCase().includes(search.toLowerCase()) &&
-      matchesActiveFilters(item, filters, activeFilterIds),
+  const triggerPreload = useHoverPickerImagePreload(items, imageUrl)
+
+  const handleTriggerPointerEnter = useCallback(() => {
+    triggerPreload()
+    scheduleOpen()
+  }, [triggerPreload, scheduleOpen])
+
+  const indexedItems = useMemo(() => indexItemsForSearch(items, searchText), [items, searchText])
+
+  const visibleItems = useMemo(
+    () => filterIndexedItems(indexedItems, search, filters, activeFilterIds),
+    [indexedItems, search, filters, activeFilterIds],
   )
 
-  function handleSelect(item: T) {
-    if (isDisabled?.(item) !== true) {
-      onSelect(item)
-      close()
-    }
-  }
+  const handleSelect = useCallback(
+    (item: T) => {
+      if (isDisabled?.(item) !== true) {
+        onSelect(item)
+        close()
+      }
+    },
+    [isDisabled, onSelect, close],
+  )
 
   useLayoutEffect(() => {
     if (!isOpen) {
@@ -150,30 +172,40 @@ export function HoverPicker<T>({
     setActiveIndex((current) => Math.min(current, Math.max(visibleItems.length - 1, 0)))
   }, [visibleItems.length])
 
-  function handleGridKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const next = computeNextGridIndex(event.key, activeIndex, visibleItems.length, columns)
-    if (next !== null) {
-      event.preventDefault()
-      setActiveIndex(next)
-      itemRefs.current[next]?.focus()
-    }
-  }
+  const handleGridKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const next = computeNextGridIndex(event.key, activeIndex, visibleItems.length, columns)
+      if (next !== null) {
+        event.preventDefault()
+        setActiveIndex(next)
+        itemRefs.current[next]?.focus()
+      }
+    },
+    [activeIndex, visibleItems.length, columns],
+  )
 
-  function handleSearchKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
-    if (event.key === "ArrowDown" && visibleItems.length > 0) {
-      event.preventDefault()
-      setActiveIndex(0)
-      itemRefs.current[0]?.focus()
-    }
-  }
+  const handleSearchKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "ArrowDown" && visibleItems.length > 0) {
+        event.preventDefault()
+        setActiveIndex(0)
+        itemRefs.current[0]?.focus()
+      }
+    },
+    [visibleItems.length],
+  )
 
-  function toggleFilter(id: string) {
+  const toggleFilter = useCallback((id: string) => {
     setActiveFilterIds((current) => {
       const next = new Set(current)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-  }
+  }, [])
+
+  const clearFilters = useCallback(() => {
+    setActiveFilterIds(new Set())
+  }, [])
 
   return (
     <>
@@ -184,7 +216,8 @@ export function HoverPicker<T>({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         className={cx(styles.trigger, className)}
-        onPointerEnter={scheduleOpen}
+        onPointerEnter={handleTriggerPointerEnter}
+        onFocus={triggerPreload}
         onPointerLeave={scheduleClose}
         onClick={() => (isOpen ? close() : open())}
       >
@@ -222,7 +255,7 @@ export function HoverPicker<T>({
                   filters={filters}
                   activeFilterIds={activeFilterIds}
                   onToggle={toggleFilter}
-                  onClear={() => setActiveFilterIds(new Set())}
+                  onClear={clearFilters}
                 />
                 <HoverPickerGrid
                   items={visibleItems}

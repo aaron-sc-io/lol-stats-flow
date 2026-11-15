@@ -1,5 +1,48 @@
 import type { HoverPickerFilter } from "./HoverPicker"
 
+export type IndexedPickerItem<T> = {
+  readonly item: T
+  readonly searchLower: string
+}
+
+/** Precomputes lowercased search strings once per `items` array so typing in
+ * the search box doesn't re-run `searchText(item).toLowerCase()` across
+ * hundreds of items on every keystroke. */
+export function indexItemsForSearch<T>(
+  items: readonly T[],
+  searchText: (item: T) => string,
+): ReadonlyArray<IndexedPickerItem<T>> {
+  return items.map((item) => ({
+    item,
+    searchLower: searchText(item).toLowerCase(),
+  }))
+}
+
+/** Filters pre-indexed items by a raw query string and active filter set. */
+export function filterIndexedItems<T>(
+  indexedItems: ReadonlyArray<IndexedPickerItem<T>>,
+  query: string,
+  filters: ReadonlyArray<HoverPickerFilter<T>>,
+  activeFilterIds: ReadonlySet<string>,
+): readonly T[] {
+  const normalizedQuery = query.toLowerCase()
+  const activeFilters =
+    activeFilterIds.size === 0 ? [] : filters.filter((filter) => activeFilterIds.has(filter.id))
+  if (normalizedQuery.length === 0 && activeFilters.length === 0) {
+    return indexedItems.map((entry) => entry.item)
+  }
+  const result: T[] = []
+  for (const entry of indexedItems) {
+    if (
+      (normalizedQuery.length === 0 || entry.searchLower.includes(normalizedQuery)) &&
+      (activeFilters.length === 0 || activeFilters.every((filter) => filter.predicate(entry.item)))
+    ) {
+      result.push(entry.item)
+    }
+  }
+  return result
+}
+
 /** AND-combines every active filter's predicate — an item must satisfy ALL
  * toggled-on filters, not just one, per DESIGN.md's multi-select filter
  * icons (e.g. "Crit" + "Marksman/ADC" narrows to crit-scaling ADCs only). */

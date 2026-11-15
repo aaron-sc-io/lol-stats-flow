@@ -1,2 +1,2 @@
-export type { NodeFrameProps } from "./NodeFrame"
+export type { NodeFrameProps, NodeFrameResizeConfig } from "./NodeFrame"
 export { NodeFrame } from "./NodeFrame"

@@ -1,7 +1,33 @@
-import { type RefObject, useEffect, useRef, useState } from "react"
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { preloadImages, scheduleIdlePreload } from "@/lib/preloadImages"
 
 const OPEN_INTENT_MS = 150
 const CLOSE_GRACE_MS = 250
+
+/** Preloads item icons during browser idle time after mount and returns an
+ * immediate preload callback for trigger `onPointerEnter`/`onFocus`. */
+export function useHoverPickerImagePreload<T>(
+  items: readonly T[],
+  imageUrl: ((item: T) => string) | undefined,
+): () => void {
+  const preloadUrls = useMemo(
+    () => (imageUrl === undefined ? null : items.map(imageUrl)),
+    [items, imageUrl],
+  )
+
+  useEffect(() => {
+    if (preloadUrls === null) {
+      return
+    }
+    return scheduleIdlePreload(() => preloadUrls)
+  }, [preloadUrls])
+
+  return useCallback(() => {
+    if (preloadUrls !== null) {
+      preloadImages(preloadUrls)
+    }
+  }, [preloadUrls])
+}
 
 /**
  * Owns the open/closed boolean plus the hover-intent and leave-grace
@@ -13,34 +39,42 @@ export function useHoverPickerOpenState(onOpen: () => void, onClose: () => void)
   const [isOpen, setIsOpen] = useState(false)
   const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const onOpenRef = useRef(onOpen)
+  const onCloseRef = useRef(onClose)
+  onOpenRef.current = onOpen
+  onCloseRef.current = onClose
 
-  function open() {
+  const open = useCallback(() => {
     window.clearTimeout(openTimer.current)
     window.clearTimeout(closeTimer.current)
     setIsOpen(true)
-    onOpen()
-  }
+    onOpenRef.current()
+  }, [])
 
-  function close() {
+  const close = useCallback(() => {
     window.clearTimeout(openTimer.current)
     window.clearTimeout(closeTimer.current)
     setIsOpen(false)
-    onClose()
-  }
+    onCloseRef.current()
+  }, [])
 
-  function scheduleOpen() {
+  const scheduleOpen = useCallback(() => {
     window.clearTimeout(closeTimer.current)
     if (!isOpen) {
       window.clearTimeout(openTimer.current)
       openTimer.current = setTimeout(open, OPEN_INTENT_MS)
     }
-  }
+  }, [isOpen, open])
 
-  function scheduleClose() {
+  const scheduleClose = useCallback(() => {
     window.clearTimeout(openTimer.current)
     window.clearTimeout(closeTimer.current)
     closeTimer.current = setTimeout(close, CLOSE_GRACE_MS)
-  }
+  }, [close])
+
+  const cancelScheduledClose = useCallback(() => {
+    window.clearTimeout(closeTimer.current)
+  }, [])
 
   useEffect(
     () => () => {
@@ -56,7 +90,7 @@ export function useHoverPickerOpenState(onOpen: () => void, onClose: () => void)
     close,
     scheduleOpen,
     scheduleClose,
-    cancelScheduledClose: () => window.clearTimeout(closeTimer.current),
+    cancelScheduledClose,
   }
 }
 

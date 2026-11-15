@@ -22,7 +22,7 @@ export const UI_ICON_PATHS = {
     { kind: "path", d: "M12 5V19" },
     { kind: "path", d: "M5 12H19" },
   ],
-  minus: [{ kind: "path", d: "M5 12H19" }],
+  minus: [{ kind: "path", d: "M5.35 12H18.65" }],
   trash: [
     { kind: "path", d: "M4 7H20" },
     { kind: "path", d: "M9 7V4.5C9 3.7 9.7 3 10.5 3H13.5C14.3 3 15 3.7 15 4.5V7" },
@@ -65,6 +65,13 @@ export const UI_ICON_PATHS = {
   copy: [
     { kind: "rect", x: 4, y: 4, width: 12, height: 12, rx: 2 },
     { kind: "rect", x: 8, y: 8, width: 12, height: 12, rx: 2 },
+  ],
+  pencil: [
+    {
+      kind: "path",
+      d: "M16.5 3.5C17.3 2.7 18.7 2.7 19.5 3.5L20.5 4.5C21.3 5.3 21.3 6.7 20.5 7.5L8 20L3 21L4 16L16.5 3.5Z",
+    },
+    { kind: "path", d: "M14.5 5.5L18.5 9.5" },
   ],
   "fit-view": [
     { kind: "path", d: "M4 10V4H10" },

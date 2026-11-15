@@ -17,6 +17,7 @@ export type NumberFieldProps = {
   readonly max?: number | undefined
   readonly step?: number | undefined
   readonly unit?: string | undefined
+  readonly compact?: boolean | undefined
   readonly "aria-label": string
   readonly disabled?: boolean | undefined
   readonly className?: string | undefined
@@ -45,6 +46,7 @@ export function NumberField({
   max = Infinity,
   step = 1,
   unit,
+  compact = false,
   "aria-label": ariaLabel,
   disabled = false,
   className,
@@ -98,14 +100,14 @@ export function NumberField({
 
   return (
     <div
-      className={cx(styles.root, className)}
+      className={cx(styles.root, compact && styles.compact, className)}
       data-disabled={disabled ? "true" : undefined}
       aria-disabled={disabled ? "true" : undefined}
     >
       <IconButton
         icon="minus"
         aria-label="Decrease"
-        size={24}
+        size={compact ? 20 : 24}
         disabled={disabled || value <= min}
         onClick={() => onChange(clamp(value - step, min, max))}
       />
@@ -127,7 +129,7 @@ export function NumberField({
       <IconButton
         icon="plus"
         aria-label="Increase"
-        size={24}
+        size={compact ? 20 : 24}
         disabled={disabled || value >= max}
         onClick={() => onChange(clamp(value + step, min, max))}
       />
