@@ -83,8 +83,8 @@ test.describe("token lint", () => {
   })
 })
 
-test.describe("Phase 4 AC #1/#2 — Champion node aspect-locked scaling", () => {
-  test("resizing to 360/560/900 preserves aspect ratio, keeps content fully inside the node, and scales the portrait linearly", async ({
+test.describe("Phase 4 AC #1/#2 — Champion node width-driven scaling", () => {
+  test("resizing to 360/560/900 scales the portrait linearly, keeps content fully inside the node, and lets height follow the content", async ({
     page,
   }) => {
     test.setTimeout(90_000)
@@ -134,9 +134,13 @@ test.describe("Phase 4 AC #1/#2 — Champion node aspect-locked scaling", () => 
         continue
       }
 
-      // Aspect ratio stays within ±1% of the base ratio.
-      const actualRatio = box.height / box.width
-      expect(Math.abs(actualRatio - baseRatio) / baseRatio).toBeLessThanOrEqual(0.01)
+      // Only the width is pinned by a resize: the node's height is whatever
+      // its (width-scaled) content needs, so the node box hugs its frame.
+      const frameBox = await nodeFrameOf(champion).boundingBox()
+      expect(frameBox, `frame box at ${targetWidth}`).not.toBeNull()
+      if (frameBox !== null) {
+        expect(Math.abs(frameBox.height - box.height)).toBeLessThanOrEqual(2)
+      }
 
       // Portrait width scales linearly with node width (±2%).
       const portraitBox = await champion.locator("img").first().boundingBox()
@@ -188,7 +192,7 @@ test.describe("Phase 4 AC #1/#2 — Champion node aspect-locked scaling", () => 
     }
   })
 
-  test("dragging the resizer horizontally only still yields the base aspect ratio (±1%)", async ({
+  test("after a resize, adding an item set grows the node and its resizer outline with the content", async ({
     page,
   }) => {
     await page.goto("./")
@@ -205,7 +209,6 @@ test.describe("Phase 4 AC #1/#2 — Champion node aspect-locked scaling", () => 
     if (baseBox === null) {
       return
     }
-    const baseRatio = baseBox.height / baseBox.width
 
     const rightLine = champion.locator(".react-flow__resize-control.line.right")
     const lineBox = await rightLine.boundingBox()
@@ -213,27 +216,48 @@ test.describe("Phase 4 AC #1/#2 — Champion node aspect-locked scaling", () => 
     if (lineBox === null) {
       return
     }
-    // Drag purely horizontally — the Y coordinate never changes.
     const startY = lineBox.y + lineBox.height / 2
     await page.mouse.move(lineBox.x + lineBox.width / 2, startY)
     await page.mouse.down()
-    await page.mouse.move(baseBox.x + 300, startY, { steps: 15 })
+    await page.mouse.move(lineBox.x + 80, startY, { steps: 15 })
     await page.mouse.up()
     await page.mouse.move(0, 0)
     await page.waitForTimeout(200)
 
     const resizedBox = await champion.boundingBox()
     expect(resizedBox).not.toBeNull()
-    if (resizedBox !== null) {
-      expect(resizedBox.width).not.toBeCloseTo(baseBox.width, 0)
-      const actualRatio = resizedBox.height / resizedBox.width
-      expect(Math.abs(actualRatio - baseRatio) / baseRatio).toBeLessThanOrEqual(0.01)
+    if (resizedBox === null) {
+      return
+    }
+    expect(resizedBox.width).toBeGreaterThan(baseBox.width)
+
+    await champion.getByRole("button", { name: "+ Add item set" }).click()
+    await expect(champion.locator('.react-flow__handle[data-handleid^="itemset:"]')).toHaveCount(2)
+    await page.waitForTimeout(200)
+
+    const grownBox = await champion.boundingBox()
+    expect(grownBox).not.toBeNull()
+    if (grownBox === null) {
+      return
+    }
+    // Width stays where the user left it; height grows to fit the new row.
+    expect(Math.abs(grownBox.width - resizedBox.width)).toBeLessThanOrEqual(1)
+    expect(grownBox.height).toBeGreaterThan(resizedBox.height)
+
+    // The NodeResizer's bottom edge tracks the grown node, not the old height.
+    const bottomLine = await champion
+      .locator(".react-flow__resize-control.line.bottom")
+      .boundingBox()
+    expect(bottomLine).not.toBeNull()
+    if (bottomLine !== null) {
+      const bottomLineCenterY = bottomLine.y + bottomLine.height / 2
+      expect(Math.abs(bottomLineCenterY - (grownBox.y + grownBox.height))).toBeLessThanOrEqual(2)
     }
   })
 })
 
 test.describe("Phase 4 AC #3 — RosterPicker", () => {
-  test("hover opens within 300ms; search narrows to one match; role filter + unmodeled guard; selecting updates the node", async ({
+  test("hover opens within 300ms; search narrows to one match; available champions lead; lane + class filters; unavailable guard; selecting updates the node", async ({
     page,
   }) => {
     await page.goto("./")
@@ -244,35 +268,44 @@ test.describe("Phase 4 AC #3 — RosterPicker", () => {
     await champion.getByRole("button", { name: "Choose champion" }).hover()
     await expect(dialog).toBeVisible({ timeout: 300 })
 
-    await dialog.getByRole("textbox", { name: "Search" }).fill("yas")
+    // Cells are icon-only; each one's accessible name is the champion name.
+    const search = dialog.getByRole("textbox", { name: "Search" })
+    await search.fill("yas")
     const gridItems = dialog.locator("button[tabindex]")
     await expect(gridItems).toHaveCount(1)
-    await expect(gridItems.first()).toContainText("Yasuo")
+    await expect(gridItems.first()).toHaveAccessibleName("Yasuo")
+    await search.fill("")
 
-    await dialog.getByRole("textbox", { name: "Search" }).fill("")
-    await dialog.getByRole("button", { name: "Marksman / ADC" }).click()
-    const vayneButton = dialog.getByRole("button", { name: /Vayne/ })
+    // Available (modeled) champions are listed before every unavailable one.
+    const disabledFlags = await gridItems.evaluateAll((items) =>
+      items.map((item) => item.getAttribute("aria-disabled") === "true"),
+    )
+    const firstDisabled = disabledFlags.indexOf(true)
+    expect(firstDisabled).toBeGreaterThan(0)
+    expect(disabledFlags.slice(firstDisabled).every(Boolean)).toBe(true)
+
+    // Lane and class filters AND-combine.
+    const filterBar = dialog.locator("fieldset")
+    await filterBar.getByRole("button", { name: "Bot lane", exact: true }).click()
+    await filterBar.getByRole("button", { name: "Marksman", exact: true }).click()
+    const vayneButton = dialog.getByRole("button", { name: "Vayne", exact: true })
     await expect(vayneButton).toBeVisible()
     await expect(vayneButton).not.toHaveAttribute("aria-disabled", "true")
+    await expect(dialog.getByRole("button", { name: /^Garen/ })).toHaveCount(0)
 
-    const filteredCount = await gridItems.count()
-    let sawDisabled = false
-    for (let index = 0; index < filteredCount; index += 1) {
-      const item = gridItems.nth(index)
-      if ((await item.getAttribute("aria-disabled")) === "true") {
-        sawDisabled = true
-        await expect(item).toContainText("Not modeled")
-      }
-    }
-    expect(sawDisabled).toBe(true)
-
-    const disabledItem = gridItems.filter({ hasText: "Not modeled" }).first()
+    // Unavailable champions are greyscaled, labelled "(unavailable)", and
+    // clicking one does not select it.
+    const disabledItem = dialog.locator('button[aria-disabled="true"]').first()
+    await expect(disabledItem).toHaveAccessibleName(/ \(unavailable\)$/)
+    await expect(disabledItem.locator('img[class*="pickerItemUnavailable"]')).toHaveCount(1)
+    await disabledItem.hover()
+    await expect(page.getByRole("tooltip")).toHaveText(/ \(unavailable\)$/)
     await disabledItem.click({ force: true })
     await expect(champion.getByText("Yasuo").first()).toBeVisible()
 
-    await dialog.getByRole("button", { name: "Marksman / ADC" }).click()
-    await dialog.getByRole("textbox", { name: "Search" }).fill("Garen")
-    await dialog.getByRole("button", { name: /^Garen$/ }).click()
+    await filterBar.getByRole("button", { name: "Clear filters" }).click()
+    await search.fill("Garen")
+    await dialog.getByRole("button", { name: "Garen", exact: true }).click()
     await expect(champion.getByText("Garen").first()).toBeVisible()
   })
 })
@@ -317,12 +350,16 @@ test.describe("Phase 4 AC #4 — ItemShop", () => {
     await filterBar.getByRole("button", { name: "Critical Strike" }).click()
     await expect(dialog.getByRole("button", { name: /Infinity Edge/ })).toBeVisible()
     await expect(dialog.getByRole("button", { name: /Rabadon/ })).toHaveCount(0)
-    await filterBar.getByRole("button", { name: "Critical Strike" }).click()
+    await filterBar.getByRole("button", { name: "Clear filters" }).click()
+    await expect(dialog.getByRole("button", { name: /Rabadon/ })).toBeVisible()
 
+    // Cells are icon-only: the item name is the accessible name and a tooltip.
     await dialog.getByRole("textbox", { name: "Search" }).fill("liand")
     const results = dialog.locator("button[tabindex]")
     await expect(results).toHaveCount(1)
-    await expect(results.first()).toContainText("Liandry")
+    await expect(results.first()).toHaveAccessibleName(/^Liandry/)
+    await results.first().hover()
+    await expect(page.getByRole("tooltip")).toHaveText(/^Liandry/)
     await results.first().click()
 
     await expect(slot).toBeHidden()
