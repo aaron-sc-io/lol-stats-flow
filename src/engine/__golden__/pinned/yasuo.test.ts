@@ -98,4 +98,39 @@ describe("Yasuo golden (pinned 16.22.1) — level 18, rank 5, vs 100 armor / 100
     expect(result.instances[0]?.raw).toBeCloseTo(130)
     expect(result.instances[0]?.mitigated).toBeCloseTo(65)
   })
+
+  it("after Last Breath (R), crits (AA-crit, crit Q) ignore 60% BONUS armor (16.22 tooltip: RPercentArmorPen = 60); non-crits and pre-R crits do not", () => {
+    // 200 armor, 150 of it bonus → post-R crits see 50 + 150 * 0.4 = 110.
+    const result = simulate({
+      steps: [
+        { id: "aa-crit-before", sourceId: "Yasuo", actionId: "AA-crit" },
+        { id: "r", sourceId: "Yasuo", actionId: "R" },
+        { id: "aa-crit", sourceId: "Yasuo", actionId: "AA-crit" },
+        { id: "q-crit", sourceId: "Yasuo", actionId: "Q-empowered" },
+        { id: "aa", sourceId: "Yasuo", actionId: "AA" },
+      ],
+      kits: { Yasuo: kit },
+      target: { ...dummy(100000, 200, 100), bonusArmor: 150 },
+    })
+    const byStep = (stepId: string) => result.instances.find((i) => i.stepId === stepId)
+    const before = byStep("aa-crit-before")
+    expect(before?.mitigated).toBeCloseTo((before?.raw ?? 0) / 3)
+    expect(byStep("aa-crit")?.mitigated).toBeCloseTo((byStep("aa-crit")?.raw ?? 0) / 2.1)
+    expect(byStep("q-crit")?.mitigated).toBeCloseTo((byStep("q-crit")?.raw ?? 0) / 2.1)
+    const aa = byStep("aa")
+    expect(aa?.mitigated).toBeCloseTo((aa?.raw ?? 0) / 3)
+  })
+
+  it("Last Breath's crit pen does nothing against a target with only base armor", () => {
+    const result = simulate({
+      steps: [
+        { id: "r", sourceId: "Yasuo", actionId: "R" },
+        { id: "aa-crit", sourceId: "Yasuo", actionId: "AA-crit" },
+      ],
+      kits: { Yasuo: kit },
+      target: dummy(100000, 100, 100),
+    })
+    const crit = result.instances.find((i) => i.stepId === "aa-crit")
+    expect(crit?.mitigated).toBeCloseTo((crit?.raw ?? 0) / 2)
+  })
 })

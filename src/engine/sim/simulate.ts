@@ -55,6 +55,8 @@ type MutableTarget = {
   currentHp: number
   readonly maxHp: number
   readonly bonusHp: number
+  readonly bonusArmor: number
+  readonly bonusMagicResist: number
 }
 type BuffCounters = Map<string, Map<string, number>>
 type SpellbladeState = Map<string, (ctx: EvalContext) => number>
@@ -73,17 +75,23 @@ function buildTargetState(spec: TargetSpec): MutableTarget {
     currentHp: spec.currentHp ?? spec.maxHp,
     maxHp: spec.maxHp,
     bonusHp: spec.bonusHp,
+    bonusArmor: spec.bonusArmor ?? 0,
+    bonusMagicResist: spec.bonusMagicResist ?? 0,
   }
 }
 
 function hpVariantCtx(target: MutableTarget) {
-  return { currentHp: target.currentHp, maxHp: target.maxHp, bonusHp: target.bonusHp }
+  return { currentHp: Math.max(0, target.currentHp), maxHp: target.maxHp, bonusHp: target.bonusHp }
 }
 
 export type SimulateParams = {
   readonly steps: readonly ComboStep[]
   readonly kits: Readonly<Record<string, Kit>>
   readonly target: TargetSpec
+  /** Keep resolving damage after the target hits 0 HP (HP goes negative),
+   * so totals measure the combo's full output rather than capping at the
+   * target's HP. Used by resist sweeps that compare kill margins. */
+  readonly allowOverkill?: boolean
 }
 
 /** Event-queue damage simulation (plan §4.4). Resolve order per instance:
@@ -92,7 +100,7 @@ export type SimulateParams = {
  * schedule DoT ticks. `%current/missing HP` reads target state at the
  * moment each instance resolves, including every DoT tick. */
 export function simulate(params: SimulateParams): SimResult {
-  const { steps, kits, target } = params
+  const { steps, kits, target, allowOverkill = false } = params
   const targetState = buildTargetState(target)
   const queue = new EventQueue()
   const instances: DamageInstance[] = []
@@ -133,8 +141,9 @@ export function simulate(params: SimulateParams): SimResult {
     time: number,
     isTick: boolean,
     cause: DamageCause,
+    bonusArmorPen = 0,
   ): void {
-    if (targetState.currentHp <= 0) {
+    if (targetState.currentHp <= 0 && !allowOverkill) {
       return
     }
     const kit = kits[sourceId]
@@ -154,6 +163,7 @@ export function simulate(params: SimulateParams): SimResult {
             armor: {
               flatPen: kit?.ctx.stats.total.armorPenetrationFlat ?? 0,
               percentPen: kit?.ctx.stats.total.armorPenetrationPercent ?? 0,
+              bonusPercentPen: bonusArmorPen,
               flatReduction: resistShred.armor,
               percentReduction: resistShred.armorPercent,
             },
@@ -171,12 +181,17 @@ export function simulate(params: SimulateParams): SimResult {
     const { mitigatedDamage } = calculateMitigatedDamage({
       rawDamage: raw,
       damageType,
-      target: { armor: targetState.armor, magicResist: targetState.magicResist },
+      target: {
+        armor: targetState.armor,
+        magicResist: targetState.magicResist,
+        bonusArmor: targetState.bonusArmor,
+        bonusMagicResist: targetState.bonusMagicResist,
+      },
       attackerPen,
     })
     const before = targetState.currentHp
-    const after = Math.max(0, before - mitigatedDamage)
-    if (after === 0 && before > 0 && killedAt === undefined) {
+    const after = allowOverkill ? before - mitigatedDamage : Math.max(0, before - mitigatedDamage)
+    if (after <= 0 && before > 0 && killedAt === undefined) {
       killedAt = { stepId, time }
       overkill = mitigatedDamage - before
     }
@@ -307,6 +322,7 @@ export function simulate(params: SimulateParams): SimResult {
           time,
           false,
           "direct",
+          component.bonusArmorPenPercent?.(ctx) ?? 0,
         )
       }
     }

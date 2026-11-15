@@ -36,6 +36,21 @@ describe("calculateEffectiveResistance", () => {
   it("Given negative base resistance, when percent and flat penetration are applied, then neither has any further effect (penetration cannot push an already-negative resistance more negative)", () => {
     expect(calculateEffectiveResistance(-20, { percentPen: 0.5, flatPen: 5 })).toBe(-20)
   })
+
+  it("Given 200 armor of which 150 is bonus and 60% bonus pen, when resolved, then only the bonus part is reduced (50 + 150 * 0.4 = 110)", () => {
+    expect(calculateEffectiveResistance(200, { bonusPercentPen: 0.6 }, 150)).toBeCloseTo(110)
+  })
+
+  it("Given percent pen and bonus pen together, when resolved, then they stack multiplicatively on the bonus share", () => {
+    // 200 * 0.7 = 140 (bonus share 75% = 105) → 140 - 105 * 0.6 = 77
+    expect(
+      calculateEffectiveResistance(200, { percentPen: 0.3, bonusPercentPen: 0.6 }, 150),
+    ).toBeCloseTo(77)
+  })
+
+  it("Given bonus pen but no bonus resistance, when resolved, then it has no effect", () => {
+    expect(calculateEffectiveResistance(100, { bonusPercentPen: 0.6 })).toBe(100)
+  })
 })
 
 describe("applyMitigation", () => {

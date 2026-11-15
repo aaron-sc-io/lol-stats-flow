@@ -104,11 +104,11 @@ describe("statsAt — base/growth (no items)", () => {
     expect(stats.bonus.attackDamage).toBe(0)
   })
 
-  it("Given a level above 18, when resolved, then the level clamps to 18", () => {
-    const uncapped = statsAt(fixtureChampion(), 18, [])
+  it("Given a level above 20, when resolved, then the level clamps to 20", () => {
+    const uncapped = statsAt(fixtureChampion(), 20, [])
     const overLeveled = statsAt(fixtureChampion(), 30, [])
     expect(overLeveled.total.health).toBeCloseTo(uncapped.total.health)
-    expect(overLeveled.level).toBe(18)
+    expect(overLeveled.level).toBe(20)
   })
 })
 

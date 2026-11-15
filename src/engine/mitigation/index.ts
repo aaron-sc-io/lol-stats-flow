@@ -24,6 +24,10 @@ export type PenetrationStats = {
   readonly flatReduction?: number
   readonly percentReduction?: number
   readonly percentPen?: number
+  /** Percent penetration that only ignores the target's BONUS resistance
+   * (e.g. Yasuo's Last Breath crits: "ignore 60% bonus Armor"). Applied in
+   * the same step as `percentPen`, to the bonus share of what remains. */
+  readonly bonusPercentPen?: number
   readonly flatPen?: number
 }
 
@@ -44,29 +48,45 @@ export function lethalityToArmorPen(lethality: number, level: number): number {
   if (lethality === 0) {
     return 0
   }
-  const clampedLevel = Math.min(18, Math.max(1, level))
+  const clampedLevel = Math.min(20, Math.max(1, level))
   return lethality * (0.6 + (0.4 * clampedLevel) / 18)
 }
 
 /**
  * Resolves the target's effective resistance after applying reductions and
  * penetration in Riot's documented order of operations.
+ *
+ * `totalResistance` is the target's full armor/MR; `bonusResistance` is the
+ * part of it that is bonus (items/runes), used only by `bonusPercentPen`.
+ * Per https://wiki.leagueoflegends.com/en-us/Armor#Penetration_and_reduction,
+ * reductions are split proportionally between base and bonus resistance, so
+ * the bonus share of the total is preserved through steps 1–2.
  */
 export function calculateEffectiveResistance(
-  baseResistance: number,
+  totalResistance: number,
   pen: PenetrationStats = {},
+  bonusResistance = 0,
 ): number {
-  const { flatReduction = 0, percentReduction = 0, percentPen = 0, flatPen = 0 } = pen
+  const {
+    flatReduction = 0,
+    percentReduction = 0,
+    percentPen = 0,
+    bonusPercentPen = 0,
+    flatPen = 0,
+  } = pen
+  const bonusShare =
+    totalResistance > 0 ? Math.min(1, Math.max(0, bonusResistance / totalResistance)) : 0
 
   // 1. Flat reduction (additive debuff, e.g. Black Cleaver shred stacks)
-  let resistance = baseResistance - flatReduction
+  let resistance = totalResistance - flatReduction
 
   // 2. Percent reduction (multiplicative debuff)
   resistance *= 1 - percentReduction
 
-  // 3. Percent penetration (multiplicative; does not apply to already-negative resistance)
+  // 3. Percent penetration, then bonus-only percent penetration on the bonus
+  // share of what remains (does not apply to already-negative resistance)
   if (resistance > 0) {
-    resistance *= 1 - percentPen
+    resistance *= (1 - percentPen) * (1 - bonusShare * bonusPercentPen)
   }
 
   // 4. Flat penetration, applied last. Per
@@ -93,6 +113,9 @@ export function applyMitigation(rawDamage: number, effectiveResistance: number):
 export type MitigationTarget = {
   readonly armor: number
   readonly magicResist: number
+  /** Portion of `armor` / `magicResist` that is bonus. Defaults to 0. */
+  readonly bonusArmor?: number
+  readonly bonusMagicResist?: number
 }
 
 export type AttackerPenetration = {
@@ -121,10 +144,11 @@ export function calculateMitigatedDamage(params: {
   }
 
   const isPhysical = damageType === "physical"
-  const baseResistance = isPhysical ? target.armor : target.magicResist
+  const totalResistance = isPhysical ? target.armor : target.magicResist
+  const bonusResistance = (isPhysical ? target.bonusArmor : target.bonusMagicResist) ?? 0
   const pen = (isPhysical ? attackerPen.armor : attackerPen.magicResist) ?? {}
 
-  const effectiveResistance = calculateEffectiveResistance(baseResistance, pen)
+  const effectiveResistance = calculateEffectiveResistance(totalResistance, pen, bonusResistance)
   const mitigatedDamage = applyMitigation(rawDamage, effectiveResistance)
 
   return { mitigatedDamage, effectiveResistance }

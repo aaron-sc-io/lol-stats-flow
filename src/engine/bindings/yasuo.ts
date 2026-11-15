@@ -1,4 +1,5 @@
 import type { ChampionData } from "../../data/snapshot-schema"
+import type { EvalContext } from "../formula/types"
 import type { ComboAction, Kit, PassiveRule } from "../sim/types"
 import type { ResolvedStats } from "../stats/types"
 import {
@@ -8,7 +9,23 @@ import {
   withAbilityData,
 } from "./helpers"
 
-function aaAction(stats: ResolvedStats, crit: boolean): ComboAction {
+/** Buff counter set once Last Breath (R) has been cast. Per the 16.22
+ * tooltip: "Afterwards, Yasuo's critical strikes ignore {{ rpercentarmorpen }}%
+ * bonus Armor for {{ rbuffduration }} seconds" — crit autos and the crit
+ * Steel Tempest get bonus-only percent armor pen, not full armor ignore. */
+const LAST_BREATH_BUFF = "YasuoLastBreath"
+
+/** Builds the post-R crit pen reader: 0 before R is cast, else the R
+ * rank's `RPercentArmorPen` (60 → 0.6). */
+function lastBreathBonusPen(percent: number): (ctx: EvalContext) => number {
+  return (ctx) => ((ctx.buffCounters?.[LAST_BREATH_BUFF] ?? 0) > 0 ? percent : 0)
+}
+
+function aaAction(
+  stats: ResolvedStats,
+  crit: boolean,
+  critBonusPen: (ctx: EvalContext) => number,
+): ComboAction {
   return {
     id: crit ? "AA-crit" : "AA",
     label: crit ? "Auto Attack (crit)" : "Auto Attack",
@@ -26,13 +43,14 @@ function aaAction(stats: ResolvedStats, crit: boolean): ComboAction {
         damageType: "physical",
         canCrit: true,
         compute: (ctx) => ctx.stats.total.attackDamage,
+        ...(crit ? { bonusArmorPenPercent: critBonusPen } : {}),
       },
     ],
   }
 }
 
 /** Yasuo (key 157). Mechanics modeled: Q (Steel Tempest) normal + guaranteed
- * crit variant (`TotalDamageCrit` — the third/tornado cast, whose own
+ * crit variant (`TotalDamageCrit` — Steel Tempest critical strike, whose own
  * compiled formula already bakes in `critDamageMultiplier` via its
  * `statBySubPart` shape; no engine `forceCrit` needed), E (Sweeping Blade)
  * base hit + per-stored-stack bonus (1-4 stacks, matching old lolstats'
@@ -56,6 +74,9 @@ export function buildYasuoKit(
   const qCrit = withAbilityData(q, qRank, compileAbilityCalc(q, "TotalDamageCrit"))
   const eTotal = withAbilityData(e, eRank, compileAbilityCalc(e, "TotalDamage"))
   const rDamage = withAbilityData(r, rRank, compileAbilityCalc(r, "Damage"))
+  // CDragon dataValue arrays are [rank0placeholder, rank1, ...] (compile.ts).
+  const rPercentArmorPen = r.dataValues.RPercentArmorPen?.[rRank] ?? 60
+  const critBonus = lastBreathBonusPen(rPercentArmorPen / 100)
   // `BonusDamagePerStack`'s raw shape is `(sum of 0 parts) * 0.25` — a
   // percentage-multiplier template, not a standalone damage value (same
   // pattern CDragon uses for Darius R's `MaximumDamage`). Its real meaning
@@ -90,7 +111,7 @@ export function buildYasuoKit(
     },
     {
       id: "Q-empowered",
-      label: "Steel Tempest ✳ (tornado)",
+      label: "Steel Tempest ✳ (crit)",
       keyLabel: "Q✳",
       slot: "Q",
       damageType: "physical",
@@ -105,6 +126,7 @@ export function buildYasuoKit(
           damageType: "physical",
           canCrit: false,
           compute: (ctx) => qCrit(ctx),
+          bonusArmorPenPercent: critBonus,
         },
       ],
     },
@@ -170,11 +192,17 @@ export function buildYasuoKit(
         },
       ],
     },
-    aaAction(stats, false),
-    aaAction(stats, true),
+    aaAction(stats, false, critBonus),
+    aaAction(stats, true, critBonus),
   ]
 
-  const passiveTriggers: PassiveRule[] = []
+  const passiveTriggers: PassiveRule[] = [
+    {
+      id: "yasuo-last-breath-bonus-armor-pen",
+      appliesTo: (event) => event.action.id === "R",
+      effect: (api, event) => api.setBuffCounter(event.sourceId, LAST_BREATH_BUFF, 1),
+    },
+  ]
   const ctx = abilityEvalContext(stats, level, qRank, q)
   return { sourceId: "", championId: champion.id, level, ctx, actions, passiveTriggers }
 }

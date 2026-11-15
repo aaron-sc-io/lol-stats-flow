@@ -9,6 +9,10 @@ export type TargetSpec = {
   readonly bonusHp: number
   readonly armor: number
   readonly magicResist: number
+  /** Portion of `armor` / `magicResist` that is bonus (items, runes) rather
+   * than base. Only bonus-only penetration reads it. Absent means 0. */
+  readonly bonusArmor?: number
+  readonly bonusMagicResist?: number
 }
 
 export type TargetHpState = {
@@ -28,6 +32,10 @@ export type ActionComponent = {
   readonly canCrit: boolean
   readonly compute: (ctx: EvalContext, time: number, target: TargetHpState) => number
   readonly isDot?: { readonly tickIntervalMs: number; readonly ticks: number }
+  /** Bonus-only percent armor penetration (0–1) this hit gets, read at fire
+   * time against the action's ctx including `buffCounters` (e.g. Yasuo's
+   * crits after Last Breath ignore 60% of the target's bonus armor). */
+  readonly bonusArmorPenPercent?: (ctx: EvalContext) => number
 }
 
 export type ActionSlot = "Q" | "W" | "E" | "R" | "AA" | "ITEM"

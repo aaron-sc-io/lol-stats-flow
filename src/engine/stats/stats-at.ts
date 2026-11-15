@@ -3,8 +3,8 @@ import { lethalityToArmorPen } from "../mitigation"
 import type { ResolvedStats, SplitStatKey } from "./types"
 import { zeroSplit } from "./types"
 
-const MIN_LEVEL = 1
-const MAX_LEVEL = 18
+export const MIN_LEVEL = 1
+export const MAX_LEVEL = 20
 
 /** Riot's standard stat growth multiplier for a given level: ports
  * `lolstats`' `statCalculator.js` `growthMultiplier` 1:1. */
