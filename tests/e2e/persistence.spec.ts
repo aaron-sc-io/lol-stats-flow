@@ -80,7 +80,7 @@ test.describe("Phase 5 — persistence", () => {
 
     const nodesBefore = await allNodes(page).count()
     await page.getByRole("button", { name: "Add node" }).click()
-    await page.getByRole("menuitem", { name: "Graph" }).click()
+    await page.getByRole("menuitem", { name: "Combo Damage vs Targets" }).click()
     await expect(allNodes(page)).toHaveCount(nodesBefore + 1)
 
     await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 3000 })
@@ -105,7 +105,7 @@ test.describe("Phase 5 — persistence", () => {
     await test.step("node add", async () => {
       const nodesBefore = await allNodes(page).count()
       await page.getByRole("button", { name: "Add node" }).click()
-      await page.getByRole("menuitem", { name: "Combo" }).click()
+      await page.getByRole("menuitem", { name: "Combo", exact: true }).click()
       await expect(allNodes(page)).toHaveCount(nodesBefore + 1)
 
       await expect(undoButton).toBeEnabled()
@@ -168,7 +168,7 @@ test.describe("Phase 5 — persistence", () => {
     await nameField.fill("Shared Canvas")
     await nameField.blur()
     await page.getByRole("button", { name: "Add node" }).click()
-    await page.getByRole("menuitem", { name: "Graph" }).click()
+    await page.getByRole("menuitem", { name: "Combo Damage vs Targets" }).click()
     const nodeCount = await allNodes(page).count()
     await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 3000 })
 
@@ -260,7 +260,7 @@ test.describe("Phase 5 — persistence", () => {
     const dialog = page.getByRole("dialog", { name: "Canvases" })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText("No saved canvases yet.")).toHaveCount(0)
-    await expect(dialog.getByText("Untitled canvas")).toBeVisible()
+    await expect(dialog.getByText("Tutorial", { exact: true })).toBeVisible()
     await page.keyboard.press("Escape")
     await expect(dialog).toBeHidden()
 

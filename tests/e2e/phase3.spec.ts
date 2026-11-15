@@ -53,9 +53,9 @@ function comboNodesExcept(page: Page, exceptId: string) {
   return page.locator(`[data-testid^="rf__node-combo-"]:not([data-id="${exceptId}"])`)
 }
 
-async function addNode(page: Page, type: "Champion" | "Combo" | "Graph") {
+async function addNode(page: Page, type: "Champion" | "Combo") {
   await page.getByRole("button", { name: "Add node" }).click()
-  await page.getByRole("menuitem", { name: type }).click()
+  await page.getByRole("menuitem", { name: type, exact: true }).click()
   await fitViewNow(page)
 }
 

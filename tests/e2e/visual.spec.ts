@@ -15,6 +15,17 @@ function nodeById(page: Page, nodeId: string): Locator {
   return page.locator(`[data-testid="rf__node-${nodeId}"]`)
 }
 
+// First run opens the "Tutorial" canvas (default chain + a Tutorial node).
+// These specs and baselines cover the plain default canvas, so make one
+// via "New canvas" first — every later `goto` restores it as last-opened.
+test.beforeEach(async ({ page }) => {
+  await page.goto("./")
+  await page.getByRole("button", { name: "Open menu" }).click()
+  await page.getByRole("button", { name: "New canvas" }).click()
+  await expect(page.locator('[data-testid="rf__node-tutorial"]')).toHaveCount(0)
+  await page.mouse.move(0, 0)
+})
+
 function edgePathById(page: Page, edgeId: string): Locator {
   return page.locator(`[data-testid="rf__edge-${edgeId}"] path`)
 }
@@ -185,7 +196,11 @@ test.describe("Phase 4 AC #1/#2 — Champion node width-driven scaling", () => {
           const rowCenterY = rowBox.y + rowBox.height / 2
           expect(Math.abs(handleCenterY - rowCenterY)).toBeLessThanOrEqual(2)
         }
-        await assertFullyInside(handle, box, `handle ${index}`)
+        // Each item-set handle's center X is on the node's right border (±2px).
+        if (handleBox !== null) {
+          const handleCenterX = handleBox.x + handleBox.width / 2
+          expect(Math.abs(handleCenterX - (box.x + box.width))).toBeLessThanOrEqual(2)
+        }
       }
 
       await expect(champion).toHaveScreenshot(`champion-node-width-${targetWidth}.png`)
@@ -210,16 +225,16 @@ test.describe("Phase 4 AC #1/#2 — Champion node width-driven scaling", () => {
       return
     }
 
-    const rightLine = champion.locator(".react-flow__resize-control.line.right")
-    const lineBox = await rightLine.boundingBox()
-    expect(lineBox).not.toBeNull()
-    if (lineBox === null) {
+    const brBracket = champion.locator(".react-flow__resize-control.handle.bottom.right")
+    const brBox = await brBracket.boundingBox()
+    expect(brBox).not.toBeNull()
+    if (brBox === null) {
       return
     }
-    const startY = lineBox.y + lineBox.height / 2
-    await page.mouse.move(lineBox.x + lineBox.width / 2, startY)
+    const startY = brBox.y + brBox.height / 2
+    await page.mouse.move(brBox.x + brBox.width / 2, startY)
     await page.mouse.down()
-    await page.mouse.move(lineBox.x + 80, startY, { steps: 15 })
+    await page.mouse.move(brBox.x + 80, startY, { steps: 15 })
     await page.mouse.up()
     await page.mouse.move(0, 0)
     await page.waitForTimeout(200)
@@ -232,7 +247,8 @@ test.describe("Phase 4 AC #1/#2 — Champion node width-driven scaling", () => {
     expect(resizedBox.width).toBeGreaterThan(baseBox.width)
 
     await champion.getByRole("button", { name: "+ Add item set" }).click()
-    await expect(champion.locator('.react-flow__handle[data-handleid^="itemset:"]')).toHaveCount(2)
+    await champion.getByRole("button", { name: "+ Add item set" }).click()
+    await expect(champion.locator('.react-flow__handle[data-handleid^="itemset:"]')).toHaveCount(3)
     await page.waitForTimeout(200)
 
     const grownBox = await champion.boundingBox()
@@ -244,14 +260,15 @@ test.describe("Phase 4 AC #1/#2 — Champion node width-driven scaling", () => {
     expect(Math.abs(grownBox.width - resizedBox.width)).toBeLessThanOrEqual(1)
     expect(grownBox.height).toBeGreaterThan(resizedBox.height)
 
-    // The NodeResizer's bottom edge tracks the grown node, not the old height.
-    const bottomLine = await champion
-      .locator(".react-flow__resize-control.line.bottom")
+    // The bottom-right resize bracket tracks the grown node, not the old height.
+    const bottomBracket = await champion
+      .locator(".react-flow__resize-control.handle.bottom.right")
       .boundingBox()
-    expect(bottomLine).not.toBeNull()
-    if (bottomLine !== null) {
-      const bottomLineCenterY = bottomLine.y + bottomLine.height / 2
-      expect(Math.abs(bottomLineCenterY - (grownBox.y + grownBox.height))).toBeLessThanOrEqual(2)
+    expect(bottomBracket).not.toBeNull()
+    if (bottomBracket !== null) {
+      expect(
+        Math.abs(bottomBracket.y + bottomBracket.height - (grownBox.y + grownBox.height)),
+      ).toBeLessThanOrEqual(6)
     }
   })
 })
@@ -388,7 +405,7 @@ test.describe("Phase 4 AC #5 — Upstream highlight", () => {
     await comboA.getByRole("button", { name: "Steel Tempest (Q)", exact: true }).click()
 
     await page.getByRole("button", { name: "Add node" }).click()
-    await page.getByRole("menuitem", { name: "Combo" }).click()
+    await page.getByRole("menuitem", { name: "Combo", exact: true }).click()
     await fitViewNow(page)
     const comboB = page.locator(
       `[data-testid^="rf__node-combo-"]:not([data-id="${DEFAULT_COMBO_ID}"])`,
@@ -530,5 +547,120 @@ test.describe("Phase 4 AC #6 — screenshot baselines (200% DPR)", () => {
     const dialog = page.getByRole("dialog", { name: /slot 2: choose item/ })
     await expect(dialog).toBeVisible()
     await expect(dialog).toHaveScreenshot("item-shop-open@2x.png")
+  })
+})
+
+test.describe("Board nodes & GraphNode interactive features", () => {
+  test("verifies node delete button, 3-corner resize brackets, level 20 slider, horizontal targets row, legend popover overrides, step icon ticks tooltip, and line hover/pinning", async ({
+    page,
+  }) => {
+    await page.goto("./")
+    await expect(page.locator(".react-flow")).toBeVisible()
+    await page.waitForTimeout(300)
+    await fitViewNow(page)
+
+    const champion = nodeById(page, DEFAULT_CHAMPION_ID)
+    const combo = nodeById(page, DEFAULT_COMBO_ID)
+    const graph = nodeById(page, DEFAULT_GRAPH_ID)
+
+    // 1 & 2. Every node has TL, BL, BR corner resize brackets and top-right delete button (no TR resize handle).
+    for (const node of [champion, combo, graph]) {
+      await expect(node.locator(".react-flow__resize-control.handle.top.left")).toBeVisible()
+      await expect(node.locator(".react-flow__resize-control.handle.bottom.left")).toBeVisible()
+      await expect(node.locator(".react-flow__resize-control.handle.bottom.right")).toBeVisible()
+      await expect(node.locator(".react-flow__resize-control.handle.top.right")).toHaveCount(0)
+    }
+
+    // 4. Champion level slider reaches 20.
+    const levelSlider = champion.getByRole("slider", { name: "Champion level" })
+    await expect(levelSlider).toHaveAttribute("aria-valuemax", "20")
+    await levelSlider.focus()
+    await page.keyboard.press("End")
+    await expect(levelSlider).toHaveAttribute("aria-valuenow", "20")
+
+    // 5, 6, 7, 8. Graph targets panel: icon-only Add target with tooltip, horizontal row, vertical compact stat fields.
+    const addTargetBtn = graph.getByRole("button", { name: "Add target" })
+    await addTargetBtn.hover()
+    await expect(page.getByRole("tooltip", { name: "Add target" })).toBeVisible()
+    await addTargetBtn.click()
+    const targetCards = graph.locator('[class*="targetBlock"]')
+    await expect(targetCards).toHaveCount(2)
+    const card0Box = await targetCards.nth(0).boundingBox()
+    const card1Box = await targetCards.nth(1).boundingBox()
+    expect(card0Box).not.toBeNull()
+    expect(card1Box).not.toBeNull()
+    if (card0Box !== null && card1Box !== null) {
+      // Laid out horizontally in a row (same Y, increasing X)
+      expect(Math.abs(card0Box.y - card1Box.y)).toBeLessThanOrEqual(2)
+      expect(card1Box.x).toBeGreaterThan(card0Box.x)
+    }
+
+    // 9. Legend swatch hover opens customization popover (color, width, dash, visible toggle).
+    const legendBtn = graph.locator("ul").getByRole("button").first()
+    await legendBtn.hover()
+    const customizeDialog = page.getByRole("dialog", { name: /Customize Combo 1/i })
+    await expect(customizeDialog).toBeVisible()
+    await customizeDialog.getByRole("button", { name: "Stroke width 2.5" }).click()
+    await customizeDialog.getByRole("button", { name: "Dash style Dashed" }).click()
+    await page.mouse.move(10, 10)
+    await page.waitForTimeout(250)
+
+    // 10 & 11. X-axis step icon ticks render ability icons and show all-lines breakdown tooltip on hover.
+    const step1Tick = graph.locator('[data-step-tick="Step 1"]')
+    await expect(step1Tick).toBeVisible()
+    await expect(step1Tick.locator("image")).toHaveCount(1)
+    const step1IconBox = await step1Tick.locator("rect").first().boundingBox()
+    expect(step1IconBox).not.toBeNull()
+    if (step1IconBox !== null) {
+      expect(step1IconBox.width).toBeGreaterThanOrEqual(20)
+      expect(step1IconBox.height).toBeGreaterThanOrEqual(20)
+    }
+    const step4Tick = graph.locator('[data-step-tick="Step 4"]')
+    await expect(step4Tick.locator("title")).toHaveText("Steel Tempest ✳ (crit)")
+    await expect(combo.locator('[title="Steel Tempest ✳ (crit)"]')).toHaveCount(2)
+    await step1Tick.hover()
+    await expect(page.getByRole("tooltip").filter({ hasText: "Step 1" })).toBeVisible()
+    await page.mouse.move(10, 10)
+
+    // 12 & 13. Clicking a line pins it; clicking empty chart area unpins it.
+    const hitSegment = graph.locator('[class*="segmentHitArea"]').first()
+    await hitSegment.click({ force: true })
+    await expect(graph.locator("[data-pinned-series]")).toHaveCount(1)
+    await graph.locator('[class*="chartWrap"]').click({ position: { x: 5, y: 5 } })
+    await expect(graph.locator("[data-pinned-series]")).toHaveCount(0)
+
+    // ComboNode resizing keeps palette and timeline strictly inside the node frame.
+    const comboHandle = combo.locator(".react-flow__resize-control.handle.bottom.right")
+    const comboHandleBox = await comboHandle.boundingBox()
+    expect(comboHandleBox).not.toBeNull()
+    if (comboHandleBox !== null) {
+      await page.mouse.move(
+        comboHandleBox.x + comboHandleBox.width / 2,
+        comboHandleBox.y + comboHandleBox.height / 2,
+      )
+      await page.mouse.down()
+      await page.mouse.move(comboHandleBox.x - 140, comboHandleBox.y - 120, { steps: 12 })
+      await page.mouse.up()
+      await page.mouse.move(0, 0)
+      await page.waitForTimeout(200)
+    }
+    const comboBox = await combo.boundingBox()
+    const comboFrameBox = await nodeFrameOf(combo).boundingBox()
+    expect(comboBox).not.toBeNull()
+    expect(comboFrameBox).not.toBeNull()
+    if (comboBox !== null && comboFrameBox !== null) {
+      expect(Math.abs(comboFrameBox.width - comboBox.width)).toBeLessThanOrEqual(2)
+      expect(Math.abs(comboFrameBox.height - comboBox.height)).toBeLessThanOrEqual(2)
+      await assertFullyInside(
+        combo.locator('[class*="timelineList"]').first(),
+        comboBox,
+        "combo timeline",
+      )
+      await assertFullyInside(
+        combo.locator('[class*="paletteGrid"]').first(),
+        comboBox,
+        "combo palette",
+      )
+    }
   })
 })
