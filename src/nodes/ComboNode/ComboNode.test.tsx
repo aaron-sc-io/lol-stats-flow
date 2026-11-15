@@ -121,7 +121,7 @@ describe("ComboNode", () => {
     expect(screen.queryByRole("button", { name: "Q" })).toBeNull()
     expect(qButton.getAttribute("title")).toBe("Steel Tempest (Q)")
     expect(qButton.querySelector("img")).not.toBeNull()
-    expect(qButton.textContent).toBe("Q")
+    expect(qButton.querySelector('span[aria-hidden="true"]')?.textContent).toBe("Q")
 
     fireEvent.click(qButton)
 
@@ -148,7 +148,7 @@ describe("ComboNode", () => {
     for (const variant of expectedVariants) {
       const btn = screen.getByRole("button", { name: variant.label })
       expect(btn.getAttribute("title")).toBe(variant.label)
-      expect(btn.textContent).toBe(variant.keyText)
+      expect(btn.querySelector('span[aria-hidden="true"]')?.textContent).toBe(variant.keyText)
       fireEvent.click(btn)
     }
 
@@ -172,8 +172,8 @@ describe("ComboNode", () => {
     expect(aaCritButton.className).toBe(qButton.className)
     expect(aaButton.querySelector("svg")).not.toBeNull()
     expect(aaCritButton.querySelector("svg")).not.toBeNull()
-    expect(aaButton.textContent).toBe("AA")
-    expect(aaCritButton.textContent).toBe("AA✳")
+    expect(aaButton.querySelector('span[aria-hidden="true"]')?.textContent).toBe("AA")
+    expect(aaCritButton.querySelector('span[aria-hidden="true"]')?.textContent).toBe("AA✳")
   })
 
   it("lists AA and AA crit first, and gives Q/Q✳ one shared rank stepper", () => {

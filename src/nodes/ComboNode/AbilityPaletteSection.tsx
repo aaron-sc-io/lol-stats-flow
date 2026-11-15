@@ -123,14 +123,12 @@ function AbilityIconButton({
   readonly keyLabel?: string | undefined
   readonly onAdd: () => void
 }) {
+  // The accessible name comes from visually-hidden text, not `aria-label`:
+  // the visible key badge ("AA✳", "E3") isn't part of the full ability
+  // name, which axe's label-content-name-mismatch flags on an aria-label.
   return (
-    <button
-      type="button"
-      className={styles.paletteButton}
-      onClick={onAdd}
-      aria-label={action.label}
-      title={action.label}
-    >
+    <button type="button" className={styles.paletteButton} onClick={onAdd} title={action.label}>
+      <span className="sr-only">{action.label}</span>
       <AbilityIconContent
         iconUrl={abilityIconUrl(champion, action)}
         keyLabel={keyLabel ?? action.keyLabel}
