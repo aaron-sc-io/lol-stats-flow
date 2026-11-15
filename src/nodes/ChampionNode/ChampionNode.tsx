@@ -1,5 +1,19 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
 import type { NodeProps } from "@xyflow/react"
-import { NodeResizer, useInternalNode, useUpdateNodeInternals } from "@xyflow/react"
+import { useInternalNode, useUpdateNodeInternals } from "@xyflow/react"
 import type { CSSProperties } from "react"
 import { useEffect, useMemo } from "react"
 import { Button } from "@/components/Button"
@@ -20,8 +34,8 @@ const MAX_WIDTH = 900
 
 /**
  * Champion node (plan §6, deliverable 3): `[portrait + name + level] |
- * [item-sets column]`. Resizes aspect-locked only (plan D6) — `NodeResizer`
- * with `keepAspectRatio`; every internal size is `calc(<token> *
+ * [item-sets column]`. Resizes aspect-locked only (plan D6) — `NodeFrame`
+ * corner brackets with `keepAspectRatio`; every internal size is `calc(<token> *
  * var(--node-scale))`, where `--node-scale = currentWidth / BASE_WIDTH`.
  * Only the width is ever pinned by a resize (see `onNodesChange` in
  * `flow-slice.ts`); height always follows the content.
@@ -35,6 +49,23 @@ export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>
   const setChampionId = useGraphStore((s) => s.setChampionId)
   const setChampionLevel = useGraphStore((s) => s.setChampionLevel)
   const addItemSet = useGraphStore((s) => s.addItemSet)
+  const removeNode = useGraphStore((s) => s.removeNode)
+  const duplicateNode = useGraphStore((s) => s.duplicateNode)
+  const reorderItemSets = useGraphStore((s) => s.reorderItemSets)
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const handleItemSetDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over === null || active.id === over.id) {
+      return
+    }
+    const fromIndex = data.itemSets.findIndex((itemSet) => itemSet.id === active.id)
+    const toIndex = data.itemSets.findIndex((itemSet) => itemSet.id === over.id)
+    if (fromIndex !== -1 && toIndex !== -1) {
+      reorderItemSets(id, fromIndex, toIndex)
+    }
+  }
   const updateNodeInternals = useUpdateNodeInternals()
   // `NodeProps.width` (and `getNodeDimensions()` generally) prioritizes
   // `node.measured.width` over the explicit resize width — exactly wrong
@@ -42,7 +73,7 @@ export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>
   // into the scale that drives it, shrinking the node every render until
   // it collapses to its CSS `min-width`. `useInternalNode` exposes the raw
   // node record, where `.width` is ONLY ever set by an actual user resize
-  // (`NodeResizer`'s `dimensions` change), so it stays `undefined` — and
+  // (`NodeResizeControl`'s `dimensions` change), so it stays `undefined` — and
   // the node renders at `BASE_WIDTH` — until the user has actually dragged
   // the resizer.
   const internalNode = useInternalNode<ChampionFlowNode>(id)
@@ -70,60 +101,70 @@ export function ChampionNode({ id, data, selected }: NodeProps<ChampionFlowNode>
   )
   const highlighted = highlight.highlightedNodeIds.has(id)
   const dimmed = highlight.dimmedNodeIds.has(id)
+  const championName = champion?.name ?? "Unknown champion"
 
   return (
-    <>
-      <NodeResizer
-        isVisible={selected === true}
-        keepAspectRatio
-        minWidth={MIN_WIDTH}
-        maxWidth={MAX_WIDTH}
-        handleClassName={cx(styles.resizeHandle)}
-        lineClassName={cx(styles.resizeLine)}
-      />
-      <NodeFrame
-        label="Champion"
-        title={champion?.name ?? "Unknown champion"}
-        selected={selected}
-        highlighted={highlighted}
-        dimmed={dimmed}
-        width={currentWidth}
-        style={frameStyle}
-      >
-        <div className={cx(styles.layout, "nodrag")}>
-          <div className={styles.portraitColumn}>
-            <RosterPicker
-              snapshot={snapshot}
-              championId={data.championId}
-              onSelect={(next) => setChampionId(id, next.id)}
+    <NodeFrame
+      label="Champion"
+      title={championName}
+      selected={selected}
+      highlighted={highlighted}
+      dimmed={dimmed}
+      width={currentWidth}
+      style={frameStyle}
+      onDelete={() => removeNode(id)}
+      onDuplicate={() => duplicateNode(id)}
+      deleteLabel={`Delete ${championName} node`}
+      resize={{
+        keepAspectRatio: true,
+        minWidth: MIN_WIDTH,
+        maxWidth: MAX_WIDTH,
+      }}
+    >
+      <div className={cx(styles.layout, "nodrag")}>
+        <div className={styles.portraitColumn}>
+          <RosterPicker
+            snapshot={snapshot}
+            championId={data.championId}
+            onSelect={(next) => setChampionId(id, next.id)}
+          />
+          <div className={styles.levelRow}>
+            <span className={styles.levelLabel}>Level</span>
+            <Slider
+              value={data.level}
+              min={1}
+              max={20}
+              onChange={(level) => setChampionLevel(id, level)}
+              aria-label="Champion level"
             />
-            <div className={styles.levelRow}>
-              <span className={styles.levelLabel}>Level</span>
-              <Slider
-                value={data.level}
-                min={1}
-                max={18}
-                onChange={(level) => setChampionLevel(id, level)}
-                aria-label="Champion level"
-              />
-            </div>
-          </div>
-          <div className={styles.itemSetsColumn}>
-            {data.itemSets.map((itemSet) => (
-              <ItemSetRow
-                key={itemSet.id}
-                championNodeId={id}
-                itemSet={itemSet}
-                snapshot={snapshot}
-                highlighted={highlight.highlightedItemSetIds.has(itemSet.id)}
-              />
-            ))}
-            <Button variant="ghost" onClick={() => addItemSet(id)}>
-              + Add item set
-            </Button>
           </div>
         </div>
-      </NodeFrame>
-    </>
+        <div className={styles.itemSetsColumn}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleItemSetDragEnd}
+          >
+            <SortableContext
+              items={data.itemSets.map((itemSet) => itemSet.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {data.itemSets.map((itemSet) => (
+                <ItemSetRow
+                  key={itemSet.id}
+                  championNodeId={id}
+                  itemSet={itemSet}
+                  snapshot={snapshot}
+                  highlighted={highlight.highlightedItemSetIds.has(itemSet.id)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          <Button variant="ghost" onClick={() => addItemSet(id)}>
+            + Add item set
+          </Button>
+        </div>
+      </div>
+    </NodeFrame>
   )
 }

@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, within } from "@testing-library/react"
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { SnapshotProvider } from "@/data/snapshot-context"
 import { loadSnapshotFixture } from "@/engine/test-support/load-snapshot"
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/graph/handle-ids"
 import { useGraphStore } from "@/graph/store"
 import type { ChampionFlowNode, ComboFlowNode, FlowEdge, GraphFlowNode } from "@/graph/types"
+import { POPOVER_LEAVE_GRACE_MS, POPOVER_OPEN_DELAY_MS, POPOVER_TRANSITION_MS } from "./ChartLegend"
 import { GraphNode } from "./GraphNode"
 
 const snapshot = loadSnapshotFixture()
@@ -123,6 +124,8 @@ describe("GraphNode", () => {
       hoveredStepIds: [],
       hoveredItemSetId: null,
       hoveredItemSetIds: [],
+      hoveredDamage: null,
+      pinnedGraphSeriesId: null,
     })
   })
 
@@ -171,20 +174,121 @@ describe("GraphNode", () => {
     })
   })
 
-  it("clicking '+ Add target' appends a second target", () => {
+  it("clicking 'Add target' appends a second target", () => {
     renderGraphNode()
-    fireEvent.click(screen.getByRole("button", { name: "+ Add target" }))
+    fireEvent.click(screen.getByRole("button", { name: "Add target" }))
     expect(currentGraph().data.targets).toHaveLength(2)
   })
 
-  it("hovering a legend entry marks the matching graph series in transient store state", () => {
+  it("hovering a legend entry marks the matching graph series in transient store state and opens the customization popover after a dwell delay", () => {
+    vi.useFakeTimers()
+    try {
+      renderGraphNode()
+
+      const legendItem = screen.getByRole("button", { name: /Combo 1.*vs Target 1/i })
+      fireEvent.mouseEnter(legendItem)
+
+      expect(useGraphStore.getState().hoveredGraphSeriesId).toBe("combo-1__is-1__t1")
+      expect(screen.queryByRole("dialog", { name: /Customize Combo 1/i })).toBeNull()
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_OPEN_DELAY_MS)
+      })
+      expect(screen.getByRole("dialog", { name: /Customize Combo 1/i })).toBeTruthy()
+
+      fireEvent.click(screen.getByRole("button", { name: "Dash style Dotted" }))
+      expect(currentGraph().data.seriesOverrides?.["combo-1__is-1__t1"]?.dashStyle).toBe("dotted")
+
+      fireEvent.mouseLeave(legendItem)
+      expect(useGraphStore.getState().hoveredGraphSeriesId).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("does not open the popover when the cursor sweeps past before the dwell delay", () => {
+    vi.useFakeTimers()
+    try {
+      renderGraphNode()
+      const legendItem = screen.getByRole("button", { name: /Combo 1.*vs Target 1/i })
+      fireEvent.mouseEnter(legendItem)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_OPEN_DELAY_MS - 50)
+      })
+      fireEvent.mouseLeave(legendItem)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_OPEN_DELAY_MS)
+      })
+      expect(screen.queryByRole("dialog", { name: /Customize Combo 1/i })).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("closes the legend customization popover after the leave grace delay unless re-entered", () => {
+    vi.useFakeTimers()
+    try {
+      renderGraphNode()
+      const legendItem = screen.getByRole("button", { name: /Combo 1.*vs Target 1/i })
+
+      fireEvent.mouseEnter(legendItem)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_OPEN_DELAY_MS)
+      })
+      const dialog = screen.getByRole("dialog", { name: /Customize Combo 1/i })
+      expect(dialog.getAttribute("data-open")).toBe("true")
+
+      // Leaving trigger starts grace delay; re-entering popover cancels it.
+      fireEvent.mouseLeave(legendItem)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_LEAVE_GRACE_MS - 20)
+      })
+      fireEvent.mouseEnter(dialog)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_LEAVE_GRACE_MS + POPOVER_TRANSITION_MS)
+      })
+      expect(
+        screen.getByRole("dialog", { name: /Customize Combo 1/i }).getAttribute("data-open"),
+      ).toBe("true")
+
+      // Leaving popover closes after grace delay and unmounts after transition.
+      fireEvent.mouseLeave(dialog)
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_LEAVE_GRACE_MS)
+      })
+      expect(dialog.getAttribute("data-open")).toBe("false")
+      act(() => {
+        vi.advanceTimersByTime(POPOVER_TRANSITION_MS)
+      })
+      expect(screen.queryByRole("dialog", { name: /Customize Combo 1/i })).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("clicking a legend entry pins and unpins the series in transient store state", () => {
     renderGraphNode()
 
     const legendItem = screen.getByRole("button", { name: /Combo 1.*vs Target 1/i })
-    fireEvent.mouseEnter(legendItem)
+    fireEvent.click(legendItem)
+    expect(useGraphStore.getState().pinnedGraphSeriesId).toBe("combo-1__is-1__t1")
 
-    expect(useGraphStore.getState().hoveredGraphSeriesId).toBe("combo-1__is-1__t1")
-    fireEvent.mouseLeave(legendItem)
-    expect(useGraphStore.getState().hoveredGraphSeriesId).toBeNull()
+    fireEvent.click(legendItem)
+    expect(useGraphStore.getState().pinnedGraphSeriesId).toBeNull()
+  })
+
+  it("clicking the node delete button when selected removes the graph node from the store", () => {
+    useGraphStore.setState({
+      nodes: [championNode(), comboNode(), { ...graphNode(), selected: true }],
+      edges: allEdges(),
+    })
+    render(
+      <SnapshotProvider snapshot={snapshot}>
+        <ReactFlowProvider>
+          <TestCanvas />
+        </ReactFlowProvider>
+      </SnapshotProvider>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Delete graph node" }))
+    expect(useGraphStore.getState().nodes.find((n) => n.id === "graph-1")).toBeUndefined()
   })
 })

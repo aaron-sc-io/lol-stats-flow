@@ -38,29 +38,6 @@
   border-color: var(--text-primary);
 }
 
-/* ── Resize handles (NodeResizer) — mirrors ChampionNode's: the compound
-   selector outranks the library's same-element base rule by specificity. */
-:global(.react-flow__resize-control.handle).resizeHandle {
-  width: 8px;
-  height: 8px;
-  border: var(--border-width-hairline) solid var(--border-strong);
-  border-radius: 2px;
-  background-color: var(--surface-canvas);
-}
-
-:global(.react-flow__resize-control.handle).resizeHandle:hover {
-  background-color: var(--surface-hover);
-  border-color: var(--text-primary);
-}
-
-:global(.react-flow__resize-control.line).resizeLine {
-  border-color: var(--border-strong);
-}
-
-:global(.react-flow__resize-control.line).resizeLine:hover {
-  border-color: var(--text-primary);
-}
-
 .controlsRow {
   display: flex;
   flex-wrap: wrap;
@@ -78,34 +55,72 @@
 .targetsPanel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   border: var(--border-width-hairline) solid var(--border-default);
   border-radius: var(--radius-control);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+
+.targetsToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .addTarget {
   align-self: flex-start;
 }
 
-.targetBlock {
+/* Horizontal target cards row, scrolling sideways like the combo timeline. */
+.targetsList {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding-bottom: var(--space-3);
-  border-bottom: var(--border-width-hairline) solid var(--border-default);
+  margin: 0;
+  /* Top/right room so each card's corner delete badge isn't clipped. */
+  padding: 9px 9px var(--space-1) 0;
+  list-style: none;
+  overflow-x: auto;
 }
 
-.targetBlock:last-of-type {
-  padding-bottom: 0;
-  border-bottom: none;
+.targetBlock {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 248px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--surface-raised);
+  padding: var(--space-2);
 }
 
 .targetHeader {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: var(--border-width-hairline) solid var(--border-default);
+}
+
+.targetHeaderLeft {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+}
+
+.targetDelete {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  z-index: 1;
 }
 
 .targetSelectLabel {
@@ -117,51 +132,51 @@
   line-height: var(--line-height-2xs);
 }
 
-.targetName {
-  width: 120px;
-  flex-shrink: 0;
-  border: none;
-  border-bottom: var(--border-width-hairline) solid transparent;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-sm);
-  font-weight: var(--font-weight-medium);
+.targetSelectLabel input[type="checkbox"] {
+  accent-color: var(--accent);
 }
 
-.targetName:hover,
-.targetName:focus-visible {
-  border-bottom-color: var(--border-default);
+.targetName {
+  width: 84px;
+  min-width: 0;
+  flex: 0 1 auto;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  font-weight: var(--font-weight-medium);
 }
 
 .targetPresets {
   display: flex;
-  flex: 1 1 auto;
-  justify-content: flex-end;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
 }
 
-.targetsToolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+.presetButton {
+  height: 22px;
+  padding: 0 var(--space-1);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
 }
 
 .targetFields {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .targetField {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .targetFieldLabel {
+  flex-shrink: 0;
   color: var(--text-tertiary);
   font-size: var(--font-size-2xs);
   line-height: var(--line-height-2xs);
@@ -170,7 +185,8 @@
 }
 
 .targetFieldInput {
-  width: 100%;
+  width: 112px;
+  flex-shrink: 0;
 }
 
 /* ── Chart ──────────────────────────────────────────────────────────── */
@@ -178,6 +194,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.chartWrap :global(.recharts-surface) {
+  overflow: visible;
 }
 
 .grid {
@@ -208,6 +228,11 @@
   cursor: pointer;
 }
 
+.referenceLabel {
+  fill: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+}
+
 .endLabel {
   fill: var(--text-secondary);
   font-size: var(--font-size-2xs);
@@ -223,17 +248,46 @@
   list-style: none;
 }
 
+.legendListItem {
+  position: relative;
+  display: inline-flex;
+}
+
 .legendItem {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  border: var(--border-width-hairline) solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  padding: 2px var(--space-1);
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
   line-height: var(--line-height-xs);
-  transition: opacity var(--motion-fast) var(--motion-easing);
+  cursor: pointer;
+  transition:
+    opacity var(--motion-fast) var(--motion-easing),
+    border-color var(--motion-fast) var(--motion-easing),
+    background-color var(--motion-fast) var(--motion-easing);
+}
+
+.legendItem:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.legendItem[data-pinned="true"] {
+  border-color: var(--border-focus);
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .legendItem[data-dimmed="true"] {
+  opacity: var(--opacity-dimmed);
+}
+
+.legendItem[data-hidden="true"] {
+  text-decoration: line-through;
   opacity: var(--opacity-dimmed);
 }
 
@@ -248,12 +302,190 @@
 }
 
 .legendLine {
-  stroke: var(--text-primary);
   stroke-width: 1.5;
 }
 
 .legendMarker {
   fill: var(--text-primary);
+}
+
+.legendPopover {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 180px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-node);
+  background-color: var(--surface-raised);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-popover);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: top center;
+  transition:
+    opacity var(--motion-base) var(--motion-easing),
+    transform var(--motion-base) var(--motion-easing);
+}
+
+.legendPopoverHidden {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  pointer-events: none;
+}
+
+.legendPopoverMeasuring {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legendPopover,
+  .legendPopoverHidden {
+    transition: none;
+    transform: none;
+  }
+}
+
+.legendPopoverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.legendPopoverRow input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.legendPopoverSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.legendPopoverLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.legendSwatchGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.colorOptionButton {
+  width: 20px;
+  height: 20px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  padding: 0;
+  cursor: pointer;
+}
+
+.colorOptionButton[aria-pressed="true"] {
+  border-color: var(--border-focus);
+  box-shadow:
+    0 0 0 1px var(--surface-canvas),
+    0 0 0 2px var(--border-focus);
+}
+
+.legendOptionGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.styleOptionButton {
+  flex: 1 1 auto;
+  height: 24px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--surface-node);
+  padding: 0 var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  cursor: pointer;
+}
+
+.styleOptionButton:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.styleOptionButton[aria-pressed="true"] {
+  border-color: var(--border-focus);
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* ── Step icon X-axis ticks ─────────────────────────────────────────── */
+.originTickDot {
+  fill: var(--text-tertiary);
+}
+
+.stepIconTickGroup {
+  cursor: pointer;
+}
+
+.stepTickForeignObject {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.stepIconTick {
+  width: 100%;
+  height: 100%;
+}
+
+.stepTickSvgBox {
+  fill: var(--surface-raised);
+  stroke: var(--border-default);
+  stroke-width: var(--border-width-hairline);
+  transition: stroke var(--motion-fast) var(--motion-easing);
+}
+
+.stepIconTickGroup:hover .stepTickSvgBox {
+  stroke: var(--border-focus);
+}
+
+.stepTickSwordSvg {
+  color: var(--text-secondary);
+}
+
+.stepIconTickGroup:hover .stepTickSwordSvg {
+  color: var(--text-primary);
+}
+
+.stepTickBadgeBg {
+  fill: var(--surface-canvas);
+  stroke: var(--border-default);
+  stroke-width: var(--border-width-hairline);
+}
+
+.stepTickBadgeText {
+  fill: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.stepTickFallbackSvg {
+  fill: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+}
+
+.stepTickTooltipPortal {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
 }
 
 /* ── Tooltip ────────────────────────────────────────────────────────── */
@@ -271,11 +503,24 @@
 }
 
 .tooltipLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   color: var(--text-tertiary);
   font-size: var(--font-size-2xs);
   line-height: var(--line-height-2xs);
   text-transform: uppercase;
   letter-spacing: var(--label-letter-spacing);
+}
+
+.pinnedBadge {
+  border: var(--border-width-hairline) solid var(--border-strong);
+  border-radius: var(--radius-control);
+  padding: 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
 }
 
 .tooltipCombo + .tooltipCombo {
@@ -347,7 +592,8 @@
   white-space: nowrap;
 }
 
-.table td.num {
+.table td.num,
+.table th.numHeader {
   text-align: right;
 }
 
@@ -386,4 +632,153 @@
 .damageCluster {
   display: flex;
   gap: var(--space-2);
+}
+
+/* ── Effective Damage controls, cursor & kill map ───────────────────── */
+.variantSelectGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.variantSelectLabel {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--label-letter-spacing);
+}
+
+.variantSelect {
+  height: 28px;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--surface-input);
+  padding: 0 var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+  cursor: pointer;
+}
+
+.variantSelect:hover {
+  border-color: var(--border-strong);
+}
+
+.cursorSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+.cursorHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cursorLabel {
+  flex-shrink: 0;
+  min-width: 112px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.cursorRange {
+  flex: 1 1 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.killMapLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.killMapLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.killMapSwatch {
+  width: 12px;
+  height: 12px;
+  border: var(--border-width-hairline) solid var(--border-strong);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.killMapStage {
+  position: relative;
+}
+
+.killMapSvg {
+  overflow: visible;
+}
+
+.killMapCell {
+  stroke: var(--surface-node);
+  stroke-width: 0.5;
+  cursor: crosshair;
+}
+
+.killMapCellHovered {
+  stroke: var(--border-focus);
+  stroke-width: 1.5;
+}
+
+.killMapMarker {
+  pointer-events: none;
+}
+
+.killMapMarkerHalo {
+  fill: none;
+  stroke: var(--surface-canvas);
+  stroke-width: 3;
+}
+
+.killMapMarkerRing {
+  fill: var(--surface-canvas);
+  stroke: var(--text-primary);
+  stroke-width: 2;
+}
+
+.killMapMarkerLabel {
+  fill: var(--text-primary);
+  stroke: var(--surface-canvas);
+  stroke-width: 3;
+  paint-order: stroke;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.killMapTooltip {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.killMapTooltipLeft {
+  right: auto;
+  left: calc(60px + var(--space-2));
+}
+
+.killMapCaption {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-2xs);
 }

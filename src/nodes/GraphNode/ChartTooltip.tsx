@@ -11,39 +11,25 @@ function readInstances(row: Record<string, unknown>, key: string): readonly Dama
   return Array.isArray(value) ? (value as DamageInstance[]) : []
 }
 
-/** Custom tooltip (DESIGN.md §6/§7/§9: no default Recharts tooltip) showing,
- * per connected combo, every damage instance folded into the hovered point
- * — source (the action that dealt it), raw → mitigated value, damage type,
- * and the target's HP after — reading straight off the merged data row's
- * `instances` array rather than reassembling it from Recharts' own
- * per-dataKey payload entries. */
-export function ChartTooltip(props: {
-  readonly active?: boolean
-  readonly label?: string
-  readonly payload?: readonly TooltipPayloadEntry[]
+export function ChartBreakdownCard({
+  label,
+  row,
+  series,
+  pinnedSeriesId,
+}: {
+  readonly label: string | undefined
+  readonly row: Record<string, unknown>
   readonly series: readonly ComboSeries[]
-  /** The row of the hovered line segment, if any — it wins over Recharts'
-   * nearest-x row, which mid-segment can be the segment's *start* point
-   * rather than the damage the segment represents. */
-  readonly hoveredRow?: MergedRow | undefined
+  readonly pinnedSeriesId?: string | null | undefined
 }) {
-  const { active, payload, series, hoveredRow } = props
-  if (active !== true || payload === undefined || payload.length === 0) {
-    return null
-  }
-  const row: Record<string, unknown> | undefined = hoveredRow ?? payload[0]?.payload
-  if (row === undefined) {
-    return null
-  }
-  // The zero-damage origin has nothing to break down.
-  if (series.every((combo) => readInstances(row, `${combo.seriesId}.instances`).length === 0)) {
-    return null
-  }
-  const label = hoveredRow?.xLabel ?? props.label
-
   return (
     <div className={styles.tooltip}>
-      <div className={styles.tooltipLabel}>{label}</div>
+      <div className={styles.tooltipLabel}>
+        {label}
+        {pinnedSeriesId !== undefined && pinnedSeriesId !== null ? (
+          <span className={styles.pinnedBadge}>Pinned</span>
+        ) : null}
+      </div>
       {series.map((combo) => {
         const instances = readInstances(row, `${combo.seriesId}.instances`)
         if (instances.length === 0) {
@@ -79,5 +65,54 @@ export function ChartTooltip(props: {
         )
       })}
     </div>
+  )
+}
+
+/** Custom tooltip (DESIGN.md §6/§7/§9: no default Recharts tooltip) showing
+ * single-line damage adjustments when hovering a specific line segment or when
+ * a line is pinned as the priority hover target. (The all-lines step breakdown
+ * lives on the X-axis step icon tick hover.) */
+export function ChartTooltip(props: {
+  readonly active?: boolean
+  readonly label?: string
+  readonly payload?: readonly TooltipPayloadEntry[]
+  readonly series: readonly ComboSeries[]
+  /** The row of the hovered line segment, if any — it wins over Recharts'
+   * nearest-x row, which mid-segment can be the segment's *start* point
+   * rather than the damage the segment represents. */
+  readonly hoveredRow?: MergedRow | undefined
+  /** Active single-series target (pinned series if pinned, otherwise the
+   * hovered segment's series). When null, line tooltip stays hidden so only
+   * step icon ticks show the multi-series breakdown. */
+  readonly targetSeriesId?: string | null | undefined
+  readonly pinnedSeriesId?: string | null | undefined
+}) {
+  const { active, payload, series, hoveredRow, targetSeriesId, pinnedSeriesId } = props
+  if (active !== true || payload === undefined || payload.length === 0) {
+    return null
+  }
+  if (targetSeriesId === undefined || targetSeriesId === null) {
+    return null
+  }
+  const row: Record<string, unknown> | undefined = hoveredRow ?? payload[0]?.payload
+  if (row === undefined) {
+    return null
+  }
+  const filteredSeries = series.filter((combo) => combo.seriesId === targetSeriesId)
+  // The zero-damage origin (or a row where the target series has no instances) has nothing to break down.
+  if (
+    filteredSeries.every((combo) => readInstances(row, `${combo.seriesId}.instances`).length === 0)
+  ) {
+    return null
+  }
+  const label = hoveredRow?.xLabel ?? props.label
+
+  return (
+    <ChartBreakdownCard
+      label={label}
+      row={row}
+      series={filteredSeries}
+      pinnedSeriesId={pinnedSeriesId}
+    />
   )
 }

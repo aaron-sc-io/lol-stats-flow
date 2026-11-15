@@ -34,19 +34,19 @@ export function abilityIconUrl(champion: ChampionData, action: ComboAction): str
 function AttackPlaceholderIcon() {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="2 2 20 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.6}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={styles.palettePlaceholderIcon}
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M14.5 4.5L19.5 4.5L19.5 9.5L10.5 18.5L5.5 13.5Z" />
-      <path d="M8 16L4.5 19.5" />
-      <path d="M6.5 12.5L11.5 17.5" />
+      <path d="M14.5 3.5L20.5 3.5L20.5 9.5L10.5 19.5L4.5 13.5Z" />
+      <path d="M7.5 16.5L3.5 20.5" />
+      <path d="M5.5 11.5L12.5 18.5" />
     </svg>
   )
 }

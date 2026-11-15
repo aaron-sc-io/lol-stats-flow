@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react"
 import type { HoverPickerFilter } from "@/components/HoverPicker"
 import { HoverPicker } from "@/components/HoverPicker"
 import type { IconName } from "@/components/icons"
@@ -88,6 +89,19 @@ export type ItemSlotControlProps = {
   readonly slotLabel: string
 }
 
+const getItemKey = (item: ItemData): number => item.id
+const getItemImageUrl = (item: ItemData): string => item.iconUrl
+const getItemSearchText = (item: ItemData): string => item.name
+const renderItemIcon = (item: ItemData) => (
+  <img
+    src={item.iconUrl}
+    alt=""
+    loading="eager"
+    decoding="async"
+    className={styles.pickerItemIcon}
+  />
+)
+
 /** One item-shop slot (plan D7/deliverable 3): empty slots open the
  * HoverPicker-based shop; a filled slot renders the equipped icon and
  * clicking it removes the item directly (per deliverable: "clicking a
@@ -100,6 +114,41 @@ export function ItemSlotControl({
   onRemove,
   slotLabel,
 }: ItemSlotControlProps) {
+  const shopItems = useMemo(
+    () =>
+      snapshot.items.filter(
+        (item) => item.purchasable && item.maps[SUMMONERS_RIFT_MAP_ID] === true,
+      ),
+    [snapshot.items],
+  )
+
+  const unavailableItemIds = useMemo(() => {
+    const ids = new Set<number>()
+    for (const item of shopItems) {
+      if (!canAddItemToSet(currentSetItems, item).canAdd) {
+        ids.add(item.id)
+      }
+    }
+    return ids
+  }, [shopItems, currentSetItems])
+
+  const isUnavailable = useCallback(
+    (item: ItemData) => unavailableItemIds.has(item.id),
+    [unavailableItemIds],
+  )
+
+  const getItemLabel = useCallback(
+    (item: ItemData) =>
+      [
+        item.name,
+        item.modeled ? null : "(unmodeled)",
+        unavailableItemIds.has(item.id) ? "(unavailable)" : null,
+      ]
+        .filter((part) => part !== null)
+        .join(" "),
+    [unavailableItemIds],
+  )
+
   if (equipped !== null) {
     return (
       <Tooltip label={`Remove ${equipped.name}`}>
@@ -109,33 +158,27 @@ export function ItemSlotControl({
           className={styles.filledSlot}
           onClick={onRemove}
         >
-          <img src={equipped.iconUrl} alt="" className={styles.slotIcon} />
+          <img
+            src={equipped.iconUrl}
+            alt=""
+            loading="eager"
+            decoding="async"
+            className={styles.slotIcon}
+          />
         </button>
       </Tooltip>
     )
   }
 
-  const shopItems = snapshot.items.filter(
-    (item) => item.purchasable && item.maps[SUMMONERS_RIFT_MAP_ID] === true,
-  )
-  const isUnavailable = (item: ItemData) => !canAddItemToSet(currentSetItems, item).canAdd
-
   return (
     <HoverPicker
       trigger={<span className={styles.emptySlot}>+</span>}
       items={shopItems}
-      getKey={(item) => item.id}
-      renderItem={(item) => <img src={item.iconUrl} alt="" className={styles.pickerItemIcon} />}
-      itemLabel={(item) =>
-        [
-          item.name,
-          item.modeled ? null : "(unmodeled)",
-          isUnavailable(item) ? "(unavailable)" : null,
-        ]
-          .filter((part) => part !== null)
-          .join(" ")
-      }
-      searchText={(item) => item.name}
+      getKey={getItemKey}
+      renderItem={renderItemIcon}
+      imageUrl={getItemImageUrl}
+      itemLabel={getItemLabel}
+      searchText={getItemSearchText}
       filters={STAT_FILTERS}
       isDisabled={isUnavailable}
       onSelect={onEquip}

@@ -16,6 +16,7 @@ export function SeriesDot({
   highlighted,
   stepId,
   onHover,
+  onClick,
   className,
 }: {
   readonly cx: number | undefined
@@ -25,6 +26,7 @@ export function SeriesDot({
   readonly highlighted: boolean
   readonly stepId?: string | undefined
   readonly onHover: (stepId: string | null) => void
+  readonly onClick?: (() => void) | undefined
   readonly className: string
 }) {
   if (cx === undefined || cy === undefined) {
@@ -36,6 +38,10 @@ export function SeriesDot({
     style: { opacity },
     onMouseEnter: () => onHover(stepId ?? null),
     onMouseLeave: () => onHover(null),
+    onClick: (event: { stopPropagation: () => void }) => {
+      event.stopPropagation()
+      onClick?.()
+    },
   }
 
   if (shape === "square") {

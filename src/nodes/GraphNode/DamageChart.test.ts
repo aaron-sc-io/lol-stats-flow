@@ -29,6 +29,7 @@ function stepSeries(targetId: string): ComboSeries {
     targetId,
     targetName: `Target ${targetId}`,
     itemSetIds: ["is-1"],
+    targetHp: 1000,
     stepIds: steps.map((step) => String(step.stepId)),
     points: [
       steps[2],
@@ -54,6 +55,7 @@ function tickSeries(targetId: string): ComboSeries {
     targetId,
     targetName: `Target ${targetId}`,
     itemSetIds: ["is-1"],
+    targetHp: 1000,
     stepIds: ["s1", "s2", "s3"],
     points: [
       {

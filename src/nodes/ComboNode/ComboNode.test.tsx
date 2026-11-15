@@ -186,7 +186,7 @@ describe("ComboNode", () => {
 
     expect(screen.getAllByRole("button", { name: "Increase Q rank" })).toHaveLength(1)
     const qButton = screen.getByRole("button", { name: "Steel Tempest (Q)" })
-    const qEmpoweredButton = screen.getByRole("button", { name: "Steel Tempest ✳ (tornado)" })
+    const qEmpoweredButton = screen.getByRole("button", { name: "Steel Tempest ✳ (crit)" })
     expect(qButton.parentElement).toBe(qEmpoweredButton.parentElement)
   })
 

@@ -48,9 +48,19 @@ export function TimelineEntry({
   readonly damages: readonly StepDamage[]
   readonly onDelete: () => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: step.id,
-  })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+    activeIndex,
+  } = useSortable({ id: step.id })
+  // While another tile is dragged over this one, mark which side of it the
+  // dragged tile will land on.
+  const dropSide = isOver && !isDragging ? (activeIndex < index ? "after" : "before") : undefined
   const setComboStepDelay = useGraphStore((s) => s.setComboStepDelay)
   const hoveredStepId = useGraphStore((s) => s.hoveredStepId)
   const hoveredStepIds = useGraphStore((s) => s.hoveredStepIds)
@@ -80,8 +90,13 @@ export function TimelineEntry({
     <li
       ref={setNodeRef}
       style={style}
-      className={cx(styles.timelineEntry, orphaned && styles.orphaned)}
+      className={cx(
+        styles.timelineEntry,
+        orphaned && styles.orphaned,
+        isDragging && styles.timelineEntryDragging,
+      )}
       data-step-id={step.id}
+      data-drop-side={dropSide}
       data-highlighted={highlighted ? "true" : undefined}
       title={orphaned ? "Source disconnected" : undefined}
       onMouseEnter={() => {

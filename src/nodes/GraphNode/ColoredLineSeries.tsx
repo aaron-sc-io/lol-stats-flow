@@ -43,6 +43,7 @@ export function ColoredLineSeries({
   rows,
   dataKeySuffix,
   stroke,
+  strokeWidthOverride,
   dasharray,
   shape,
   opacity,
@@ -52,6 +53,7 @@ export function ColoredLineSeries({
   hoveredDamage,
   onHoverStep,
   onHoverDamage,
+  onClickLine,
 }: {
   readonly combo: ComboSeries
   /** The `<LineChart data>` rows — Recharts hands the line's `shape` one
@@ -59,6 +61,7 @@ export function ColoredLineSeries({
   readonly rows: readonly MergedRow[]
   readonly dataKeySuffix: "cumulative" | "targetHpAfter"
   readonly stroke: string
+  readonly strokeWidthOverride?: number | undefined
   readonly dasharray: string | undefined
   readonly shape: MarkerShape
   readonly opacity: number
@@ -68,6 +71,7 @@ export function ColoredLineSeries({
   readonly hoveredDamage: HoveredDamage | null
   readonly onHoverStep: (stepId: string | null) => void
   readonly onHoverDamage: (damage: HoveredDamage | null) => void
+  readonly onClickLine?: (() => void) | undefined
 }) {
   const valueKey = `${combo.seriesId}.${dataKeySuffix}`
   const stepKey = `${combo.seriesId}.stepId`
@@ -75,6 +79,9 @@ export function ColoredLineSeries({
   const lastX = combo.points[combo.points.length - 1]?.x ?? null
   const hoveredStepIdSet = new Set(hoveredStepIds)
   const hoveredX = hoveredDamage?.seriesId === combo.seriesId ? hoveredDamage.x : null
+  const baseWidth = strokeWidthOverride ?? BASE_STROKE_WIDTH
+  const emphasizedWidth =
+    strokeWidthOverride === undefined ? EMPHASIZED_STROKE_WIDTH : strokeWidthOverride + 1
 
   const renderShape = (props: LineDrawShapeProps) => {
     // `connectNulls`: a row this series has no value for (another combo's
@@ -111,7 +118,7 @@ export function ColoredLineSeries({
           ),
         )}
         {segments.map(({ start, end }) => (
-          // biome-ignore lint/a11y/noStaticElementInteractions: hover-only cross-highlight affordance — the tooltip, timeline chips, and comparison table carry the same numbers for non-pointer users.
+          // biome-ignore lint/a11y/noStaticElementInteractions: hover/click cross-highlight affordance — the tooltip, timeline chips, and comparison table carry the same numbers for non-pointer users.
           <path
             key={end.row.x}
             d={`M${start.x},${start.y}L${end.x},${end.y}`}
@@ -126,6 +133,10 @@ export function ColoredLineSeries({
               })
             }
             onMouseLeave={() => onHoverDamage(null)}
+            onClick={(event) => {
+              event.stopPropagation()
+              onClickLine?.()
+            }}
           />
         ))}
       </g>
@@ -140,7 +151,7 @@ export function ColoredLineSeries({
       // from each child series, duplicating/out-of-order x-axis labels.
       dataKey={valueKey}
       stroke={stroke}
-      strokeWidth={emphasized ? EMPHASIZED_STROKE_WIDTH : BASE_STROKE_WIDTH}
+      strokeWidth={emphasized ? emphasizedWidth : baseWidth}
       strokeOpacity={opacity}
       {...(dasharray === undefined ? {} : { strokeDasharray: dasharray })}
       isAnimationActive={false}
@@ -171,6 +182,7 @@ export function ColoredLineSeries({
               }
               stepId={typeof stepId === "string" && stepId !== "" ? stepId : undefined}
               onHover={onHoverStep}
+              onClick={onClickLine}
               className={cx(styles.markerFill)}
             />
             {!isLast || dotProps.cx === undefined || dotProps.cy === undefined ? null : (

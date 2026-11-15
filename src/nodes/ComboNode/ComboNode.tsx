@@ -1,6 +1,7 @@
 import type { NodeProps } from "@xyflow/react"
-import { Handle, Position } from "@xyflow/react"
+import { Handle, Position, useInternalNode } from "@xyflow/react"
 import { useMemo } from "react"
+import { EditableText } from "@/components/EditableText"
 import { NodeFrame } from "@/components/NodeFrame"
 import { useSnapshotContext } from "@/data/snapshot-context"
 import { buildComboVariants, groupSourcesByChampion } from "@/graph/combo-variants"
@@ -19,6 +20,8 @@ import styles from "./ComboNode.module.css"
 import { TimelineList } from "./TimelineList"
 
 const DEFAULT_WIDTH = 480
+const MIN_WIDTH = 280
+const MAX_WIDTH = 1600
 
 /**
  * Combo node (plan §6, deliverable 4): one single-row ability palette per
@@ -35,6 +38,10 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
   const setHoveredCombo = useGraphStore((s) => s.setHoveredCombo)
   const renameCombo = useGraphStore((s) => s.renameCombo)
   const toggleComboSectionCollapsed = useGraphStore((s) => s.toggleComboSectionCollapsed)
+  const removeNode = useGraphStore((s) => s.removeNode)
+  const duplicateNode = useGraphStore((s) => s.duplicateNode)
+  const internalNode = useInternalNode<ComboFlowNode>(id)
+  const nodeWidth = internalNode?.width ?? DEFAULT_WIDTH
 
   const connectedSources = useMemo(
     () => getConnectedItemSetSources(id, nodes, edges),
@@ -72,9 +79,8 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
     <NodeFrame
       label="Combo"
       title={
-        <input
-          type="text"
-          className={styles.nameInput}
+        <EditableText
+          wrapperClassName={cx(styles.nameInput, "nodrag")}
           value={data.name}
           onChange={(event) => renameCombo(id, event.target.value)}
           aria-label="Combo name"
@@ -83,9 +89,16 @@ export function ComboNode({ id, data, selected }: NodeProps<ComboFlowNode>) {
       selected={selected}
       highlighted={highlighted}
       dimmed={dimmed}
-      width={DEFAULT_WIDTH}
+      width={nodeWidth}
       onPointerEnter={() => setHoveredCombo(id)}
       onPointerLeave={() => setHoveredCombo(null)}
+      onDelete={() => removeNode(id)}
+      onDuplicate={() => duplicateNode(id)}
+      deleteLabel={`Delete ${data.name || "combo"} node`}
+      resize={{
+        minWidth: MIN_WIDTH,
+        maxWidth: MAX_WIDTH,
+      }}
       actions={
         target === undefined ? undefined : (
           <span className="num">{Math.round(total).toLocaleString()}</span>

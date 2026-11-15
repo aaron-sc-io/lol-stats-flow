@@ -60,6 +60,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: calc(var(--space-2) * var(--node-scale, 1));
   padding: calc(var(--space-1) * var(--node-scale, 1));
   transition: background-color var(--motion-fast) var(--motion-easing);
@@ -76,22 +77,51 @@
   box-shadow: inset 2px 0 0 var(--text-primary);
 }
 
+/* Reorder grip + drag feedback, matching the combo timeline: the dragged row
+ * is dashed, the row it's over is bolded with an insertion bar on the edge
+ * the dragged row will land on. */
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: calc(20px * var(--node-scale, 1));
+  height: calc(24px * var(--node-scale, 1));
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: grab;
+}
+
+.itemSetRowDragging {
+  z-index: 1;
+  outline: var(--border-width-hairline) dashed var(--border-focus);
+}
+
+.itemSetRow[data-drop-side] {
+  background-color: var(--surface-hover);
+}
+
+.itemSetRow[data-drop-side="before"] {
+  box-shadow:
+    inset 0 3px 0 var(--accent),
+    inset 0 0 0 1px var(--accent);
+}
+
+.itemSetRow[data-drop-side="after"] {
+  box-shadow:
+    inset 0 -3px 0 var(--accent),
+    inset 0 0 0 1px var(--accent);
+}
+
 .itemSetName {
   width: calc(108px * var(--node-scale, 1));
   min-width: 0;
   flex: 0 1 auto;
-  border: none;
-  border-bottom: var(--border-width-hairline) solid transparent;
-  background: transparent;
   color: var(--text-primary);
   font-size: calc(var(--font-size-xs) * var(--node-scale, 1));
   line-height: var(--line-height-xs);
-  text-overflow: ellipsis;
-}
-
-.itemSetName:hover,
-.itemSetName:focus-visible {
-  border-bottom-color: var(--border-default);
 }
 
 .slots {
@@ -138,6 +168,7 @@
 .rowActions {
   display: flex;
   flex-shrink: 0;
+  margin-left: auto;
   gap: calc(var(--space-1) * var(--node-scale, 1));
 }
 
@@ -152,30 +183,4 @@
 /* Unselectable (unmodeled) champions in the roster picker. */
 .pickerItemUnavailable {
   filter: grayscale(1);
-}
-
-/* ── Resize handles (NodeResizer, plan D6) ─────────────────────────────
-   Combined with the library's own classes as one compound selector
-   (3 classes: `.react-flow__resize-control.handle` + ours) so it outranks
-   the library's same-element base rule by specificity alone — no
-   `!important` needed, and no dependency on CSS import order. */
-:global(.react-flow__resize-control.handle).resizeHandle {
-  width: 8px;
-  height: 8px;
-  border: var(--border-width-hairline) solid var(--border-strong);
-  border-radius: 2px;
-  background-color: var(--surface-canvas);
-}
-
-:global(.react-flow__resize-control.handle).resizeHandle:hover {
-  background-color: var(--surface-hover);
-  border-color: var(--text-primary);
-}
-
-:global(.react-flow__resize-control.line).resizeLine {
-  border-color: var(--border-strong);
-}
-
-:global(.react-flow__resize-control.line).resizeLine:hover {
-  border-color: var(--text-primary);
 }

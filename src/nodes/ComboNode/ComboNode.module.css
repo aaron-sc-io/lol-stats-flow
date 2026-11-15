@@ -1,22 +1,15 @@
 .body {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-3);
 }
 
 .nameInput {
   width: 100%;
-  border: none;
-  border-bottom: var(--border-width-hairline) solid transparent;
-  background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-weight: var(--font-weight-medium);
-}
-
-.nameInput:hover,
-.nameInput:focus-visible {
-  border-bottom-color: var(--border-default);
 }
 
 .emptyState {
@@ -111,8 +104,8 @@
 }
 
 .palettePlaceholderIcon {
-  width: var(--icon-size-md);
-  height: var(--icon-size-md);
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
 }
 
 .paletteKey {
@@ -137,6 +130,7 @@
 
 .timeline {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-2);
 }
@@ -144,6 +138,7 @@
 /* The combo order, left to right; scrolls sideways once it outgrows the node. */
 .timelineList {
   display: flex;
+  min-width: 0;
   flex-direction: row;
   align-items: flex-start;
   gap: var(--space-1);
@@ -170,6 +165,31 @@
 
 .timelineEntry[data-highlighted="true"] {
   border-color: var(--border-focus);
+}
+
+/* The tile being dragged, and the drop zone it will land in: the hovered
+ * tile gets a bold outline plus an insertion bar on the landing side (inset,
+ * so the list's horizontal scroll clip can't hide it). */
+.timelineEntryDragging {
+  border-style: dashed;
+  border-color: var(--border-focus);
+}
+
+.timelineEntry[data-drop-side] {
+  border-color: var(--accent);
+  background-color: var(--surface-hover);
+}
+
+.timelineEntry[data-drop-side="before"] {
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--accent);
+}
+
+.timelineEntry[data-drop-side="after"] {
+  box-shadow:
+    inset -3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--accent);
 }
 
 .orphaned {

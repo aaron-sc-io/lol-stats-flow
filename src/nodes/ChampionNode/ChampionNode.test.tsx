@@ -87,11 +87,20 @@ describe("ChampionNode", () => {
     expect(currentNode().data.itemSets[0]?.name).toBe("Full Build")
   })
 
-  it("moving the level slider via the keyboard updates the store", () => {
+  it("moving the level slider via the keyboard updates the store and allows up to level 20", () => {
     renderChampionNode(fixtureNode())
     const slider = screen.getByRole("slider", { name: "Champion level" })
+    expect(slider.getAttribute("aria-valuemax")).toBe("20")
     fireEvent.keyDown(slider, { key: "ArrowRight" })
     expect(currentNode().data.level).toBe(12)
+    fireEvent.keyDown(slider, { key: "End" })
+    expect(currentNode().data.level).toBe(20)
+  })
+
+  it("clicking the delete button when selected removes the champion node from the store", () => {
+    renderChampionNode({ ...fixtureNode(), selected: true })
+    fireEvent.click(screen.getByRole("button", { name: "Delete Yasuo node" }))
+    expect(useGraphStore.getState().nodes).toHaveLength(0)
   })
 
   it("clicking '+ Add item set' appends a new row", () => {
