@@ -1,6 +1,6 @@
 {
   "name": "lol-stats-flow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interactive node-graph damage calculator for League of Legends",
   "private": true,
   "type": "module",
